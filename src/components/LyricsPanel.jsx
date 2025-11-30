@@ -1,4 +1,4 @@
-// src/components/LyricsPanel.jsx
+// src/components/LyricsPanel.jsx (REPLACE ENTIRE FILE)
 import React, { useEffect, useState, useRef } from 'react';
 
 export default function LyricsPanel({ song }) {
@@ -9,6 +9,14 @@ export default function LyricsPanel({ song }) {
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // ---------------------------------------------------------
+  // 🛑 TODO: PASTE YOUR RENDER BACKEND URL HERE
+  // Example: "https://groove-j0kw.onrender.com"
+  // Do NOT add a slash "/" at the end.
+  // ---------------------------------------------------------
+  const API_BASE = "https://groove-j0kw.onrender.com"; 
+  // ---------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -22,9 +30,17 @@ export default function LyricsPanel({ song }) {
       setLoading(true);
       setError(null);
       try {
-        const resp = await fetch(`/api/lyrics?songId=${encodeURIComponent(song.id)}`);
+        // FIXED: Now uses the full URL to fetch lyrics
+        const resp = await fetch(`${API_BASE}/api/lyrics?songId=${encodeURIComponent(song.id)}`);
+        
+        if (!resp.ok) {
+           // If 404, it just means no lyrics exist yet, which is fine
+           if (resp.status !== 404) throw new Error("Failed to fetch");
+        }
+
         const json = await resp.json();
         if (cancelled) return;
+        
         const entry = json?.entry || null;
         if (entry) {
           setLyrics(entry.lyrics || '');
@@ -37,7 +53,7 @@ export default function LyricsPanel({ song }) {
         }
       } catch (err) {
         console.error(err);
-        setError('Failed to load lyrics');
+        // We generally don't show an error on load, just empty state
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -59,7 +75,8 @@ export default function LyricsPanel({ song }) {
     setLoading(true);
     setError(null);
     try {
-      const resp = await fetch('/api/lyrics', {
+      // FIXED: Uses full URL to save lyrics
+      const resp = await fetch(`${API_BASE}/api/lyrics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ songId: String(song.id), lyrics, source: 'manual' })
@@ -86,7 +103,8 @@ export default function LyricsPanel({ song }) {
     setLoading(true);
     setError(null);
     try {
-      await fetch(`/api/lyrics?songId=${encodeURIComponent(song.id)}`, { method: 'DELETE' });
+      // FIXED: Uses full URL to delete lyrics
+      await fetch(`${API_BASE}/api/lyrics?songId=${encodeURIComponent(song.id)}`, { method: 'DELETE' });
       setLyrics('');
       setMeta(null);
       setEditing(false);
@@ -115,7 +133,7 @@ export default function LyricsPanel({ song }) {
             onClick={() => setMenuOpen(v => !v)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            title=""
+            title="Lyrics actions"
           >
             ✎ 
           </button>
@@ -181,7 +199,7 @@ export default function LyricsPanel({ song }) {
             rows={12}
           />
         ) : (
-          <pre className="lyrics-pre">{lyrics || 'No lyrics saved yet — open Actions → Edit to add lyrics.'}</pre>
+          <pre className="lyrics-pre">{lyrics || 'No lyrics saved yet — open Actions ✎ -> Edit to add them.'}</pre>
         )}
       </div>
 
