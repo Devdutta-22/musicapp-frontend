@@ -7,7 +7,6 @@ import LyricsPanel from './LyricsPanel';
 import '../App.css';
 import { QRCodeCanvas } from "qrcode.react";
 
-
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
 function CoverImage({ srcs = [], alt, className }) {
@@ -65,12 +64,19 @@ export default function MusicApp() {
     return a;
   }
 
-  /* ---------- fetch songs (randomize library on fetch) ---------- */
-  async function fetchSongs() {
+  /* ---------- fetch songs (Supports Search!) ---------- */
+  // FIX: Accepts a query parameter now
+  async function fetchSongs(query = '') {
     try {
-      // Use REACT_APP_API_BASE_URL if present (set in Vercel / .env.local)
-      const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); // strip trailing slash
-      const requestUrl = API ? `${API}/api/songs` : '/api/songs';
+      // 🛑 TODO: If env var still fails, you can hardcode your URL here like:
+      // const API = "https://groove-j0kw.onrender.com";
+      const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
+      
+      // FIX: Switch logic. If query exists -> Search. If not -> Top 100.
+      const requestUrl = query 
+        ? `${API}/api/songs/search?q=${encodeURIComponent(query)}` 
+        : `${API}/api/songs`;
+
       console.log('Fetching songs from', requestUrl);
 
       const res = await axios.get(requestUrl);
@@ -80,25 +86,22 @@ export default function MusicApp() {
         likeCount: typeof s.likeCount === 'number' ? s.likeCount : 0
       }));
 
-      // Randomize left library order (one-per-fetch, as requested)
+      // Randomize results (keep the "Fresh" feel even for search results)
       const randomized = shuffleArray(data);
       setSongs(randomized);
 
-      // Initialize queue if empty, or keep existing queue but remove stale ids
+      // Initialize queue if empty
       if (randomized.length && queue.length === 0) {
         setQueue(randomized.map(d => d.id));
         setCurrentIndex(0);
       } else {
-        setQueue(q => q.filter(id => randomized.some(d => d.id === id)));
-        if (currentIndex >= 0 && !(randomized.some(d => d.id === queue[currentIndex]))) {
-          setCurrentIndex(0);
-        }
+        // Just ensure queue is valid
+        setQueue(q => q.filter(id => randomized.some(d => d.id === id) || queue.includes(id)));
       }
     } catch (e) {
       console.error('fetchSongs', e);
       setSongs([]);
-      setQueue([]);
-      setCurrentIndex(-1);
+      // Don't clear queue on error to prevent playback interruption
     }
   }
 
@@ -307,12 +310,6 @@ export default function MusicApp() {
     document.querySelectorAll('.queue-item.drag-over').forEach(el => el.classList.remove('drag-over'));
   }
 
-  /* ---------- filtered view (search) ---------- */
-  const visibleSongs = songs.filter(s => {
-    if (!searchTerm) return true;
-    return (s.title || '').toLowerCase().includes(searchTerm.trim().toLowerCase());
-  });
-
   /* ---------- render ---------- */
   return (
     <div className="app-shell" style={{ alignItems: 'stretch', ['--sidebar-width']: `${sidebarWidth}px` }}>
@@ -383,11 +380,18 @@ export default function MusicApp() {
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search songs by title..."
+            // FIX: Press Enter to Search on Server
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                fetchSongs(searchTerm); 
+              }
+            }}
+            placeholder="Search & Press Enter..."
             aria-label="Search songs"
             style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '3px solid rgba(255,255,255,0.04)', background: 'transparent', color: 'var(--text-primary)' }}
           />
-          <button className="small-btn" onClick={() => { setSearchTerm(''); }}>Clear</button>
+          {/* FIX: Clear button reloads default top 100 */}
+          <button className="small-btn" onClick={() => { setSearchTerm(''); fetchSongs(''); }}>Clear</button>
         </div>
 
         <div style={{ marginTop: 12 }}>
@@ -397,8 +401,9 @@ export default function MusicApp() {
             </div>
           ) : (
             <div className="song-list" style={{ height: 'calc(100vh - 140px)', overflowY: 'auto', paddingRight: 8 }}>
-              {visibleSongs.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs match your search.</div>}
-              {visibleSongs.map(s => (
+              {/* FIX: We display 'songs' directly because 'fetchSongs' handles the filtering now */}
+              {songs.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs match your search.</div>}
+              {songs.map(s => (
                 <div key={s.id} className="song-item" onDoubleClick={() => playSong(s)}>
                   <CoverImage srcs={[s.coverUrl, s.artistImageUrl, PERSON_PLACEHOLDER]} alt={s.title} className="cover" />
 
