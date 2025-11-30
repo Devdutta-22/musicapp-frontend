@@ -17,7 +17,7 @@ export default function UploadCard({ onUploaded }) {
   // Go to your Render Dashboard -> Copy the URL (e.g. https://music-app.onrender.com)
   // Do NOT add a slash "/" at the end.
   // -------------------------------------------------------------------------
-  const API_BASE = "https://REPLACE_THIS_WITH_YOUR_RENDER_URL.onrender.com"; 
+  const API_BASE = "https://groove-j0kw.onrender.com"; 
   // -------------------------------------------------------------------------
 
   const submit = async (e) => {
