@@ -1,20 +1,33 @@
-// src/components/UploadCard.jsx  (REPLACE THIS ENTIRE FILE)
+// src/components/UploadCard.jsx
 import React, { useState } from "react";
 import axios from "axios";
 
 export default function UploadCard({ onUploaded }) {
   const [file, setFile] = useState(null);
   const [coverImage, setCoverImage] = useState(null);
-  const [artistImage, setArtistImage] = useState(null); // new
+  const [artistImage, setArtistImage] = useState(null);
   const [title, setTitle] = useState("");
   const [artistName, setArtistName] = useState("");
   const [album, setAlbum] = useState("");
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // -------------------------------------------------------------------------
+  // 🛑 TODO: PASTE YOUR RENDER BACKEND URL HERE
+  // Go to your Render Dashboard -> Copy the URL (e.g. https://music-app.onrender.com)
+  // Do NOT add a slash "/" at the end.
+  // -------------------------------------------------------------------------
+  const API_BASE = "https://REPLACE_THIS_WITH_YOUR_RENDER_URL.onrender.com"; 
+  // -------------------------------------------------------------------------
+
   const submit = async (e) => {
     e.preventDefault();
     if (!file) return alert("Please choose an audio file.");
+
+    // Check if user forgot to replace the URL
+    if (API_BASE.includes("REPLACE_THIS")) {
+      return alert("Setup Error: You forgot to paste your Render Backend URL inside UploadCard.jsx!");
+    }
 
     const fd = new FormData();
     fd.append("file", file);
@@ -28,7 +41,11 @@ export default function UploadCard({ onUploaded }) {
     setProgress(0);
 
     try {
-      await axios.post("/api/songs/upload", fd, {
+      // FIXED: Now uses the absolute URL to your backend
+      const url = `${API_BASE}/api/songs/upload`;
+      console.log("Uploading to:", url);
+
+      await axios.post(url, fd, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (evt) => {
           if (evt.total) {
@@ -52,7 +69,12 @@ export default function UploadCard({ onUploaded }) {
     } catch (err) {
       console.error(err);
       setLoading(false);
-      alert("Upload failed — check backend console.");
+      
+      if (err.response && err.response.status === 405) {
+         alert("Error 405: Still hitting Vercel. Check the API_BASE URL in code.");
+      } else {
+         alert("Upload failed — check backend console.");
+      }
     }
   };
 
