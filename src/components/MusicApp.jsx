@@ -6,11 +6,10 @@ import UploadCard from './UploadCard';
 import LyricsPanel from './LyricsPanel';
 import '../App.css';
 import { QRCodeCanvas } from "qrcode.react";
-// Import Icons
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, 
   MoreHorizontal, Plus, ListMusic, Shuffle, 
-  PanelLeftClose, PanelLeftOpen // <--- New Icons for Collapse
+  PanelLeftClose, PanelLeftOpen, QrCode 
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -30,12 +29,12 @@ export default function MusicApp() {
   const [showUpload, setShowUpload] = useState(false);
   const [repeatMode, setRepeatMode] = useState('off'); 
   const [shuffle, setShuffle] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   
-  // --- NEW: COLLAPSE STATE ---
-  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
+  // Search State
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Sidebar width logic (Only affects expanded state)
+  // Collapse State
+  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
 
   const [showQR, setShowQR] = useState(false);
@@ -62,14 +61,14 @@ export default function MusicApp() {
     return a;
   }
 
-  /* ---------- fetch ---------- */
-  async function fetchSongs(query = '') {
+  /* ---------- fetch (Client-Side Search Mode) ---------- */
+  async function fetchSongs() {
     try {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
-      const requestUrl = query 
-        ? `${API}/api/songs/search?q=${encodeURIComponent(query)}` 
-        : `${API}/api/songs`;
+      // Always fetch ALL songs
+      const requestUrl = `${API}/api/songs`;
 
+      console.log('Fetching all songs:', requestUrl);
       const res = await axios.get(requestUrl);
       const data = (res.data || []).map(s => ({
         ...s,
@@ -93,6 +92,13 @@ export default function MusicApp() {
   }
 
   useEffect(() => { fetchSongs(); }, []); 
+
+  // --- CLIENT SIDE FILTERING (Fixes Search) ---
+  const visibleSongs = songs.filter(s => {
+    if (!searchTerm) return true;
+    const q = searchTerm.toLowerCase();
+    return (s.title || '').toLowerCase().includes(q) || (s.artistName || '').toLowerCase().includes(q);
+  });
 
   // --- MEDIA SESSION ---
   useEffect(() => {
@@ -177,7 +183,6 @@ export default function MusicApp() {
     else { if (repeatMode === 'all') { setCurrentIndex(queue.length - 1); setPlaying(true); } else { setPlaying(true); } }
   }
 
-  /* ---------------- Helpers ---------------- */
   function playAtIndex(idx) { if (idx < 0 || idx >= queue.length) return; setCurrentIndex(idx); setPlaying(true); }
   
   function removeAtIndex(idx) {
@@ -209,7 +214,6 @@ export default function MusicApp() {
     });
   }
 
-  // Menu handlers
   useEffect(() => {
     function onDocClick(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenuSongId(null);
@@ -229,64 +233,75 @@ export default function MusicApp() {
       <aside 
         className={`library card-surface ${isLibraryCollapsed ? 'collapsed' : ''}`} 
         style={{ 
-          // If collapsed, force small width (80px), else use variable width
           width: isLibraryCollapsed ? '80px' : `${sidebarWidth}px`, 
           minWidth: isLibraryCollapsed ? '80px' : `${sidebarWidth}px`,
           maxWidth: isLibraryCollapsed ? '80px' : '720px' 
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-          {/* Hide Title if collapsed */}
-          {!isLibraryCollapsed && <h3 style={{ margin: 0 }}>Library</h3>}
-
-          <div style={{ display: 'flex', gap: 8, margin: isLibraryCollapsed ? '0 auto' : '0' }}>
-             
-             {/* COLLAPSE BUTTON */}
-             <button 
+        {/* HEADER ROW */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
+          
+          {/* Collapse Button is ALWAYS visible on Left */}
+          <button 
                 className="small-btn icon-only" 
                 onClick={() => setIsLibraryCollapsed(v => !v)} 
                 title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
+                style={{ zIndex: 50 }} 
              >
                 {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
-             </button>
+          </button>
 
-             {!isLibraryCollapsed && (
-               <>
-                 <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
-                    {showUpload ? 'Back' : <Plus size={18}/>}
+          {!isLibraryCollapsed && <h3 style={{ margin: 0, flex: 1 }}>Library</h3>}
+
+          {/* Controls (QR, Add, Shuffle) */}
+          {!isLibraryCollapsed && (
+            <div style={{ display: 'flex', gap: 8 }}>
+               <div style={{ position: 'relative' }}>
+                 <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
+                    <QrCode size={18}/>
                  </button>
-                 <button className="small-btn" onClick={() => toggleShuffle()} title="Shuffle Library">
-                    <Shuffle size={18} color={shuffle ? 'var(--neon)' : 'white'} />
-                 </button>
-               </>
-             )}
-          </div>
+                 {showQR && (
+                  <div style={{ position: "absolute", right: 0, top: "40px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
+                    <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
+                  </div>
+                )}
+               </div>
+
+               <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
+                  {showUpload ? 'Back' : <Plus size={18}/>}
+               </button>
+               <button className="small-btn" onClick={() => toggleShuffle()} title="Shuffle Library">
+                  <Shuffle size={18} color={shuffle ? 'var(--neon)' : 'white'} />
+               </button>
+            </div>
+          )}
         </div>
 
-        {/* Hide Search if Collapsed */}
+        {/* Search Bar */}
         {!isLibraryCollapsed && (
           <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', }}>
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') fetchSongs(searchTerm); }}
               placeholder="Search..."
               className="search-input"
             />
-            <button className="small-btn" onClick={() => { setSearchTerm(''); fetchSongs(''); }}>Clear</button>
+            {searchTerm && <button className="small-btn" onClick={() => setSearchTerm('')}>Clear</button>}
           </div>
         )}
 
+        {/* List */}
         <div style={{ marginTop: 12 }}>
           {showUpload && !isLibraryCollapsed ? (
             <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
           ) : (
             <div className="song-list" style={{ height: 'calc(100vh - 140px)', overflowY: 'auto', paddingRight: isLibraryCollapsed ? 0 : 4 }}>
-              {songs.map(s => (
+              {/* USE VISIBLE SONGS (FILTERED) */}
+              {visibleSongs.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs found.</div>}
+              {visibleSongs.map(s => (
                 <div key={s.id} className="song-item" onDoubleClick={() => playSong(s)} title={s.title}>
                   <CoverImage srcs={[s.coverUrl, s.artistImageUrl, PERSON_PLACEHOLDER]} alt={s.title} className="cover" />
                   
-                  {/* Hide Details if Collapsed */}
                   {!isLibraryCollapsed && (
                     <>
                       <div className="song-info">
@@ -330,8 +345,7 @@ export default function MusicApp() {
           <div className="nowplaying-left">
             {current ? (
               <div className="nowplaying-big">
-                 {/* Ambient Glow */}
-                <div className="glow-container">
+                 <div className="glow-container">
                   <img src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER} alt="" className="glow-bg" onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)} />
                   <img src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER} alt={current.title} className="real-cover" onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)} />
                 </div>
@@ -371,7 +385,6 @@ export default function MusicApp() {
           </div>
         </div>
 
-        {/* Queue Panel */}
         <div className="queue-panel">
           <div className="queue-header">
             <div style={{ fontWeight: 700, display:'flex', alignItems:'center', gap:6 }}>
@@ -397,7 +410,6 @@ export default function MusicApp() {
                       <div className="q-artist">{s.artistName}</div>
                     </div>
                   </div>
-                  {/* CHANGED TO ICONS */}
                   <div className="q-actions">
                     {!isCurrent && <button className="icon-btn" onClick={() => playAtIndex(idx)}><Play size={16}/></button>}
                     <button className="icon-btn" onClick={() => moveItem(idx, Math.max(0, idx - 1))}><ArrowUp size={16}/></button>
