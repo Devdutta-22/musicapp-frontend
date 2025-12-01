@@ -30,9 +30,8 @@ export default function MusicApp() {
   const [repeatMode, setRepeatMode] = useState('off'); 
   const [shuffle, setShuffle] = useState(false);
   
-  // Search & UI State
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false); // Controls Mobile View (List vs Player)
+  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
 
   const [showQR, setShowQR] = useState(false);
@@ -56,13 +55,12 @@ export default function MusicApp() {
     return a;
   }
 
-  /* ---------- fetch (Load ALL for Client Search) ---------- */
+  /* ---------- fetch ---------- */
   async function fetchSongs() {
     try {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
-      const requestUrl = `${API}/api/songs`; // Load ALL songs
+      const requestUrl = `${API}/api/songs`; 
 
-      console.log('Fetching all songs:', requestUrl);
       const res = await axios.get(requestUrl);
       const data = (res.data || []).map(s => ({
         ...s,
@@ -87,7 +85,6 @@ export default function MusicApp() {
 
   useEffect(() => { fetchSongs(); }, []); 
 
-  // --- CLIENT SIDE SEARCH FILTER ---
   const visibleSongs = songs.filter(s => {
     if (!searchTerm) return true;
     const q = searchTerm.toLowerCase();
@@ -109,7 +106,6 @@ export default function MusicApp() {
     navigator.mediaSession.setActionHandler('nexttrack', () => playNext({ manual: true }));
   }, [current, playing]); 
 
-  /* ---------------- Core Logic ---------------- */
   function playSong(song) {
     if (!song) return;
     const q = [...queue];
@@ -124,7 +120,7 @@ export default function MusicApp() {
     }
     setPlaying(true);
     
-    // Mobile: Automatically open player when clicking a song
+    // Auto-open player on mobile
     if (window.innerWidth <= 768) {
        setIsLibraryCollapsed(true); 
     }
@@ -239,7 +235,6 @@ export default function MusicApp() {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
-          {/* Collapse Button (Desktop Only) */}
           <button 
                 className="small-btn icon-only" 
                 onClick={() => setIsLibraryCollapsed(v => !v)} 
@@ -334,10 +329,8 @@ export default function MusicApp() {
         </div>
       </aside>
 
-      {/* --- MAIN PLAYER AREA (Hidden on mobile if library is open) --- */}
       <main className={`player-area ${!isLibraryCollapsed ? 'mobile-hidden' : ''}`} style={{ flex: 1, minWidth: 0 }}>
         
-        {/* Mobile: Back Button to return to Library */}
         <div className="mobile-only-header">
            <button className="icon-btn" onClick={() => setIsLibraryCollapsed(false)}>
               <ChevronDown size={28} />
@@ -394,7 +387,6 @@ export default function MusicApp() {
                 <ListMusic size={18}/> Up Next
             </div>
             <div className="queue-controls">
-              {/* FIXED CLEAR BUTTON: Keeps current song if playing */}
               <button 
                 className="small-btn icon-only" 
                 title="Clear"
