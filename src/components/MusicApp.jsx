@@ -6,10 +6,11 @@ import UploadCard from './UploadCard';
 import LyricsPanel from './LyricsPanel';
 import '../App.css';
 import { QRCodeCanvas } from "qrcode.react";
-// IMPORT ICONS
+// Import Icons
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, 
-  MoreHorizontal, Plus, ListMusic, Shuffle, Repeat 
+  MoreHorizontal, Plus, ListMusic, Shuffle, 
+  PanelLeftClose, PanelLeftOpen // <--- New Icons for Collapse
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -31,14 +32,11 @@ export default function MusicApp() {
   const [shuffle, setShuffle] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Sidebar width (persisted)
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    try {
-      const v = parseInt(localStorage.getItem('gg_sidebar_width') || '', 10);
-      if (!isNaN(v)) return v;
-    } catch (e) { }
-    return 400;
-  });
+  // --- NEW: COLLAPSE STATE ---
+  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
+
+  // Sidebar width logic (Only affects expanded state)
+  const [sidebarWidth, setSidebarWidth] = useState(400);
 
   const [showQR, setShowQR] = useState(false);
   const qrUrl = window.location.href.replace("localhost", window.location.hostname);
@@ -46,7 +44,6 @@ export default function MusicApp() {
   const [openMenuSongId, setOpenMenuSongId] = useState(null);
   const menuRef = useRef(null);
 
-  // drag/drop 
   const dragIndexRef = useRef(null);
   const dragOverIndexRef = useRef(null);
 
@@ -73,7 +70,6 @@ export default function MusicApp() {
         ? `${API}/api/songs/search?q=${encodeURIComponent(query)}` 
         : `${API}/api/songs`;
 
-      console.log('Fetching:', requestUrl);
       const res = await axios.get(requestUrl);
       const data = (res.data || []).map(s => ({
         ...s,
@@ -182,12 +178,8 @@ export default function MusicApp() {
   }
 
   /* ---------------- Helpers ---------------- */
-  function playAtIndex(idx) {
-    if (idx < 0 || idx >= queue.length) return;
-    setCurrentIndex(idx);
-    setPlaying(true);
-  }
-
+  function playAtIndex(idx) { if (idx < 0 || idx >= queue.length) return; setCurrentIndex(idx); setPlaying(true); }
+  
   function removeAtIndex(idx) {
     setQueue(prev => {
       const newQ = prev.slice(0, idx).concat(prev.slice(idx + 1));
@@ -226,98 +218,106 @@ export default function MusicApp() {
     return () => window.removeEventListener('click', onDocClick);
   }, []);
 
-  function addToQueue(songId) {
-    if (!songId) return;
-    setQueue(prev => [...prev, songId]);
-    setOpenMenuSongId(null);
-  }
-
-  function playNextNow(songId) {
-    if (!songId) return;
-    setQueue(prev => {
-      const q = [...prev];
-      const insertAt = Math.max(0, currentIndex + 1);
-      q.splice(insertAt, 0, songId);
-      return q;
-    });
-    setOpenMenuSongId(null);
-  }
+  function addToQueue(songId) { if (!songId) return; setQueue(prev => [...prev, songId]); setOpenMenuSongId(null); }
+  function playNextNow(songId) { if (!songId) return; setQueue(prev => { const q = [...prev]; q.splice(Math.max(0, currentIndex + 1), 0, songId); return q; }); setOpenMenuSongId(null); }
 
   /* ---------- render ---------- */
   return (
-    <div className="app-shell" style={{ alignItems: 'stretch', ['--sidebar-width']: `${sidebarWidth}px` }}>
-      <aside className="library card-surface" style={{ width: `${sidebarWidth}px`, minWidth: `${sidebarWidth}px`, maxWidth: '720px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <h3 style={{ margin: 0 }}>Library</h3>
-          
-          <div style={{display:'flex', gap: 8}}>
-             <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
-                QR
+    <div className="app-shell" style={{ alignItems: 'stretch' }}>
+      
+      {/* --- LIBRARY SIDEBAR --- */}
+      <aside 
+        className={`library card-surface ${isLibraryCollapsed ? 'collapsed' : ''}`} 
+        style={{ 
+          // If collapsed, force small width (80px), else use variable width
+          width: isLibraryCollapsed ? '80px' : `${sidebarWidth}px`, 
+          minWidth: isLibraryCollapsed ? '80px' : `${sidebarWidth}px`,
+          maxWidth: isLibraryCollapsed ? '80px' : '720px' 
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          {/* Hide Title if collapsed */}
+          {!isLibraryCollapsed && <h3 style={{ margin: 0 }}>Library</h3>}
+
+          <div style={{ display: 'flex', gap: 8, margin: isLibraryCollapsed ? '0 auto' : '0' }}>
+             
+             {/* COLLAPSE BUTTON */}
+             <button 
+                className="small-btn icon-only" 
+                onClick={() => setIsLibraryCollapsed(v => !v)} 
+                title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
+             >
+                {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
              </button>
-             {showQR && (
-              <div style={{ position: "absolute", left: 10, top: "50px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
-                <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
-              </div>
-            )}
-            <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
-               {showUpload ? 'Back' : <Plus size={18}/>}
-            </button>
-            <button className="small-btn" onClick={() => toggleShuffle()} title="Shuffle Library">
-               <Shuffle size={18} color={shuffle ? 'var(--neon)' : 'white'} />
-            </button>
+
+             {!isLibraryCollapsed && (
+               <>
+                 <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
+                    {showUpload ? 'Back' : <Plus size={18}/>}
+                 </button>
+                 <button className="small-btn" onClick={() => toggleShuffle()} title="Shuffle Library">
+                    <Shuffle size={18} color={shuffle ? 'var(--neon)' : 'white'} />
+                 </button>
+               </>
+             )}
           </div>
         </div>
 
-        <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', }}>
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') fetchSongs(searchTerm); }}
-            placeholder="Search..."
-            className="search-input"
-          />
-          <button className="small-btn" onClick={() => { setSearchTerm(''); fetchSongs(''); }}>Clear</button>
-        </div>
+        {/* Hide Search if Collapsed */}
+        {!isLibraryCollapsed && (
+          <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', }}>
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') fetchSongs(searchTerm); }}
+              placeholder="Search..."
+              className="search-input"
+            />
+            <button className="small-btn" onClick={() => { setSearchTerm(''); fetchSongs(''); }}>Clear</button>
+          </div>
+        )}
 
         <div style={{ marginTop: 12 }}>
-          {showUpload ? (
+          {showUpload && !isLibraryCollapsed ? (
             <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
           ) : (
-            <div className="song-list" style={{ height: 'calc(100vh - 140px)', overflowY: 'auto', paddingRight: 4 }}>
-              {songs.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs found.</div>}
+            <div className="song-list" style={{ height: 'calc(100vh - 140px)', overflowY: 'auto', paddingRight: isLibraryCollapsed ? 0 : 4 }}>
               {songs.map(s => (
-                <div key={s.id} className="song-item" onDoubleClick={() => playSong(s)}>
+                <div key={s.id} className="song-item" onDoubleClick={() => playSong(s)} title={s.title}>
                   <CoverImage srcs={[s.coverUrl, s.artistImageUrl, PERSON_PLACEHOLDER]} alt={s.title} className="cover" />
                   
-                  <div className="song-info">
-                    <div className="title" title={s.title}>{s.title}</div>
-                    <div className="artist" title={s.artistName}>{s.artistName}</div>
-                  </div>
-
-                  <div className="like-wrap">
-                    {/* NEW ICON LIKE BUTTON */}
-                    <button className={`icon-btn ${s.liked ? 'liked' : ''}`} onClick={() => toggleLike(s.id)}>
-                      <Heart size={18} fill={s.liked ? "currentColor" : "none"} />
-                    </button>
-                    <div className="like-count">{s.likeCount || 0}</div>
-                  </div>
-
-                  <div className="more-wrap" ref={menuRef}>
-                    <button className="icon-btn" onClick={(ev) => { ev.stopPropagation(); setOpenMenuSongId(openMenuSongId === s.id ? null : s.id); }}>
-                      <MoreHorizontal size={18}/>
-                    </button>
-                    {openMenuSongId === s.id && (
-                      <div className="more-menu" onClick={(ev) => ev.stopPropagation()}>
-                        <button className="menu-item" onClick={() => addToQueue(s.id)}>Add to queue</button>
-                        <button className="menu-item" onClick={() => playNextNow(s.id)}>Play next</button>
-                        <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>Play now</button>
+                  {/* Hide Details if Collapsed */}
+                  {!isLibraryCollapsed && (
+                    <>
+                      <div className="song-info">
+                        <div className="title" title={s.title}>{s.title}</div>
+                        <div className="artist" title={s.artistName}>{s.artistName}</div>
                       </div>
-                    )}
-                  </div>
-                  
-                  <button className="icon-btn play-mini" onClick={() => playSong(s)}>
-                    <Play size={16} fill="currentColor" />
-                  </button>
+
+                      <div className="like-wrap">
+                        <button className={`icon-btn ${s.liked ? 'liked' : ''}`} onClick={() => toggleLike(s.id)}>
+                          <Heart size={18} fill={s.liked ? "currentColor" : "none"} />
+                        </button>
+                      </div>
+
+                      <div className="more-wrap" ref={menuRef}>
+                        <button className="icon-btn" onClick={(ev) => { ev.stopPropagation(); setOpenMenuSongId(openMenuSongId === s.id ? null : s.id); }}>
+                          <MoreHorizontal size={18}/>
+                        </button>
+                        {openMenuSongId === s.id && (
+                          <div className="more-menu" onClick={(ev) => ev.stopPropagation()}>
+                            <button className="menu-item" onClick={() => addToQueue(s.id)}>Add to queue</button>
+                            <button className="menu-item" onClick={() => playNextNow(s.id)}>Play next</button>
+                            <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>Play now</button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <button className="icon-btn play-mini" onClick={() => playSong(s)}>
+                        <Play size={16} fill="currentColor" />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
