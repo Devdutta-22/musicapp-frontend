@@ -391,7 +391,29 @@ export default function MusicApp() {
                 <ListMusic size={18}/> Up Next
             </div>
             <div className="queue-controls">
-              <button className="small-btn icon-only" onClick={() => setQueue([])} title="Clear"><Trash2 size={16}/></button>
+              {/* FIXED CLEAR BUTTON: Keeps current song if playing */}
+              <button 
+                className="small-btn icon-only" 
+                title="Clear"
+                onClick={() => {
+                  const hasCurrent = currentIndex >= 0 && queue[currentIndex];
+                  if (hasCurrent) {
+                    const currentId = queue[currentIndex];
+                    setQueue([currentId]);
+                    setCurrentIndex(0);
+                    setPlaying(true);
+                  } else {
+                    if (window.confirm('Clear the queue?')) {
+                      setQueue([]);
+                      setCurrentIndex(-1);
+                      setPlaying(false);
+                    }
+                  }
+                }}
+              >
+                <Trash2 size={16}/>
+              </button>
+              
               <button className="small-btn icon-only" onClick={() => { if (songsRef.current) setQueue(songsRef.current.map(s => s.id)); }} title="Restore">Restore</button>
             </div>
           </div>
