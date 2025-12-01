@@ -7,9 +7,9 @@ import LyricsPanel from './LyricsPanel';
 import '../App.css';
 import { QRCodeCanvas } from "qrcode.react";
 import { 
-  Heart, Trash2, ArrowUp, ArrowDown, Play, 
+  Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
   MoreHorizontal, Plus, ListMusic, Shuffle, 
-  PanelLeftClose, PanelLeftOpen, QrCode 
+  PanelLeftClose, PanelLeftOpen, QrCode, ChevronDown 
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -30,10 +30,8 @@ export default function MusicApp() {
   const [repeatMode, setRepeatMode] = useState('off'); 
   const [shuffle, setShuffle] = useState(false);
   
-  // Search State
+  // Search & Layout State
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Collapse State
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
 
@@ -61,12 +59,11 @@ export default function MusicApp() {
     return a;
   }
 
-  /* ---------- fetch (Client-Side Search Mode) ---------- */
+  /* ---------- fetch (Load ALL for Client Search) ---------- */
   async function fetchSongs() {
     try {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
-      // Always fetch ALL songs
-      const requestUrl = `${API}/api/songs`;
+      const requestUrl = `${API}/api/songs`; // Load ALL songs so search works locally
 
       console.log('Fetching all songs:', requestUrl);
       const res = await axios.get(requestUrl);
@@ -93,7 +90,7 @@ export default function MusicApp() {
 
   useEffect(() => { fetchSongs(); }, []); 
 
-  // --- CLIENT SIDE FILTERING (Fixes Search) ---
+  // --- CLIENT SIDE SEARCH FILTER ---
   const visibleSongs = songs.filter(s => {
     if (!searchTerm) return true;
     const q = searchTerm.toLowerCase();
@@ -129,6 +126,10 @@ export default function MusicApp() {
       setCurrentIndex(insertAt);
     }
     setPlaying(true);
+    // On mobile, automatically expand player when clicking a song
+    if (window.innerWidth <= 768) {
+       setIsLibraryCollapsed(true);
+    }
   }
 
   function toggleLike(songId) {
@@ -238,22 +239,21 @@ export default function MusicApp() {
           maxWidth: isLibraryCollapsed ? '80px' : '720px' 
         }}
       >
-        {/* HEADER ROW */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
-          {/* Collapse Button is ALWAYS visible on Left */}
-          <button 
-                className="small-btn icon-only" 
-                onClick={() => setIsLibraryCollapsed(v => !v)} 
-                title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
-                style={{ zIndex: 50 }} 
-             >
-                {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
-          </button>
+          {/* Collapse Button (Desktop Only) */}
+          <div className="desktop-collapse-btn">
+             <button 
+                  className="small-btn icon-only" 
+                  onClick={() => setIsLibraryCollapsed(v => !v)} 
+                  title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
+               >
+                  {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
+            </button>
+          </div>
 
           {!isLibraryCollapsed && <h3 style={{ margin: 0, flex: 1 }}>Library</h3>}
 
-          {/* Controls (QR, Add, Shuffle) */}
           {!isLibraryCollapsed && (
             <div style={{ display: 'flex', gap: 8 }}>
                <div style={{ position: 'relative' }}>
@@ -277,7 +277,6 @@ export default function MusicApp() {
           )}
         </div>
 
-        {/* Search Bar */}
         {!isLibraryCollapsed && (
           <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', }}>
             <input
@@ -290,7 +289,6 @@ export default function MusicApp() {
           </div>
         )}
 
-        {/* List */}
         <div style={{ marginTop: 12 }}>
           {showUpload && !isLibraryCollapsed ? (
             <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
@@ -340,7 +338,16 @@ export default function MusicApp() {
         </div>
       </aside>
 
-      <main className="player-area" style={{ flex: 1, minWidth: 0 }}>
+      {/* --- MAIN PLAYER AREA (Hidden on mobile if library is open) --- */}
+      <main className={`player-area ${!isLibraryCollapsed ? 'mobile-hidden' : ''}`} style={{ flex: 1, minWidth: 0 }}>
+        
+        {/* Mobile: Back Button to return to Library */}
+        <div className="mobile-only-header">
+           <button className="icon-btn" onClick={() => setIsLibraryCollapsed(false)}>
+              <ChevronDown size={28} />
+           </button>
+        </div>
+
         <div className="content-split">
           <div className="nowplaying-left">
             {current ? (
@@ -444,6 +451,33 @@ export default function MusicApp() {
           </div>
         </div>
       </main>
+
+      {/* --- MINI PLAYER (MOBILE ONLY) --- */}
+      {current && !isLibraryCollapsed && (
+        <div className="mini-player" onClick={() => setIsLibraryCollapsed(true)}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+              <img src={current.coverUrl || current.artistImageUrl || PERSON_PLACEHOLDER} className="mini-cover" onError={(e)=>e.currentTarget.src=PERSON_PLACEHOLDER}/>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                 <div className="mini-title">{current.title}</div>
+                 <div className="mini-artist">{current.artistName}</div>
+              </div>
+           </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button className="icon-btn" onClick={(e) => { e.stopPropagation(); toggleLike(current.id); }}>
+                 <Heart size={20} fill={current.liked ? "var(--neon-pink)" : "none"} color={current.liked ? "var(--neon-pink)" : "white"} />
+              </button>
+              <button className="icon-btn" onClick={(e) => { e.stopPropagation(); setPlaying(p => !p); }}>
+                 {playing ? <Pause size={24} fill="white"/> : <Play size={24} fill="white"/>}
+              </button>
+           </div>
+           
+           {/* Mini Progress Bar */}
+           <div className="mini-progress">
+              <div className="mini-progress-fill" style={{ width: '100%', animation: playing ? 'progress 30s linear' : 'none' }}></div>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 }
