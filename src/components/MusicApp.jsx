@@ -103,6 +103,29 @@ export default function MusicApp() {
 
   useEffect(() => { fetchSongs(); }, []); // load once on mount
 
+  // --- NEW: MEDIA SESSION API (For Lock Screen Controls) ---
+  useEffect(() => {
+    if (!current || !('mediaSession' in navigator)) return;
+
+    // 1. Metadata
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: current.title,
+      artist: current.artistName,
+      album: "Rhino Music",
+      artwork: [
+        { src: current.coverUrl || current.artistImageUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }
+      ]
+    });
+
+    // 2. Action Handlers
+    navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
+    navigator.mediaSession.setActionHandler('pause', () => setPlaying(false));
+    navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+    navigator.mediaSession.setActionHandler('nexttrack', () => playNext({ manual: true }));
+
+  }, [current, playing]); // Update when song or state changes
+  // ---------------------------------------------------------
+
   /* ---------------- playback & queue core ---------------- */
 
   function playSong(song) {
