@@ -94,7 +94,7 @@ html, body, #root {
 .nowplaying-left, .lyrics-right { flex:1; min-width:0; }
 
 .glow-container { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 32px auto; }
-.glow-bg { position: absolute; top: 12%; left: 0; width: 100%; height: 100%; filter: blur(50px) saturate(200%); opacity: 0.5; z-index: 0; transform: scale(0.95); border-radius: 40px; }
+.glow-bg { position: absolute; top: 12%; left: 0; width: 100%; height: 100%; filter: blur(50px) saturate(200%); opacity: 0.6; z-index: 0; transform: scale(0.96); border-radius: 40px; }
 .real-cover { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 20px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
 
 .big-text { text-align: center; margin-top: 16px; margin-bottom: 24px; }
@@ -130,7 +130,7 @@ html, body, #root {
 /* Lyrics */
 .lyrics-right { flex:1; padding-top:20px; display:flex; flex-direction:column; }
 .lyrics-heading { font-size:24px; font-weight:700; color: #fff; margin-bottom:16px; }
-.lyrics-box { background: rgba(255,255,255,0.03); border-radius:12px; padding:20px; height:70%; overflow-y:auto; color:#aaa; font-size:16px; line-height:1.6; flex:1 1 auto; max-height: calc(100vh - 200px); }
+.lyrics-box { background: rgba(255,255,255,0.03); border-radius:12px; padding:20px; height:70%; overflow-y:auto; color:#aaa; font-size:16px; line-height:1.6; flex:1 1 auto; max-height: calc(100vh - 170px); }
 
 /* Utilities */
 .mini-player, .mobile-only-header { display: none; }
@@ -149,10 +149,20 @@ html, body, #root {
   .player-area.mobile-hidden { display: none; }
 
   /* Mini Player */
+ /* Premium Mini Player */
   .mini-player {
     display: flex; position: fixed; bottom: 16px; left: 12px; right: 12px;
-    height: 68px; background: rgba(15, 15, 20, 0.85); backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
+    height: 68px; 
+    
+    /* CHANGE 1: Lower 0.85 to 0.60 for more transparency */
+    background: rgba(15, 15, 20, 0.60); 
+    
+    /* CHANGE 2: Increase blur slightly (20px -> 30px) to keep text readable */
+    backdrop-filter: blur(30px) saturate(180%); 
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    
+    border: 1px solid rgba(255, 255, 255, 0.08); 
+    border-radius: 14px;
     align-items: center; padding: 0 12px; z-index: 100;
     box-shadow: 0 10px 40px rgba(0,0,0,0.6); cursor: pointer;
   }
@@ -196,7 +206,7 @@ html, body, #root {
   /* 4. Lyrics Panel */
   .lyrics-right {
     width: 100%;
-    height: 300px; /* Force fixed height */
+    height: 400px; /* Force fixed height */
     flex: 0 0 auto; /* Don't shrink */
     margin-bottom: 20px;
   }
