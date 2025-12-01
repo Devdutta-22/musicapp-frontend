@@ -9,7 +9,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
   MoreHorizontal, Plus, ListMusic, Shuffle, 
-  PanelLeftClose, PanelLeftOpen, QrCode, ChevronDown 
+  PanelLeftClose, PanelLeftOpen, QrCode, ChevronDown,
+  ListPlus, SkipForward, Edit3 // <--- ADDED THESE ICONS
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -40,6 +41,9 @@ export default function MusicApp() {
   const [openMenuSongId, setOpenMenuSongId] = useState(null);
   const menuRef = useRef(null);
 
+  const dragIndexRef = useRef(null);
+  const dragOverIndexRef = useRef(null);
+
   const songsRef = useRef(songs);
   useEffect(() => { songsRef.current = songs }, [songs]);
 
@@ -61,6 +65,7 @@ export default function MusicApp() {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
       const requestUrl = `${API}/api/songs`; 
 
+      console.log('Fetching all songs:', requestUrl);
       const res = await axios.get(requestUrl);
       const data = (res.data || []).map(s => ({
         ...s,
@@ -120,7 +125,6 @@ export default function MusicApp() {
     }
     setPlaying(true);
     
-    // Auto-open player on mobile
     if (window.innerWidth <= 768) {
        setIsLibraryCollapsed(true); 
     }
@@ -304,15 +308,25 @@ export default function MusicApp() {
                         </button>
                       </div>
 
+                      {/* --- THREE DOT MENU WITH ICONS --- */}
                       <div className="more-wrap" ref={menuRef}>
                         <button className="icon-btn" onClick={(ev) => { ev.stopPropagation(); setOpenMenuSongId(openMenuSongId === s.id ? null : s.id); }}>
                           <MoreHorizontal size={18}/>
                         </button>
                         {openMenuSongId === s.id && (
                           <div className="more-menu" onClick={(ev) => ev.stopPropagation()}>
-                            <button className="menu-item" onClick={() => addToQueue(s.id)}>Add to queue</button>
-                            <button className="menu-item" onClick={() => playNextNow(s.id)}>Play next</button>
-                            <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>Play now</button>
+                            <button className="menu-item" onClick={() => addToQueue(s.id)}>
+                                <ListPlus size={16}/> Add to queue
+                            </button>
+                            <button className="menu-item" onClick={() => playNextNow(s.id)}>
+                                <SkipForward size={16}/> Play next
+                            </button>
+                            <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>
+                                <Play size={16}/> Play now
+                            </button>
+                            <button className="menu-item" onClick={() => { /* consider hooking to open lyrics editor */ }}>
+                                <Edit3 size={16}/> Edit Lyrics
+                            </button>
                           </div>
                         )}
                       </div>
@@ -447,14 +461,13 @@ export default function MusicApp() {
            </div>
            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button className="icon-btn" onClick={(e) => { e.stopPropagation(); toggleLike(current.id); }}>
-                 <Heart size={20} fill={current.liked ? "var(--neon-pink)" : "none"} color={current.liked ? "var(--neon-pink)" : "white"} />
+                 <Heart size={20} fill={current.liked ? "var(--neon)" : "none"} color={current.liked ? "var(--neon)" : "white"} />
               </button>
               <button className="icon-btn" onClick={(e) => { e.stopPropagation(); setPlaying(p => !p); }}>
                  {playing ? <Pause size={24} fill="white"/> : <Play size={24} fill="white"/>}
               </button>
            </div>
            
-           {/* Mini Progress Bar */}
            <div className="mini-progress">
               <div className="mini-progress-fill" style={{ width: '100%', animation: playing ? 'progress 30s linear' : 'none' }}></div>
            </div>
