@@ -30,9 +30,9 @@ export default function MusicApp() {
   const [repeatMode, setRepeatMode] = useState('off'); 
   const [shuffle, setShuffle] = useState(false);
   
-  // Search & Layout State
+  // Search & UI State
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
+  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false); // Controls Mobile View (List vs Player)
   const [sidebarWidth, setSidebarWidth] = useState(400);
 
   const [showQR, setShowQR] = useState(false);
@@ -40,9 +40,6 @@ export default function MusicApp() {
 
   const [openMenuSongId, setOpenMenuSongId] = useState(null);
   const menuRef = useRef(null);
-
-  const dragIndexRef = useRef(null);
-  const dragOverIndexRef = useRef(null);
 
   const songsRef = useRef(songs);
   useEffect(() => { songsRef.current = songs }, [songs]);
@@ -63,7 +60,7 @@ export default function MusicApp() {
   async function fetchSongs() {
     try {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
-      const requestUrl = `${API}/api/songs`; // Load ALL songs so search works locally
+      const requestUrl = `${API}/api/songs`; // Load ALL songs
 
       console.log('Fetching all songs:', requestUrl);
       const res = await axios.get(requestUrl);
@@ -126,9 +123,10 @@ export default function MusicApp() {
       setCurrentIndex(insertAt);
     }
     setPlaying(true);
-    // On mobile, automatically expand player when clicking a song
+    
+    // Mobile: Automatically open player when clicking a song
     if (window.innerWidth <= 768) {
-       setIsLibraryCollapsed(true);
+       setIsLibraryCollapsed(true); 
     }
   }
 
@@ -242,15 +240,14 @@ export default function MusicApp() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
           {/* Collapse Button (Desktop Only) */}
-          <div className="desktop-collapse-btn">
-             <button 
-                  className="small-btn icon-only" 
-                  onClick={() => setIsLibraryCollapsed(v => !v)} 
-                  title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
-               >
-                  {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
-            </button>
-          </div>
+          <button 
+                className="small-btn icon-only" 
+                onClick={() => setIsLibraryCollapsed(v => !v)} 
+                title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
+                style={{ zIndex: 50 }} 
+             >
+                {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
+          </button>
 
           {!isLibraryCollapsed && <h3 style={{ margin: 0, flex: 1 }}>Library</h3>}
 
@@ -294,7 +291,6 @@ export default function MusicApp() {
             <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
           ) : (
             <div className="song-list" style={{ height: 'calc(100vh - 140px)', overflowY: 'auto', paddingRight: isLibraryCollapsed ? 0 : 4 }}>
-              {/* USE VISIBLE SONGS (FILTERED) */}
               {visibleSongs.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs found.</div>}
               {visibleSongs.map(s => (
                 <div key={s.id} className="song-item" onDoubleClick={() => playSong(s)} title={s.title}>
@@ -405,16 +401,11 @@ export default function MusicApp() {
                 onClick={() => {
                   const hasCurrent = currentIndex >= 0 && queue[currentIndex];
                   if (hasCurrent) {
-                    const currentId = queue[currentIndex];
-                    setQueue([currentId]);
+                    setQueue([queue[currentIndex]]);
                     setCurrentIndex(0);
                     setPlaying(true);
                   } else {
-                    if (window.confirm('Clear the queue?')) {
-                      setQueue([]);
-                      setCurrentIndex(-1);
-                      setPlaying(false);
-                    }
+                    if (window.confirm('Clear?')) { setQueue([]); setCurrentIndex(-1); setPlaying(false); }
                   }
                 }}
               >
