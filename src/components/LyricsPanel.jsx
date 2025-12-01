@@ -1,5 +1,6 @@
-// src/components/LyricsPanel.jsx (FIXED VERSION)
+// src/components/LyricsPanel.jsx
 import React, { useEffect, useState, useRef } from 'react';
+import { Edit2, Save, Trash2, X } from "lucide-react";
 
 export default function LyricsPanel({ song }) {
   const [loading, setLoading] = useState(false);
@@ -10,13 +11,8 @@ export default function LyricsPanel({ song }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // ---------------------------------------------------------
-  // 🛑 TODO: PASTE YOUR RENDER BACKEND URL HERE
-  // Example: "https://groove-j0kw.onrender.com"
-  // Do NOT add a slash "/" at the end.
-  // ---------------------------------------------------------
+  // 🛑 PASTE YOUR RENDER BACKEND URL HERE
   const API_BASE = "https://groove-j0kw.onrender.com"; 
-  // ---------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -30,25 +26,15 @@ export default function LyricsPanel({ song }) {
       setLoading(true);
       setError(null);
       try {
-        // Fetch lyrics
         const resp = await fetch(`${API_BASE}/api/lyrics?songId=${encodeURIComponent(song.id)}`);
         
-        if (!resp.ok) {
-           // If 404, it just means no lyrics exist yet
-           if (resp.status !== 404) throw new Error("Failed to fetch");
-        }
+        // If 404, it just means no lyrics exist yet
+        if (!resp.ok && resp.status !== 404) throw new Error("Failed to fetch");
 
         const json = await resp.json();
         if (cancelled) return;
         
-        // ----------------------------------------------------------
-        // 🔥 CRITICAL FIX IS HERE
-        // Your backend GET request returns the object directly: { lyrics: "...", source: "..." }
-        // Your POST request returns it wrapped: { entry: { ... } }
-        // This line handles BOTH cases automatically:
-        // ----------------------------------------------------------
         const entry = json.entry || json; 
-
         if (entry && (entry.lyrics || entry.source)) {
           setLyrics(entry.lyrics || '');
           setMeta({ source: entry.source, updatedAt: entry.updatedAt });
@@ -104,7 +90,7 @@ export default function LyricsPanel({ song }) {
 
   async function clearLyrics() {
     if (!song) return;
-    if (!window.confirm('Clear lyrics for this song?')) return;
+    if (!window.confirm('Delete these lyrics?')) return;
     setLoading(true);
     setError(null);
     try {
@@ -133,13 +119,13 @@ export default function LyricsPanel({ song }) {
 
         <div ref={menuRef} style={{ position: 'relative' }}>
           <button
-            className="small-btn"
+            className={`icon-btn ${menuOpen ? 'active' : ''}`}
             onClick={() => setMenuOpen(v => !v)}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             title="Lyrics actions"
           >
-            ✎ 
+            <Edit2 size={18} />
           </button>
 
           {menuOpen && (
@@ -161,33 +147,32 @@ export default function LyricsPanel({ song }) {
             >
               <button
                 className="small-btn"
-                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 6 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
                 onClick={() => { setEditing(e => !e); setMenuOpen(false); }}
               >
-                {editing ? 'Cancel Edit' : 'Edit Lyrics'}
+                {editing ? <><X size={16}/> Stop Editing</> : <><Edit2 size={16}/> Edit Lyrics</>}
               </button>
 
               <button
                 className="small-btn"
-                style={{ display: 'block', width: '100%', textAlign: 'left', marginBottom: 6 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
                 onClick={saveLyrics}
                 disabled={!editing || loading}
               >
-                Save Lyrics
+                <Save size={16}/> Save
               </button>
 
               <button
                 className="small-btn danger"
-                style={{ display: 'block', width: '100%', textAlign: 'left' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', color: '#ff4d7a' }}
                 onClick={clearLyrics}
                 disabled={loading}
               >
-                Clear Lyrics
+                <Trash2 size={16}/> Clear
               </button>
             </div>
           )}
         </div>
-        
       </div>
 
       {loading && <div className="lyrics-loading">Loading…</div>}
@@ -203,14 +188,13 @@ export default function LyricsPanel({ song }) {
             rows={12}
           />
         ) : (
-          <pre className="lyrics-pre">{lyrics || 'No lyrics saved yet — open Actions ✎ -> Edit to add them.'}</pre>
+          <pre className="lyrics-pre">{lyrics || 'No lyrics found.'}</pre>
         )}
       </div>
 
       <div className="lyrics-meta">
-        {meta ? <small>Source: {meta.source} · Updated: {meta.updatedAt ? new Date(meta.updatedAt).toLocaleString() : '—'}</small> : null}
+        {meta ? <small>Updated: {meta.updatedAt ? new Date(meta.updatedAt).toLocaleDateString() : '—'}</small> : null}
       </div>
-      
     </div>
   );
 }
