@@ -7,7 +7,6 @@ import LyricsPanel from './LyricsPanel';
 import '../App.css';
 import { QRCodeCanvas } from "qrcode.react";
 
-
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
 function CoverImage({ srcs = [], alt, className }) {
@@ -457,12 +456,47 @@ export default function MusicApp() {
           <div className="nowplaying-left">
             {current ? (
               <div className="nowplaying-big">
-                <img
-                  src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER}
-                  alt={current.title}
-                  className="big-cover"
-                  onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)}
-                />
+                {/* --- AMBIENT GLOW CONTAINER START --- */}
+                <div style={{ position: 'relative', width: '280px', height: '280px', margin: '0 auto 20px auto' }}>
+                  
+                  {/* 1. The Ambient Glow (Blurred Background) */}
+                  <img
+                    src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER}
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      filter: 'blur(40px) saturate(200%)', // High saturation makes it look like light
+                      opacity: 0.5,
+                      zIndex: 0,
+                      transform: 'scale(1.1)', 
+                      borderRadius: '24px',
+                      pointerEvents: 'none' // Prevent clicking the glow
+                    }}
+                    onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)}
+                  />
+
+                  {/* 2. The Real Sharp Cover (Foreground) */}
+                  <img
+                    src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER}
+                    alt={current.title}
+                    className="big-cover"
+                    style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.5)', // Strong shadow to separate from glow
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)}
+                  />
+                </div>
+                {/* --- AMBIENT GLOW CONTAINER END --- */}
 
                 <div className="big-text">
                   <div className="big-title">{current.title}</div>
