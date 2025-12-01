@@ -1,474 +1,206 @@
-// src/components/MusicApp.jsx
-import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
-import Player from './Player';
-import UploadCard from './UploadCard';
-import LyricsPanel from './LyricsPanel';
-import '../App.css';
-import { QRCodeCanvas } from "qrcode.react";
-import { 
-  Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
-  MoreHorizontal, Plus, ListMusic, Shuffle, 
-  PanelLeftClose, PanelLeftOpen, QrCode, ChevronDown,
-  ListPlus, SkipForward, Edit3 // <--- NEW ICONS
-} from "lucide-react";
+/* src/App.css — Final Premium Theme */
 
-const PERSON_PLACEHOLDER = '/person-placeholder.png';
-
-function CoverImage({ srcs = [], alt, className }) {
-  const [src, setSrc] = useState(srcs.find(Boolean) || PERSON_PLACEHOLDER);
-  useEffect(() => setSrc(srcs.find(Boolean) || PERSON_PLACEHOLDER), [JSON.stringify(srcs)]);
-  const onError = (e) => { if (e.currentTarget.src !== PERSON_PLACEHOLDER) e.currentTarget.src = PERSON_PLACEHOLDER; };
-  return <img src={src} alt={alt} className={className} onError={onError} />;
+/* ---------- Variables & base ---------- */
+:root {
+  --neon: #40fefc;
+  --neon-pink: #ff3bf0;
+  --neon-hover: #5ffffb;
+  --scroll-thumb: rgba(255,255,255,0.03);
+  --scroll-thumb-hover: rgba(255,255,255,0.06);
+  --accent-a: #6cf0f0;
+  --accent-b: #7a6bff;
+  --bg-primary: #06060b;
 }
 
-export default function MusicApp() {
-  const [songs, setSongs] = useState([]);               
-  const [queue, setQueue] = useState([]);               
-  const [currentIndex, setCurrentIndex] = useState(-1); 
-  const [playing, setPlaying] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
-  const [repeatMode, setRepeatMode] = useState('off'); 
-  const [shuffle, setShuffle] = useState(false);
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: var(--bg-primary);
+  color: #edf0ff;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  overflow: hidden; 
+  overscroll-behavior: none;
+}
+
+/* App shell */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  gap: 24px;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+/* ------------------ Sidebar / Library ------------------ */
+.library {
+  width: 400px;
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+  box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+  box-sizing: border-box;
+  overflow-y: auto;
+  position: relative;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid rgba(255,255,255,0.02);
+}
+
+/* Collapsed Desktop State */
+.library.collapsed { padding: 12px 6px; }
+.library.collapsed .song-item { justify-content: center; padding: 8px 0; background: transparent; }
+.library.collapsed .song-list::-webkit-scrollbar { display: none; }
+.library.collapsed .song-list, .library.collapsed .search-input, .library.collapsed h3 { /* managed by jsx */ }
+
+.library h3 { margin: 6px 0 16px; font-weight: 800; font-size: 20px; color: #fff; }
+.library .song-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-bottom: 12px; }
+
+/* Song Row */
+.song-item {
+  display: flex; align-items: center; gap: 14px; padding: 10px;
+  border-radius: 12px;
+  background: transparent;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+.song-item:hover { background: rgba(255,255,255,0.04); }
+.song-item .cover { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; flex: 0 0 56px; background: #111; }
+.song-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.song-info .title { font-weight:600; font-size:15px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.song-info .artist { margin-top:4px; font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* Buttons & Icons */
+.icon-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:40px; height:40px; border-radius:10px; border:none;
+  background:transparent; color:#aaa; cursor:pointer;
+  transition: all 0.2s ease;
+}
+.icon-btn:hover { color: var(--neon); background: rgba(255,255,255,0.05); }
+.icon-btn:active { transform: scale(0.95); }
+.icon-btn.active { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
+.icon-btn.liked { color: #ff4d7a; filter: drop-shadow(0 0 8px #ff4d7a); }
+.icon-btn.danger:hover { color: #ff4d7a; }
+
+.small-btn {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: #ddd; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.small-btn.icon-only { padding: 8px; }
+
+/* Search Input */
+.search-input {
+  flex: 1; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.3); color: #fff;
+  font-size: 14px;
+}
+.search-input:focus { border-color: var(--neon); outline: none; }
+
+/* ------------------ Player Area ------------------ */
+.player-area { flex: 1; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
+.content-split { display:flex; width:100%; gap:40px; padding:20px; box-sizing:border-box; align-items:flex-start; }
+.nowplaying-left, .lyrics-right { flex:1; min-width:0; }
+
+/* Glow & Cover */
+.glow-container { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 32px auto; }
+.glow-bg { position: absolute; top: 12%; left: 0; width: 100%; height: 100%; filter: blur(50px) saturate(200%); opacity: 0.5; z-index: 0; transform: scale(0.95); border-radius: 40px; }
+.real-cover { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 20px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+
+.big-text { text-align: center; margin-top: 16px; margin-bottom: 24px; }
+.big-title { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin-bottom: 6px; }
+.big-artist { font-size: 17px; color: #ccc; font-weight: 500; }
+
+/* --- PREMIUM NEON SLIDER --- */
+.slider-row { width: 100%; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; height: 30px; }
+.neon-range { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.15); outline: none; cursor: pointer; position: relative; margin: 0; }
+.neon-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--neon); box-shadow: 0 0 10px var(--neon), 0 0 20px var(--neon); cursor: pointer; margin-top: -5px; transition: transform 0.1s; }
+.neon-range::-webkit-slider-thumb:active { transform: scale(1.3); }
+
+/* Play/Pause Button (Neon) */
+.play-btn {
+  width:64px; height:64px; border-radius:50%; border:2px solid var(--neon);
+  background: transparent; color: var(--neon); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow: 0 4px 18px rgba(64,254,252,0.08); transition: transform .18s ease;
+}
+.play-btn:hover { transform: scale(1.08); box-shadow: 0 10px 40px rgba(64,254,252,0.14); }
+
+/* Queue Panel */
+.queue-panel { margin-top:20px; background: rgba(255,255,255,0.02); border-radius:16px; padding:20px; border: 1px solid rgba(255,255,255,0.03); }
+.queue-header { display:flex; justify-content:space-between; margin-bottom:12px; align-items: center; }
+.queue-item { display:flex; align-items:center; justify-content: space-between; gap: 12px; padding: 10px; border-radius: 10px; margin-bottom: 4px; transition: background 0.2s; background: transparent; }
+.queue-item:hover { background: rgba(255,255,255,0.04); }
+.queue-item.current { background: rgba(64,254,252,0.05); }
+.q-left { display:flex; gap:12px; align-items:center; flex: 1; min-width: 0; }
+.q-cover { width:42px; height:42px; border-radius:6px; object-fit: cover; flex-shrink: 0; }
+.q-meta { flex: 1; min-width: 0; overflow: hidden; }
+.q-title { font-size:14px; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color: #fff; }
+.q-artist { font-size:12px; color:#aaa; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.q-actions { display:flex; align-items:center; gap: 2px; flex-shrink: 0; }
+
+/* Lyrics */
+.lyrics-right { flex:1; padding-top:20px; display:flex; flex-direction:column; }
+.lyrics-heading { font-size:24px; font-weight:700; color: #fff; margin-bottom:16px; }
+.lyrics-box { background: rgba(255,255,255,0.03); border-radius:12px; padding:20px; height:70%; overflow-y:auto; color:#aaa; font-size:16px; line-height:1.6; flex:1 1 auto; max-height: calc(100vh - 200px); }
+
+/* Utilities */
+.mini-player, .mobile-only-header { display: none; }
+*::-webkit-scrollbar { width:6px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:4px; }
+
+/* ------------------ MOBILE LAYOUT (The Fix) ------------------ */
+@media (max-width: 768px) {
+  .app-shell { flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* Library Open */
+  .library:not(.collapsed) {
+    width: 100% !important; max-width: 100% !important; height: 100%;
+    border-radius: 0; margin: 0; padding-bottom: 90px; z-index: 10;
+  }
+  .player-area.mobile-hidden { display: none; }
+
+  /* Premium Mini Player */
+  .mini-player {
+    display: flex; position: fixed; bottom: 16px; left: 12px; right: 12px;
+    height: 68px; background: rgba(15, 15, 20, 0.70); backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
+    align-items: center; padding: 0 12px; z-index: 100;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6); cursor: pointer;
+  }
+  .mini-cover { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+  .mini-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+  .mini-artist { font-size: 13px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(400);
+  .mini-progress { position: absolute; bottom: -1px; left: 14px; right: 14px; height: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
+  .mini-progress-fill { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); }
 
-  const [showQR, setShowQR] = useState(false);
-  const qrUrl = window.location.href.replace("localhost", window.location.hostname);
+  /* Player Full Screen */
+  .library.collapsed { display: none; }
 
-  const [openMenuSongId, setOpenMenuSongId] = useState(null);
-  const menuRef = useRef(null);
-
-  const songsRef = useRef(songs);
-  useEffect(() => { songsRef.current = songs }, [songs]);
-
-  const current = songs.find(s => s.id === queue[currentIndex]) || null;
-
-  /* ---------- util ---------- */
-  function shuffleArray(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+  .player-area {
+    display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg-primary); z-index: 200;
+    padding: 20px 20px 40px 20px; overflow-y: auto;
   }
 
-  /* ---------- fetch ---------- */
-  async function fetchSongs() {
-    try {
-      const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
-      const requestUrl = `${API}/api/songs`; 
-
-      const res = await axios.get(requestUrl);
-      const data = (res.data || []).map(s => ({
-        ...s,
-        liked: !!s.liked,
-        likeCount: typeof s.likeCount === 'number' ? s.likeCount : 0
-      }));
-
-      const randomized = shuffleArray(data);
-      setSongs(randomized);
-
-      if (randomized.length && queue.length === 0) {
-        setQueue(randomized.map(d => d.id));
-        setCurrentIndex(0);
-      } else {
-        setQueue(q => q.filter(id => randomized.some(d => d.id === id) || queue.includes(id)));
-      }
-    } catch (e) {
-      console.error('fetchSongs', e);
-      setSongs([]);
-    }
-  }
-
-  useEffect(() => { fetchSongs(); }, []); 
-
-  const visibleSongs = songs.filter(s => {
-    if (!searchTerm) return true;
-    const q = searchTerm.toLowerCase();
-    return (s.title || '').toLowerCase().includes(q) || (s.artistName || '').toLowerCase().includes(q);
-  });
-
-  // --- MEDIA SESSION ---
-  useEffect(() => {
-    if (!current || !('mediaSession' in navigator)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: current.title,
-      artist: current.artistName,
-      album: "Rhino Music",
-      artwork: [{ src: current.coverUrl || current.artistImageUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }]
-    });
-    navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
-    navigator.mediaSession.setActionHandler('pause', () => setPlaying(false));
-    navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
-    navigator.mediaSession.setActionHandler('nexttrack', () => playNext({ manual: true }));
-  }, [current, playing]); 
-
-  function playSong(song) {
-    if (!song) return;
-    const q = [...queue];
-    const idx = q.indexOf(song.id);
-    if (idx !== -1) {
-      setCurrentIndex(idx);
-    } else {
-      const insertAt = Math.max(0, currentIndex + 1);
-      q.splice(insertAt, 0, song.id);
-      setQueue(q);
-      setCurrentIndex(insertAt);
-    }
-    setPlaying(true);
-    
-    if (window.innerWidth <= 768) {
-       setIsLibraryCollapsed(true); 
-    }
-  }
-
-  function toggleLike(songId) {
-    setSongs(prev => prev.map(s => {
-      if (s.id !== songId) return s;
-      const newLiked = !s.liked;
-      const newCount = Math.max(0, (s.likeCount || 0) + (newLiked ? 1 : -1));
-      return { ...s, liked: newLiked, likeCount: newCount };
-    }));
-  }
-
-  function toggleShuffle() {
-    setShuffle(s => {
-      const newS = !s;
-      if (newS) {
-        setQueue(q => shuffleArray(q));
-        setCurrentIndex(0);
-      } else {
-        setQueue(() => songsRef.current.map(s => s.id));
-        setCurrentIndex(() => {
-          const id = current?.id;
-          return id ? (songsRef.current.map(s => s.id).indexOf(id)) : 0;
-        });
-      }
-      return newS;
-    });
-  }
-
-  function toggleRepeat() {
-    setRepeatMode(r => {
-      if (r === 'off') return 'all';
-      if (r === 'all') return 'one';
-      return 'off';
-    });
-  }
-
-  function playNext({ manual = false } = {}) {
-    if (!queue.length) return;
-    if (repeatMode === 'one' && !manual) { setPlaying(true); return; }
-    const nextIdx = currentIndex + 1;
-    if (nextIdx < queue.length) {
-      setCurrentIndex(nextIdx);
-      setPlaying(true);
-    } else {
-      if (repeatMode === 'all') { setCurrentIndex(0); setPlaying(true); } else { setPlaying(false); }
-    }
-  }
-
-  function playPrev() {
-    if (!queue.length) return;
-    if (currentIndex > 0) { setCurrentIndex(ci => ci - 1); setPlaying(true); } 
-    else { if (repeatMode === 'all') { setCurrentIndex(queue.length - 1); setPlaying(true); } else { setPlaying(true); } }
-  }
-
-  function playAtIndex(idx) { if (idx < 0 || idx >= queue.length) return; setCurrentIndex(idx); setPlaying(true); }
+  /* === FIX OVERLAPPING (Lyrics vs Queue) === */
+  .content-split { flex-direction: column; padding: 0; gap: 30px; }
   
-  function removeAtIndex(idx) {
-    setQueue(prev => {
-      const newQ = prev.slice(0, idx).concat(prev.slice(idx + 1));
-      setCurrentIndex(ci => {
-        if (newQ.length === 0) { setPlaying(false); return -1; }
-        if (idx < ci) return ci - 1;
-        if (idx === ci) return Math.min(idx, newQ.length - 1);
-        return ci;
-      });
-      return newQ;
-    });
+  .nowplaying-left { width: 100%; flex: 0 0 auto; }
+  .glow-container { width: 80vw; height: 80vw; max-width: 300px; max-height: 300px; margin-bottom: 20px; }
+
+  .lyrics-right { 
+    width: 100%; 
+    height: 350px; /* Fixed height for lyrics */
+    flex: 0 0 auto; 
+    margin-bottom: 20px; 
   }
 
-  function moveItem(oldIndex, newIndex) {
-    setQueue(prev => {
-      const q = [...prev];
-      if (oldIndex < 0 || oldIndex >= q.length || newIndex < 0 || newIndex >= q.length) return q;
-      const [item] = q.splice(oldIndex, 1);
-      q.splice(newIndex, 0, item);
-      setCurrentIndex(ci => {
-        if (ci === oldIndex) return newIndex;
-        if (oldIndex < ci && newIndex >= ci) return ci - 1;
-        if (oldIndex > ci && newIndex <= ci) return ci + 1;
-        return ci;
-      });
-      return q;
-    });
-  }
-
-  useEffect(() => {
-    function onDocClick(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenuSongId(null);
-    }
-    window.addEventListener('click', onDocClick);
-    return () => window.removeEventListener('click', onDocClick);
-  }, []);
-
-  function addToQueue(songId) { if (!songId) return; setQueue(prev => [...prev, songId]); setOpenMenuSongId(null); }
-  function playNextNow(songId) { if (!songId) return; setQueue(prev => { const q = [...prev]; q.splice(Math.max(0, currentIndex + 1), 0, songId); return q; }); setOpenMenuSongId(null); }
-
-  return (
-    <div className="app-shell" style={{ alignItems: 'stretch' }}>
-      
-      {/* --- LIBRARY SIDEBAR --- */}
-      <aside 
-        className={`library card-surface ${isLibraryCollapsed ? 'collapsed' : ''}`} 
-        style={{ 
-          width: isLibraryCollapsed ? '80px' : `${sidebarWidth}px`, 
-          minWidth: isLibraryCollapsed ? '80px' : `${sidebarWidth}px`,
-          maxWidth: isLibraryCollapsed ? '80px' : '720px' 
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
-          
-          <button 
-                className="small-btn icon-only" 
-                onClick={() => setIsLibraryCollapsed(v => !v)} 
-                title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
-                style={{ zIndex: 50 }} 
-             >
-                {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
-          </button>
-
-          {!isLibraryCollapsed && <h3 style={{ margin: 0, flex: 1 }}>Library</h3>}
-
-          {!isLibraryCollapsed && (
-            <div style={{ display: 'flex', gap: 8 }}>
-               <div style={{ position: 'relative' }}>
-                 <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
-                    <QrCode size={18}/>
-                 </button>
-                 {showQR && (
-                  <div style={{ position: "absolute", right: 0, top: "40px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
-                    <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
-                  </div>
-                )}
-               </div>
-
-               <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
-                  {showUpload ? 'Back' : <Plus size={18}/>}
-               </button>
-               <button className="small-btn" onClick={() => toggleShuffle()} title="Shuffle Library">
-                  <Shuffle size={18} color={shuffle ? 'var(--neon)' : 'white'} />
-               </button>
-            </div>
-          )}
-        </div>
-
-        {!isLibraryCollapsed && (
-          <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', }}>
-            <input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search..."
-              className="search-input"
-            />
-            {searchTerm && <button className="small-btn" onClick={() => setSearchTerm('')}>Clear</button>}
-          </div>
-        )}
-
-        <div style={{ marginTop: 12 }}>
-          {showUpload && !isLibraryCollapsed ? (
-            <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
-          ) : (
-            <div className="song-list" style={{ height: 'calc(100vh - 140px)', overflowY: 'auto', paddingRight: isLibraryCollapsed ? 0 : 4 }}>
-              {visibleSongs.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs found.</div>}
-              {visibleSongs.map(s => (
-                <div key={s.id} className="song-item" onDoubleClick={() => playSong(s)} title={s.title}>
-                  <CoverImage srcs={[s.coverUrl, s.artistImageUrl, PERSON_PLACEHOLDER]} alt={s.title} className="cover" />
-                  
-                  {!isLibraryCollapsed && (
-                    <>
-                      <div className="song-info">
-                        <div className="title" title={s.title}>{s.title}</div>
-                        <div className="artist" title={s.artistName}>{s.artistName}</div>
-                      </div>
-
-                      <div className="like-wrap">
-                        <button className={`icon-btn ${s.liked ? 'liked' : ''}`} onClick={() => toggleLike(s.id)}>
-                          <Heart size={18} fill={s.liked ? "currentColor" : "none"} />
-                        </button>
-                      </div>
-
-                      {/* --- THREE DOT MENU FIX --- */}
-                      <div className="more-wrap" ref={menuRef}>
-                        <button className="icon-btn" onClick={(ev) => { ev.stopPropagation(); setOpenMenuSongId(openMenuSongId === s.id ? null : s.id); }}>
-                          <MoreHorizontal size={18}/>
-                        </button>
-                        {openMenuSongId === s.id && (
-                          <div className="more-menu" onClick={(ev) => ev.stopPropagation()}>
-                            <button className="menu-item" onClick={() => addToQueue(s.id)}>
-                                <ListPlus size={16}/> Add to queue
-                            </button>
-                            <button className="menu-item" onClick={() => playNextNow(s.id)}>
-                                <SkipForward size={16}/> Play next
-                            </button>
-                            <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>
-                                <Play size={16}/> Play now
-                            </button>
-                            <button className="menu-item" onClick={() => { /* consider hooking to open lyrics editor */ }}>
-                                <Edit3 size={16}/> Edit Lyrics
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <button className="icon-btn play-mini" onClick={() => playSong(s)}>
-                        <Play size={16} fill="currentColor" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </aside>
-
-      <main className={`player-area ${!isLibraryCollapsed ? 'mobile-hidden' : ''}`} style={{ flex: 1, minWidth: 0 }}>
-        
-        <div className="mobile-only-header">
-           <button className="icon-btn" onClick={() => setIsLibraryCollapsed(false)}>
-              <ChevronDown size={28} />
-           </button>
-        </div>
-
-        <div className="content-split">
-          <div className="nowplaying-left">
-            {current ? (
-              <div className="nowplaying-big">
-                 <div className="glow-container">
-                  <img src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER} alt="" className="glow-bg" onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)} />
-                  <img src={current.artistImageUrl || current.coverUrl || PERSON_PLACEHOLDER} alt={current.title} className="real-cover" onError={(e) => (e.currentTarget.src = PERSON_PLACEHOLDER)} />
-                </div>
-
-                <div className="big-text">
-                  <div className="big-title">{current.title}</div>
-                  <div className="big-artist">{current.artistName}</div>
-                  <div style={{ marginTop: 12 }}>
-                    <Player
-                      song={current}
-                      playing={playing}
-                      onToggle={() => setPlaying(p => !p)}
-                      onToggleLike={() => current && toggleLike(current.id)}
-                      onNext={() => playNext({ manual: true })}
-                      onPrev={() => playPrev()}
-                      onEnded={() => playNext({ manual: false })}
-                      repeatMode={repeatMode}
-                      onToggleRepeat={toggleRepeat}
-                      shuffle={shuffle}
-                      onToggleShuffle={toggleShuffle}
-                      hideCover={true}
-                      hideMeta={true}
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ color: 'var(--text-secondary)', marginTop: 40 }}>Select a song to play</div>
-            )}
-          </div>
-
-          <div className="lyrics-right">
-            <h2 className="lyrics-heading">Lyrics</h2>
-            <div className="lyrics-box">
-              <LyricsPanel song={current} />
-            </div>
-          </div>
-        </div>
-
-        <div className="queue-panel">
-          <div className="queue-header">
-            <div style={{ fontWeight: 700, display:'flex', alignItems:'center', gap:6 }}>
-                <ListMusic size={18}/> Up Next
-            </div>
-            <div className="queue-controls">
-              <button 
-                className="small-btn icon-only" 
-                title="Clear"
-                onClick={() => {
-                  const hasCurrent = currentIndex >= 0 && queue[currentIndex];
-                  if (hasCurrent) {
-                    setQueue([queue[currentIndex]]);
-                    setCurrentIndex(0);
-                    setPlaying(true);
-                  } else {
-                    if (window.confirm('Clear?')) { setQueue([]); setCurrentIndex(-1); setPlaying(false); }
-                  }
-                }}
-              >
-                <Trash2 size={16}/>
-              </button>
-              
-              <button className="small-btn icon-only" onClick={() => { if (songsRef.current) setQueue(songsRef.current.map(s => s.id)); }} title="Restore">Restore</button>
-            </div>
-          </div>
-
-          <div className="queue" style={{ maxHeight: '36vh', overflowY: 'auto' }}>
-            {queue.length === 0 && <div style={{ padding: 12, color: 'var(--text-secondary)', fontSize: 13 }}>Queue is empty</div>}
-            {queue.map((id, idx) => {
-              const s = songs.find(x => x.id === id) || { id, title: 'Unknown', artistName: '' };
-              const isCurrent = idx === currentIndex;
-              return (
-                <div key={`${id}-${idx}`} className={`queue-item ${isCurrent ? 'current' : ''}`}>
-                  <div className="q-left">
-                    <img src={s.coverUrl || s.artistImageUrl || PERSON_PLACEHOLDER} alt={s.title} className="q-cover" onError={(e) => e.currentTarget.src = PERSON_PLACEHOLDER} />
-                    <div className="q-meta">
-                      <div className="q-title">{s.title}</div>
-                      <div className="q-artist">{s.artistName}</div>
-                    </div>
-                  </div>
-                  <div className="q-actions">
-                    {!isCurrent && <button className="icon-btn" onClick={() => playAtIndex(idx)}><Play size={16}/></button>}
-                    <button className="icon-btn" onClick={() => moveItem(idx, Math.max(0, idx - 1))}><ArrowUp size={16}/></button>
-                    <button className="icon-btn" onClick={() => moveItem(idx, Math.min(queue.length - 1, idx + 1))}><ArrowDown size={16}/></button>
-                    <button className="icon-btn danger" onClick={() => removeAtIndex(idx)}><Trash2 size={16}/></button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </main>
-
-      {/* --- MINI PLAYER (MOBILE ONLY) --- */}
-      {current && !isLibraryCollapsed && (
-        <div className="mini-player" onClick={() => setIsLibraryCollapsed(true)}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-              <img src={current.coverUrl || current.artistImageUrl || PERSON_PLACEHOLDER} className="mini-cover" onError={(e)=>e.currentTarget.src=PERSON_PLACEHOLDER}/>
-              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                 <div className="mini-title">{current.title}</div>
-                 <div className="mini-artist">{current.artistName}</div>
-              </div>
-           </div>
-           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button className="icon-btn" onClick={(e) => { e.stopPropagation(); toggleLike(current.id); }}>
-                 <Heart size={20} fill={current.liked ? "var(--neon)" : "none"} color={current.liked ? "var(--neon)" : "var(--text-secondary)"} />
-              </button>
-              <button className="icon-btn" onClick={(e) => { e.stopPropagation(); setPlaying(p => !p); }}>
-                 {playing ? <Pause size={24} fill="white"/> : <Play size={24} fill="white"/>}
-              </button>
-           </div>
-           
-           <div className="mini-progress">
-              <div className="mini-progress-fill" style={{ width: '100%', animation: playing ? 'progress 30s linear' : 'none' }}></div>
-           </div>
-        </div>
-      )}
-
-    </div>
-  );
+  .queue-panel { margin-top: 0; padding-bottom: 80px; width: 100%; flex: 0 0 auto; }
+  
+  /* Fix Controls Row */
+  .controls { justify-content: space-between; width: 100%; margin-top: 24px; padding: 0 4px; }
+  .play-btn { width: 68px; height: 68px; }
+  
+  .mobile-only-header { display: flex; justify-content: flex-start; padding-bottom: 10px; }
 }
