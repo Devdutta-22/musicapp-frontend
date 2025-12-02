@@ -35,6 +35,9 @@ export default function MusicApp() {
   // Loading State
   const [isLoading, setIsLoading] = useState(true);
 
+  // NEW: State to track song progress for mini-player
+  const [songProgress, setSongProgress] = useState(0);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
@@ -399,6 +402,8 @@ export default function MusicApp() {
                       onToggleShuffle={toggleShuffle}
                       hideCover={true}
                       hideMeta={true}
+                      // --- NEW: Pass progress callback ---
+                      onProgress={(curr, total) => setSongProgress(total ? (curr / total) * 100 : 0)}
                     />
                   </div>
                 </div>
@@ -489,9 +494,9 @@ export default function MusicApp() {
              </button>
            </div>
            
-           {/* Mini Progress Bar */}
+           {/* Mini Progress Bar - CONNECTED TO STATE */}
            <div className="mini-progress">
-             <div className="mini-progress-fill" style={{ width: '100%', animation: playing ? 'progress 30s linear' : 'none' }}></div>
+             <div className="mini-progress-fill" style={{ width: `${songProgress}%` }}></div>
            </div>
         </div>
       )}
