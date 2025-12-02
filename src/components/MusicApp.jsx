@@ -15,7 +15,7 @@ import {
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 // REPLACE THIS WITH YOUR GIF FILE NAME IN THE PUBLIC FOLDER
-const LOADING_GIF = '/loading.png'; 
+const LOADING_GIF = '/loading.svg'; 
 
 function CoverImage({ srcs = [], alt, className }) {
   const [src, setSrc] = useState(srcs.find(Boolean) || PERSON_PLACEHOLDER);
