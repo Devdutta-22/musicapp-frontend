@@ -22,6 +22,7 @@ export default function Player({
   onToggleShuffle,
   hideCover = false,
   hideMeta = false,
+  onProgress, // <--- 1. NEW PROP ADDED HERE
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
@@ -76,6 +77,9 @@ export default function Player({
         const t = e.target.currentTime || 0;
         setTime(t);
         updateRange(duration ? (t / duration) * 100 : 0);
+        
+        // --- 2. NEW: Send progress back to parent for Mini Player ---
+        if (onProgress) onProgress(t, duration); 
       }
     }
 
@@ -110,7 +114,7 @@ export default function Player({
       audio.removeEventListener('error', onError);
       if (stuckIntervalRef.current) { clearInterval(stuckIntervalRef.current); stuckIntervalRef.current = null; }
     };
-  }, [duration, seeking, playing, onEnded, time]);
+  }, [duration, seeking, playing, onEnded, time, onProgress]); // Added onProgress to deps
 
   // --- SOURCE CHANGE EFFECT ---
   useEffect(() => {
