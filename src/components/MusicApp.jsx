@@ -31,6 +31,9 @@ export default function MusicApp() {
   const [repeatMode, setRepeatMode] = useState('off'); 
   const [shuffle, setShuffle] = useState(false);
   
+  // Loading State
+  const [isLoading, setIsLoading] = useState(true);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
@@ -58,6 +61,7 @@ export default function MusicApp() {
 
   /* ---------- fetch ---------- */
   async function fetchSongs() {
+    setIsLoading(true);
     try {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
       const requestUrl = `${API}/api/songs`; 
@@ -81,6 +85,10 @@ export default function MusicApp() {
     } catch (e) {
       console.error('fetchSongs', e);
       setSongs([]);
+    } finally {
+      // Force a tiny delay so the user sees the cool animation for at least 1.5s
+      // even if the internet is super fast (prevents flickering)
+      setTimeout(() => setIsLoading(false), 1500);
     }
   }
 
@@ -120,11 +128,7 @@ export default function MusicApp() {
       setCurrentIndex(insertAt);
     }
     setPlaying(true);
-    
-    // Auto-open player on mobile
-    if (window.innerWidth <= 768) {
-       setIsLibraryCollapsed(true); 
-    }
+    if (window.innerWidth <= 768) { setIsLibraryCollapsed(true); }
   }
 
   function toggleLike(songId) {
@@ -225,6 +229,21 @@ export default function MusicApp() {
   return (
     <div className="app-shell" style={{ alignItems: 'stretch' }}>
       
+      {/* === FULL SCREEN LOADING OVERLAY === */}
+      {isLoading && (
+        <div className="loading-overlay">
+           <div className="loading-content">
+             <div className="music-bars big-bars">
+               <div className="bar"></div>
+               <div className="bar"></div>
+               <div className="bar"></div>
+               <div className="bar"></div>
+             </div>
+             <div className="loading-text">Loading Rhino Music...</div>
+           </div>
+        </div>
+      )}
+
       {/* --- LIBRARY SIDEBAR --- */}
       <aside 
         className={`library card-surface ${isLibraryCollapsed ? 'collapsed' : ''}`} 
