@@ -51,9 +51,13 @@ export default function Player({
     const a = audioRef.current;
     if (!a) return;
     stuckAttemptsRef.current = 0;
-    const p = a.play();
-    if (p && typeof p.catch === 'function') {
-      p.catch(() => {});
+    
+    // Only attempt to play if currently paused to prevent interruption errors
+    if (a.paused) {
+        const p = a.play();
+        if (p && typeof p.catch === 'function') {
+        p.catch(() => {});
+        }
     }
   }
 
@@ -76,7 +80,14 @@ export default function Player({
     }
 
     function onWaiting() { setBuffering(true); }
-    function onCanPlay() { setBuffering(false); if (playing) attemptPlay(); }
+    
+    // This event is critical for background play. 
+    // It fires when the browser is ready to play.
+    function onCanPlay() { 
+        setBuffering(false); 
+        if (playing) attemptPlay(); 
+    }
+    
     function onStalled() { setBuffering(true); }
     function onEndedInternal() { if (typeof onEnded === 'function') onEnded(); }
     function onError(e) { console.warn('Audio error', e); setBuffering(false); }
@@ -101,6 +112,7 @@ export default function Player({
     };
   }, [duration, seeking, playing, onEnded, time]);
 
+  // --- SOURCE CHANGE EFFECT ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -114,12 +126,15 @@ export default function Player({
 
     const safeUrl = encodeURI(song.streamUrl);
     if (audio.src !== new URL(safeUrl, window.location.href).href && audio.src !== safeUrl) {
-       audio.src = safeUrl; try { audio.load(); } catch (_) {}
+       audio.src = safeUrl; 
+       try { audio.load(); } catch (_) {}
     }
 
-    if (playing) { setTimeout(() => attemptPlay(), 50); }
+    // REMOVED: setTimeout logic. 
+    // The autoPlay attribute on the <audio> tag now handles this natively.
   }, [song?.id, song?.streamUrl]);
 
+  // --- PLAY/PAUSE TOGGLE & WATCHDOG ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -236,7 +251,9 @@ export default function Player({
       <audio
         ref={audioRef}
         src={song?.streamUrl ? encodeURI(song.streamUrl) : undefined} 
-        preload="metadata"
+        preload="auto"          // UPDATED: Preload auto helps background buffering
+        autoPlay={playing}      // UPDATED: Forces native browser play
+        playsInline             // UPDATED: Required for iOS stability
         style={{ display: 'none' }}
       />
     </div>
