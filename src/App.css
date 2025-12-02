@@ -1,33 +1,21 @@
-/* src/App.css — Equinox Theme (Volt/Black) + Mobile Fixes */
+/* src/App.css — Final Fix for Mobile Overlap */
 
 :root {
-  /* THEME: Volt / Acid Green */
-  --neon: #DFFF00;         /* The main Volt Green */
-  --neon-hover: #E4FC52;   /* Lighter Volt */
-  --neon-pink: #ff3bf0;    /* Secondary accent for Hearts */
-  
-  /* Backgrounds */
-  --bg-primary: #050701;   /* Deepest Black */
-  --bg-secondary: #0f1205; /* Slightly lighter for cards */
-  
-  /* Text */
-  --text-primary: #f0f2eb; /* Off-white for readability */
-  --text-secondary: #8a8d80; /* Muted gray-green */
-
-  /* Scrollbars */
-  --scroll-thumb: rgba(223, 255, 0, 0.15);
-  --scroll-thumb-hover: rgba(223, 255, 0, 0.3);
-  
-  /* Gradients */
-  --accent-a: #DFFF00; 
-  --accent-b: #b8cc00;
+  --neon: #40fefc;
+  --neon-pink: #ff3bf0;
+  --neon-hover: #5ffffb;
+  --scroll-thumb: rgba(255,255,255,0.03);
+  --scroll-thumb-hover: rgba(255,255,255,0.06);
+  --accent-a: #6cf0f0;
+  --accent-b: #7a6bff;
+  --bg-primary: #06060b;
 }
 
 html, body, #root {
   height: 100%;
   margin: 0;
   background: var(--bg-primary);
-  color: var(--text-primary);
+  color: #edf0ff;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   overflow: hidden; 
   overscroll-behavior: none;
@@ -46,25 +34,20 @@ html, body, #root {
   width: 400px;
   padding: 20px;
   border-radius: 16px;
-  /* Subtle dark tint */
-  background: linear-gradient(180deg, rgba(223, 255, 0, 0.02), rgba(0,0,0,0)); 
-  border-right: 1px solid rgba(223, 255, 0, 0.05); /* Faint neon border */
-  box-shadow: 0 14px 40px rgba(0,0,0,0.8);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
+  box-shadow: 0 14px 40px rgba(0,0,0,0.55);
   box-sizing: border-box;
   overflow-y: auto;
   position: relative;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid rgba(255,255,255,0.02);
 }
 
 .library.collapsed { padding: 12px 6px; }
 .library.collapsed .song-item { justify-content: center; padding: 8px 0; background: transparent; }
 .library.collapsed .song-list::-webkit-scrollbar { display: none; }
 
-.library h3 { 
-  margin: 6px 0 16px; font-weight: 800; font-size: 20px; 
-  color: var(--neon); /* Volt Green Header */
-  text-transform: uppercase; letter-spacing: 1px;
-}
+.library h3 { margin: 6px 0 16px; font-weight: 800; font-size: 20px; color: #fff; }
 .library .song-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-bottom: 12px; }
 
 /* Song List Row */
@@ -72,47 +55,38 @@ html, body, #root {
   display: flex; align-items: center; gap: 12px; padding: 10px;
   border-radius: 12px;
   background: transparent;
-  border: 1px solid transparent;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.2s ease;
   cursor: pointer;
 }
-.song-item:hover { 
-  background: rgba(223, 255, 0, 0.03); 
-  border-color: rgba(223, 255, 0, 0.1); 
-}
+.song-item:hover { background: rgba(255,255,255,0.04); }
 .song-item .cover { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; flex: 0 0 50px; background: #111; }
 .song-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.song-info .title { font-weight:600; font-size:15px; color: #fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.song-info .artist { margin-top:4px; font-size:13px; color: var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.song-info .title { font-weight:600; font-size:15px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.song-info .artist { margin-top:4px; font-size:13px; color:#aaa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* Buttons & Icons */
 .icon-btn {
   display:inline-flex; align-items:center; justify-content:center;
   width:40px; height:40px; border-radius:10px; border:none;
-  background:transparent; color: var(--text-secondary); cursor:pointer;
+  background:transparent; color:#aaa; cursor:pointer;
   transition: all 0.2s ease;
 }
-.icon-btn:hover { color: var(--bg-primary); background: var(--neon); } /* Inverted Volt Hover */
-.icon-btn.active { color: var(--neon); text-shadow: 0 0 10px var(--neon); }
-.icon-btn.liked { color: var(--neon); fill: var(--neon); filter: drop-shadow(0 0 8px var(--neon)); }
-.icon-btn.danger:hover { background: #ff3b3b; color: white; }
+.icon-btn:hover { color: var(--neon); background: rgba(255,255,255,0.05); }
+.icon-btn.active { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
+.icon-btn.liked { color: #ff4d7a; filter: drop-shadow(0 0 8px #ff4d7a); }
+.icon-btn.danger:hover { color: #ff4d7a; }
 
 .small-btn {
-  background: rgba(223, 255, 0, 0.05); 
-  border: 1px solid rgba(223, 255, 0, 0.15);
-  color: var(--neon); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 700;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: #ddd; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600;
   display: inline-flex; align-items: center; justify-content: center;
-  text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;
 }
 .small-btn.icon-only { padding: 8px; }
-.small-btn:hover { background: var(--neon); color: var(--bg-primary); }
 
 .search-input {
   flex: 1; padding: 10px 12px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.5); color: #fff;
-  transition: border-color 0.2s;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff;
 }
-.search-input:focus { border-color: var(--neon); outline: none; }
 
 /* ------------------ Player Area (Desktop) ------------------ */
 .player-area { flex: 1; padding: 32px; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
@@ -120,113 +94,155 @@ html, body, #root {
 .nowplaying-left, .lyrics-right { flex:1; min-width:0; }
 
 .glow-container { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 32px auto; }
-.glow-bg { position: absolute; top: 12%; left: 0; width: 100%; height: 100%; filter: blur(60px) saturate(200%); opacity: 0.4; z-index: 0; transform: scale(0.95); border-radius: 40px; }
-.real-cover { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 4px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
+.glow-bg { position: absolute; top: 12%; left: 0; width: 100%; height: 100%; filter: blur(50px) saturate(200%); opacity: 0.6; z-index: 0; transform: scale(0.96); border-radius: 40px; }
+.real-cover { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 20px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
 
 .big-text { text-align: center; margin-top: 16px; margin-bottom: 24px; }
-.big-title { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 6px; text-transform: uppercase; font-style: italic; }
-.big-artist { font-size: 16px; color: var(--neon); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+.big-title { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin-bottom: 6px; }
+.big-artist { font-size: 17px; color: #ccc; font-weight: 500; }
 
-/* Slider (Volt Style) */
+/* Slider */
 .slider-row { width: 100%; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; height: 30px; }
-.neon-range { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 0; background: rgba(255, 255, 255, 0.15); outline: none; cursor: pointer; position: relative; margin: 0; }
-.neon-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 0; background: var(--neon); box-shadow: 0 0 10px var(--neon); cursor: pointer; margin-top: -4px; transition: transform 0.1s; }
-.neon-range::-webkit-slider-thumb:active { transform: scale(1.5); }
+.neon-range { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.15); outline: none; cursor: pointer; position: relative; margin: 0; }
+.neon-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--neon); box-shadow: 0 0 10px var(--neon); cursor: pointer; margin-top: -5px; transition: transform 0.1s; }
+.neon-range::-webkit-slider-thumb:active { transform: scale(1.4); }
 
 .play-btn {
-  width:64px; height:64px; border-radius:50%; 
-  background: var(--neon); color: var(--bg-primary); border: none;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer; box-shadow: 0 0 20px rgba(223, 255, 0, 0.2); 
-  transition: transform .18s ease;
+  width:64px; height:64px; border-radius:50%; border:2px solid var(--neon);
+  background: transparent; color: var(--neon); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; box-shadow: 0 4px 18px rgba(64,254,252,0.08); transition: transform .18s ease;
 }
-.play-btn:hover { transform: scale(1.08); box-shadow: 0 0 35px rgba(223, 255, 0, 0.5); }
+.play-btn:hover { transform: scale(1.08); box-shadow: 0 10px 40px rgba(64,254,252,0.14); }
 
 /* Queue Layout */
 .queue-panel { margin-top:20px; background: rgba(255,255,255,0.02); border-radius:16px; padding:16px; border: 1px solid rgba(255,255,255,0.03); }
-.queue-header { display:flex; justify-content:space-between; margin-bottom:12px; align-items: center; color: var(--neon); font-weight: 800; text-transform: uppercase; }
+.queue-header { display:flex; justify-content:space-between; margin-bottom:12px; align-items: center; }
 .queue-item { display:flex; align-items:center; justify-content: space-between; gap: 12px; padding: 8px; border-radius: 10px; margin-bottom: 4px; background: transparent; }
 .queue-item:hover { background: rgba(255,255,255,0.04); }
-.queue-item.current { background: rgba(223, 255, 0, 0.05); border-left: 3px solid var(--neon); }
+.queue-item.current { background: rgba(64,254,252,0.05); border: 1px solid rgba(64,254,252,0.1); }
 .q-left { display:flex; gap:12px; align-items:center; flex: 1; min-width: 0; }
-.q-cover { width:42px; height:42px; border-radius:4px; object-fit: cover; flex-shrink: 0; }
+.q-cover { width:42px; height:42px; border-radius:6px; object-fit: cover; flex-shrink: 0; }
 .q-meta { flex: 1; min-width: 0; overflow: hidden; }
 .q-title { font-size:14px; font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color: #fff; }
-.q-artist { font-size:12px; color: var(--text-secondary); white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.q-artist { font-size:12px; color:#aaa; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
 .q-actions { display:flex; align-items:center; gap: 2px; flex-shrink: 0; }
 
 /* Lyrics */
 .lyrics-right { flex:1; padding-top:20px; display:flex; flex-direction:column; }
-.lyrics-heading { font-size:24px; font-weight:800; color: var(--neon); margin-bottom:16px; text-transform: uppercase; }
-.lyrics-box { background: rgba(255,255,255,0.02); border-radius:12px; padding:20px; height:70%; overflow-y:auto; color:#ccc; font-size:15px; line-height:1.8; flex:1 1 auto; max-height: calc(100vh - 200px); border: 1px solid rgba(255,255,255,0.05); }
-
-/* Popup Menu */
-.more-menu { 
-  position:absolute; right:0; top:36px; min-width:180px; 
-  background: #000; border: 1px solid rgba(223, 255, 0, 0.3); 
-  border-radius: 8px; padding: 6px; z-index: 200; 
-  box-shadow: 0 4px 20px rgba(0,0,0,0.9);
-}
-.more-menu .menu-item { 
-  display: flex; align-items: center; gap: 10px; width:100%; text-align:left; 
-  background:transparent; border:none; padding:10px 12px; 
-  color: #fff; cursor:pointer; border-radius:4px; font-size:13px; font-weight: 600;
-}
-.more-menu .menu-item:hover { background: var(--neon); color: black; }
+.lyrics-heading { font-size:24px; font-weight:700; color: #fff; margin-bottom:16px; }
+.lyrics-box { background: rgba(255,255,255,0.03); border-radius:12px; padding:20px; height:70%; overflow-y:auto; color:#aaa; font-size:16px; line-height:1.6; flex:1 1 auto; max-height: calc(100vh - 170px); }
 
 /* Utilities */
 .mini-player, .mobile-only-header { display: none; }
-*::-webkit-scrollbar { width:4px; }
-*::-webkit-scrollbar-thumb { background: var(--neon); border-radius:0; }
+*::-webkit-scrollbar { width:6px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:4px; }
 
-/* ------------------ MOBILE LAYOUT FIXES (Preserved) ------------------ */
+/* ------------------ MOBILE LAYOUT FIXES ------------------ */
 @media (max-width: 768px) {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; }
 
-  /* Library Open */
+  /* Library (Full Screen when open) */
   .library:not(.collapsed) {
     width: 100% !important; max-width: 100% !important; height: 100%;
     border-radius: 0; margin: 0; padding-bottom: 90px; z-index: 10;
   }
   .player-area.mobile-hidden { display: none; }
 
-  /* Mini Player (Glass + Volt) */
+  /* Mini Player */
+ /* Premium Mini Player */
   .mini-player {
     display: flex; position: fixed; bottom: 16px; left: 12px; right: 12px;
     height: 68px; 
-    background: rgba(10, 12, 5, 0.75); /* Dark Volt Tint */
-    backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid rgba(223, 255, 0, 0.15); 
+    
+    /* CHANGE 1: Lower 0.85 to 0.60 for more transparency */
+    background: rgba(15, 15, 20, 0.60); 
+    
+    /* CHANGE 2: Increase blur slightly (20px -> 30px) to keep text readable */
+    backdrop-filter: blur(30px) saturate(180%); 
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    
+    border: 1px solid rgba(255, 255, 255, 0.08); 
     border-radius: 14px;
     align-items: center; padding: 0 12px; z-index: 100;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8); cursor: pointer;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6); cursor: pointer;
   }
-  .mini-cover { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; }
-  .mini-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
-  .mini-artist { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
-  
+  .mini-cover { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
+  .mini-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .mini-artist { font-size: 13px; color: #bbb; }
   .mini-progress { position: absolute; bottom: -1px; left: 14px; right: 14px; height: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
   .mini-progress-fill { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); }
 
-  /* Player Full Screen */
+  /* === PLAYER FULL SCREEN === */
   .library.collapsed { display: none; }
 
+  /* 1. Force everything to stack */
   .player-area {
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: var(--bg-primary); z-index: 200;
-    padding: 20px 20px 40px 20px; overflow-y: auto;
+    padding: 20px 16px; 
+    overflow-y: auto; /* Allow scrolling within the player page */
   }
 
-  /* Overlap Fixes */
-  .content-split { flex-direction: column; padding: 0; gap: 30px; }
-  .nowplaying-left { width: 100%; flex: 0 0 auto; }
-  .glow-container { width: 80vw; height: 80vw; max-width: 300px; max-height: 300px; margin-bottom: 20px; }
+  .mobile-only-header { display: flex; justify-content: flex-start; padding-bottom: 10px; flex-shrink: 0; }
 
-  .lyrics-right { width: 100%; height: 320px; flex: 0 0 auto; margin-bottom: 20px; }
-  .queue-panel { margin-top: 0; padding-bottom: 80px; width: 100%; flex: 0 0 auto; }
-  
+  /* 2. Break content into strict blocks */
+  .content-split {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 0;
+    gap: 24px;
+    flex-shrink: 0; /* Prevents squishing */
+  }
+
+  /* 3. Cover Art & Controls */
+  .nowplaying-left { width: 100%; flex: 0 0 auto; }
+  .glow-container { width: 80vw; height: 80vw; max-width: 320px; max-height: 320px; margin-bottom: 20px; }
   .controls { justify-content: space-between; width: 100%; margin-top: 24px; padding: 0 4px; }
   .play-btn { width: 68px; height: 68px; }
-  .mobile-only-header { display: flex; justify-content: flex-start; padding-bottom: 10px; }
+
+  /* 4. Lyrics Panel */
+  .lyrics-right {
+    width: 100%;
+    height: 400px; /* Force fixed height */
+    flex: 0 0 auto; /* Don't shrink */
+    margin-bottom: 20px;
+  }
+
+  /* 5. Queue Panel (The fix is here!) */
+  .queue-panel {
+    margin-top: 20px;
+    width: 100%;
+    flex: 0 0 auto; /* Don't overlap lyrics */
+    padding-bottom: 60px; /* Space for scroll */
+  }
+  /* --- Add this to your src/App.css (inside the Mobile Media Query if possible) --- */
+
+.mini-title { 
+  font-size: 15px; 
+  font-weight: 700; 
+  color: #fff; 
+  margin-bottom: 2px;
+  
+  /* The Magic Fix for Long Titles */
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+  max-width: 100%; /* Force it to respect the container width */
+  display: block;
+}
+
+.mini-artist { 
+  font-size: 13px; 
+  color: #bbb;
+  
+  /* The Magic Fix for Long Artist Names */
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+}
 }
