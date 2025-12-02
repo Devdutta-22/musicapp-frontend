@@ -1,22 +1,24 @@
-/* src/App.css — Final Version */
+/* src/App.css — Electric Purple Edition + Fixed Queue Buttons */
 
-/* 1. UNIVERSAL RESET (Crucial for preventing horizontal scroll) */
+/* 1. UNIVERSAL RESET */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent; /* Removes blue tap box on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 :root {
-  --neon: #40fefc;
-  --neon-pink: #ff3bf0;
-  --neon-hover: #5ffffb;
+  /* --- ELECTRIC PURPLE THEME --- */
+  --neon: #BB86FC;         /* Light Purple (Main Accent) */
+  --neon-hover: #8A2BE2;   /* Electric Purple (Hover State) */
+  --neon-pink: #ff3bf0;    /* Pink (Kept for Logo match) */
+  
   --scroll-thumb: rgba(255,255,255,0.03);
   --scroll-thumb-hover: rgba(255,255,255,0.06);
-  --accent-a: #6cf0f0;
+  --accent-a: #9955ff;
   --accent-b: #7a6bff;
-  --bg-primary: #06060b;
+  --bg-primary: #06060b;   /* Deep Dark Background */
 }
 
 html, body, #root {
@@ -29,11 +31,10 @@ html, body, #root {
   color: #edf0ff;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   
-  /* 2. APP LOCK (Prevents rubber-banding and horizontal sway) */
   overflow: hidden; 
   overflow-x: hidden;
   overscroll-behavior: none;
-  position: fixed; /* Anchors the app to prevent browser chrome shifting */
+  position: fixed;
   top: 0;
   left: 0;
 }
@@ -44,7 +45,7 @@ html, body, #root {
   width: 100%;
   gap: 24px;
   align-items: stretch;
-  overflow: hidden; /* Ensures child overflow doesn't break layout */
+  overflow: hidden;
 }
 
 /* --- MINIMALIST PROFESSIONAL LOADER --- */
@@ -56,7 +57,7 @@ html, body, #root {
   width: 100%;
   height: 100%; 
   min-height: 300px;
-  background: var(--bg-primary); /* Clean solid background */
+  background: var(--bg-primary);
   position: absolute; 
   top: 0;
   left: 0;
@@ -67,7 +68,7 @@ html, body, #root {
 .loading-logo {
   width: 48px; 
   height: 48px;
-  color: var(--neon); /* Uses your theme color, but cleanly */
+  color: var(--neon);
   margin-bottom: 16px;
   animation: rotate-smooth 2s linear infinite;
 }
@@ -78,12 +79,11 @@ html, body, #root {
 }
 
 .loading-text {
-  color: #888; /* Muted grey instead of glowing white */
+  color: #888;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 3px; /* Wide spacing looks very professional */
+  letter-spacing: 3px;
   text-transform: uppercase;
-  /* Removed all text-shadows for a flat, matte look */
 }
 
 /* ------------------ Library (Sidebar) ------------------ */
@@ -128,7 +128,7 @@ html, body, #root {
   transition: all 0.2s ease;
 }
 .icon-btn:hover { color: var(--neon); background: rgba(255,255,255,0.05); }
-.icon-btn.active { color: var(--neon-pink); text-shadow: 0 0 10px var(--neon-pink); }
+.icon-btn.active { color: var(--neon); text-shadow: 0 0 10px var(--neon); }
 .icon-btn.liked { color: #ff4d7a; filter: drop-shadow(0 0 8px #ff4d7a); }
 .icon-btn.danger:hover { color: #ff4d7a; }
 
@@ -163,25 +163,28 @@ html, body, #root {
 .neon-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--neon); box-shadow: 0 0 10px var(--neon); cursor: pointer; margin-top: -5px; transition: transform 0.1s; }
 .neon-range::-webkit-slider-thumb:active { transform: scale(1.4); }
 
-/* --- PLAY BUTTON (Single Color) --- */
+/* --- PLAY BUTTON --- */
 .play-btn {
   width: 72px; 
   height: 72px; 
   border-radius: 50%; 
   border: none;
-  background: var(--neon); /* Single Color */
+  background: var(--neon); 
   color: #050508; 
   display: flex; 
   align-items: center; 
   justify-content: center;
   cursor: pointer; 
-  box-shadow: 0 8px 32px rgba(64, 254, 252, 0.3);
+  /* Updated shadow to Violet/Purple */
+  box-shadow: 0 8px 32px rgba(138, 43, 226, 0.3); 
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .play-btn:hover { 
   transform: scale(1.05); 
-  box-shadow: 0 12px 48px rgba(64, 254, 252, 0.5);
+  background: var(--neon-hover);
+  /* Updated shadow to Violet/Purple */
+  box-shadow: 0 12px 48px rgba(138, 43, 226, 0.5);
   filter: brightness(1.1);
 }
 
@@ -192,6 +195,13 @@ html, body, #root {
 /* Queue Layout */
 .queue-panel { margin-top:20px; background: rgba(255,255,255,0.02); border-radius:16px; padding:16px; border: 1px solid rgba(255,255,255,0.03); }
 .queue-header { display:flex; justify-content:space-between; margin-bottom:12px; align-items: center; }
+
+/* === Queue Controls Alignment === */
+.queue-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px; 
+}
 
 /* Queue Row Alignment */
 .queue-item { 
@@ -205,7 +215,13 @@ html, body, #root {
   background: transparent; 
 }
 .queue-item:hover { background: rgba(255,255,255,0.04); }
-.queue-item.current { background: rgba(64,254,252,0.05); border: 1px solid rgba(64,254,252,0.1); }
+
+/* Updated Current Song Highlight to Purple */
+.queue-item.current { 
+  background: rgba(187, 134, 252, 0.05); 
+  border: 1px solid rgba(187, 134, 252, 0.1); 
+}
+
 .q-left { display:flex; gap:12px; align-items:center; flex: 1; min-width: 0; }
 .q-cover { width:42px; height:42px; border-radius:6px; object-fit: cover; flex-shrink: 0; }
 .q-meta { flex: 1; min-width: 0; overflow: hidden; }
@@ -243,14 +259,12 @@ html, body, #root {
 @media (max-width: 768px) {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; width: 100%; }
 
-  /* Library (Full Screen when open) */
   .library:not(.collapsed) {
     width: 100% !important; max-width: 100% !important; height: 100%;
     border-radius: 0; margin: 0; padding-bottom: 90px; z-index: 10;
   }
   .player-area.mobile-hidden { display: none; }
 
-  /* Mini Player */
   .mini-player {
     display: flex; position: fixed; bottom: 16px; left: 12px; right: 12px;
     height: 68px; 
@@ -271,7 +285,6 @@ html, body, #root {
   /* === PLAYER FULL SCREEN === */
   .library.collapsed { display: none; }
 
-  /* 1. Force everything to stack and lock width */
   .player-area {
     display: flex;
     flex-direction: column;
@@ -283,27 +296,17 @@ html, body, #root {
     z-index: 200;
     padding: 20px 16px; 
     overflow-y: auto; 
-    
-    /* FIX: Prevent Horizontal Scrolling on Mobile */
     overflow-x: hidden; 
     max-width: 100vw;
   }
 
   .mobile-only-header { display: flex; justify-content: flex-start; padding-bottom: 10px; flex-shrink: 0; }
-
-  /* 2. Break content into strict blocks */
   .content-split { display: flex; flex-direction: column; height: auto; padding: 0; gap: 24px; flex-shrink: 0; width: 100%; }
-
-  /* 3. Cover Art & Controls */
   .nowplaying-left { width: 100%; flex: 0 0 auto; }
   .glow-container { width: 80vw; height: 80vw; max-width: 320px; max-height: 320px; margin-bottom: 20px; }
   .controls { justify-content: space-between; width: 100%; margin-top: 24px; padding: 0 4px; }
   .play-btn { width: 68px; height: 68px; }
-
-  /* 4. Lyrics Panel */
   .lyrics-right { width: 100%; height: 580px; flex: 0 0 auto; margin-bottom: 20px; }
-
-  /* 5. Queue Panel */
   .queue-panel { margin-top: 20px; width: 100%; flex: 0 0 auto; padding-bottom: 60px; }
   
   .mini-title, .mini-artist { 
