@@ -307,12 +307,35 @@ html, body, #root {
 *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:4px; }
 
 /* ------------------ MOBILE LAYOUT ------------------ */
+/* ------------------ MOBILE LAYOUT FIXES ------------------ */
 @media (max-width: 768px) {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; width: 100%; }
+
+  /* === UPDATED LIBRARY STYLES === */
   .library:not(.collapsed) {
-    width: 100% !important; max-width: 100% !important; height: 100%;
-    border-radius: 0; margin: 0; padding-bottom: 90px; z-index: 10;
+    width: 100% !important; 
+    max-width: 100% !important; 
+    height: 100%;
+    border-radius: 0; 
+    margin: 0; 
+    /* Changed padding: Top 20px, Left/Right 12px, Bottom 90px (for player) */
+    padding: 20px 12px 90px 12px; 
+    z-index: 10;
   }
+  
+  /* Tighten the header gaps on mobile to prevent cut-off */
+  .library > div:first-child {
+    gap: 8px !important; 
+  }
+  .library > div:first-child > div:last-child {
+    gap: 4px !important;
+  }
+  
+  /* Slightly smaller title on mobile to save space */
+  .library h3 {
+    font-size: 18px; 
+  }
+
   .player-area.mobile-hidden { display: none; }
 
   .mini-player {
