@@ -29,9 +29,11 @@ export default function Player({
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
+  
+  // This state tracks if the audio is loading/stuck
   const [buffering, setBuffering] = useState(false);
 
-  // --- CRITICAL FIX: Use Ref for progress to prevent re-render loops ---
+  // Ref to prevent infinite loops with the progress bar
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
 
@@ -41,7 +43,11 @@ export default function Player({
   function updateRange(percent) {
     const el = rangeRef.current;
     if (!el) return;
-    el.style.background = `linear-gradient(90deg, var(--neon) ${percent}%, rgba(255,255,255,0.07) ${percent}%)`;
+    // Only update the background gradient if NOT buffering
+    // (CSS handles the buffering animation)
+    if (!buffering) {
+        el.style.background = `linear-gradient(90deg, var(--neon) ${percent}%, rgba(255,255,255,0.07) ${percent}%)`;
+    }
   }
 
   function formatTime(sec) {
@@ -60,11 +66,12 @@ export default function Player({
     if (a.paused) {
         const p = a.play();
         if (p && typeof p.catch === 'function') {
-        p.catch(() => {});
+           p.catch(() => {});
         }
     }
   }
 
+  // --- AUDIO EVENTS SETUP ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -72,7 +79,8 @@ export default function Player({
     function onLoadedMetadata(e) {
       const d = Math.floor(e.target.duration) || 0;
       setDuration(d);
-      updateRange(d ? (time / d) * 100 : 0);
+      setBuffering(false); // Metadata loaded means we are getting there
+      updateRange(d ? (audio.currentTime / d) * 100 : 0);
     }
 
     function onTimeUpdate(e) {
@@ -80,21 +88,23 @@ export default function Player({
         const t = e.target.currentTime || 0;
         setTime(t);
         updateRange(duration ? (t / duration) * 100 : 0);
-        
-        // Use the Ref so we don't restart the useEffect
         if (onProgressRef.current) onProgressRef.current(t, duration); 
       }
     }
 
-    function onWaiting() { setBuffering(true); }
+    function onLoadStart() { setBuffering(true); } // Show line immediately when loading starts
+    function onWaiting() { setBuffering(true); }   // Show line if internet causes a pause
+    
     function onCanPlay() { 
-        setBuffering(false); 
+        setBuffering(false); // Hide line when ready
         if (playing) attemptPlay(); 
     }
+    
     function onStalled() { setBuffering(true); }
     function onEndedInternal() { if (typeof onEnded === 'function') onEnded(); }
     function onError(e) { console.warn('Audio error', e); setBuffering(false); }
 
+    audio.addEventListener('loadstart', onLoadStart);
     audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('waiting', onWaiting);
@@ -104,6 +114,7 @@ export default function Player({
     audio.addEventListener('error', onError);
 
     return () => {
+      audio.removeEventListener('loadstart', onLoadStart);
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('waiting', onWaiting);
@@ -113,13 +124,14 @@ export default function Player({
       audio.removeEventListener('error', onError);
       if (stuckIntervalRef.current) { clearInterval(stuckIntervalRef.current); stuckIntervalRef.current = null; }
     };
-    // Removed 'onProgress' from dependencies to stop the loop
-  }, [duration, seeking, playing, onEnded, time]); 
+  }, [duration, seeking, playing, onEnded, time]); // Dependencies
 
+  // --- SOURCE CHANGE ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    setTime(0); setDuration(0); setBuffering(false); stuckAttemptsRef.current = 0;
+    setTime(0); setDuration(0); setBuffering(true); // Default to buffering on new song
+    stuckAttemptsRef.current = 0;
 
     if (!song || !song.streamUrl) {
       try { audio.pause(); } catch(_) {}
@@ -134,6 +146,7 @@ export default function Player({
     }
   }, [song?.id, song?.streamUrl]);
 
+  // --- WATCHDOG ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -201,7 +214,8 @@ export default function Player({
         <div className="time-left" aria-hidden style={{ fontSize: 12 }}>{formatTime(time)}</div>
         <input
           ref={rangeRef}
-          className="range neon-range"
+          // Here we apply the 'buffering' class if the state is true
+          className={`range neon-range ${buffering ? 'buffering' : ''}`}
           type="range"
           min={0}
           max={Math.max(duration || 0, 0)}
