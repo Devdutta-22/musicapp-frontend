@@ -240,61 +240,64 @@ export default function MusicApp() {
           maxWidth: isLibraryCollapsed ? '80px' : '720px' 
         }}
       >
+        {/* === HEADER: LEFT (Logo/Refresh) | RIGHT (Controls) === */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
-          <button 
+          {/* LEFT SIDE: Logo & Text (Click to Refresh) */}
+          <div 
+            onClick={() => window.location.reload()} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 12, 
+              cursor: 'pointer',
+              flex: 1, 
+              minWidth: 0,
+              userSelect: 'none'
+            }}
+            title="Refresh App"
+          >
+            <img 
+              src="/logo192.png" 
+              alt="JAM" 
+              style={{ width: 28, height: 28, objectFit: 'contain' }}
+            />
+            {!isLibraryCollapsed && <h3 style={{ margin: 0 }}>Library</h3>}
+          </div>
+
+          {/* RIGHT SIDE: Action Buttons */}
+          <div style={{ display: 'flex', gap: 8 }}>
+             
+             {/* Only show QR and Upload when Expanded */}
+             {!isLibraryCollapsed && (
+               <>
+                 <div style={{ position: 'relative' }}>
+                   <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
+                      <QrCode size={18}/>
+                   </button>
+                   {showQR && (
+                    <div style={{ position: "absolute", right: 0, top: "40px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
+                      <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
+                    </div>
+                  )}
+                 </div>
+
+                 <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
+                    {showUpload ? 'Back' : <Upload size={18}/>}
+                 </button>
+               </>
+             )}
+
+             {/* Collapse Button: NOW AT THE EXTREME RIGHT (Replaces Shuffle) */}
+             <button 
                 className="small-btn icon-only" 
                 onClick={() => setIsLibraryCollapsed(v => !v)} 
                 title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
                 style={{ zIndex: 50 }} 
              >
                 {isLibraryCollapsed ? <PanelLeftOpen size={18}/> : <PanelLeftClose size={18}/>}
-          </button>
-
-          {/* === 1. CLICKABLE REFRESH HEADER (Logo + Text) === */}
-          {!isLibraryCollapsed && (
-            <div 
-              onClick={() => window.location.reload()} 
-              style={{ 
-                flex: 1, 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 12, 
-                cursor: 'pointer',
-                userSelect: 'none'
-              }}
-              title="Click to Refresh App"
-            >
-              <img 
-                src="/logo192.png" 
-                alt="JAM" 
-                style={{ width: 28, height: 28, objectFit: 'contain' }}
-              />
-              <h3 style={{ margin: 0 }}>Library</h3>
-            </div>
-          )}
-
-          {!isLibraryCollapsed && (
-            <div style={{ display: 'flex', gap: 8 }}>
-               <div style={{ position: 'relative' }}>
-                 <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
-                    <QrCode size={18}/>
-                 </button>
-                 {showQR && (
-                  <div style={{ position: "absolute", right: 0, top: "40px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
-                    <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
-                  </div>
-                )}
-               </div>
-
-               <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
-                  {showUpload ? 'Back' : <Upload size={18}/>}
-               </button>
-               <button className="small-btn" onClick={() => toggleShuffle()} title="Shuffle Library">
-                  <Shuffle size={18} color={shuffle ? 'var(--neon)' : 'white'} />
-               </button>
-            </div>
-          )}
+             </button>
+          </div>
         </div>
 
         {!isLibraryCollapsed && (
