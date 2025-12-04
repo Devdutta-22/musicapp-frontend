@@ -291,8 +291,9 @@ export default function MusicApp() {
              )}
 
              {/* COLLAPSE/EXPAND: Uses Simple Arrows now */}
+            {/* COLLAPSE/EXPAND: Added 'collapse-btn' to class list */}
              <button 
-                className="small-btn icon-only" 
+                className="small-btn icon-only collapse-btn" 
                 onClick={() => setIsLibraryCollapsed(v => !v)} 
                 title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
                 style={{ zIndex: 50 }} 
