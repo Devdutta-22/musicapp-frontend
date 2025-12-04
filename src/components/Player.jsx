@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Shuffle, Repeat, Repeat1, Heart
+  Shuffle, Repeat, Repeat1, Heart, Timer // <--- 1. ADDED TIMER IMPORT
 } from "lucide-react";
 import '../App.css';
 
@@ -23,6 +23,8 @@ export default function Player({
   hideCover = false,
   hideMeta = false,
   onProgress, 
+  sleepTime,       // <--- 2. NEW PROP
+  onSetSleepTimer, // <--- 3. NEW PROP
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
@@ -30,6 +32,9 @@ export default function Player({
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  
+  // Local state for the Sleep Timer menu
+  const [showSleepMenu, setShowSleepMenu] = useState(false);
 
   // Ref to prevent infinite loops with the progress bar
   const onProgressRef = useRef(onProgress);
@@ -187,6 +192,12 @@ export default function Player({
   function handleNext() { if (typeof onNext === 'function') onNext(); }
   function handleToggle() { if (typeof onToggle === 'function') onToggle(); }
 
+  // Helper to select timer and close menu
+  function handleSetSleep(min) {
+    if (onSetSleepTimer) onSetSleepTimer(min);
+    setShowSleepMenu(false);
+  }
+
   return (
     <div className="player neon-player player--compact" role="region" aria-label="Now playing controls">
       {!hideMeta && song && (
@@ -249,6 +260,27 @@ export default function Player({
           {repeatMode === "one" ? <Repeat1 size={20}/> : <Repeat size={20}/>}
         </button>
         
+        {/* --- 4. SLEEP TIMER BUTTON & MENU --- */}
+        <div style={{ position: 'relative' }}>
+            <button 
+                className={`icon-btn ${sleepTime ? 'active' : ''}`} 
+                onClick={() => setShowSleepMenu(!showSleepMenu)} 
+                title={sleepTime ? `${sleepTime}m left` : "Sleep Timer"}
+            >
+                <Timer size={20}/>
+            </button>
+            
+            {showSleepMenu && (
+                // Opens Upwards (bottom: 100%) so it doesn't get cut off
+                <div className="more-menu" style={{ bottom: '100%', right: '-10px', top: 'auto', marginBottom: 12, width: 120 }}>
+                    <button className="menu-item" onClick={() => handleSetSleep(15)}>15 min</button>
+                    <button className="menu-item" onClick={() => handleSetSleep(30)}>30 min</button>
+                    <button className="menu-item" onClick={() => handleSetSleep(60)}>1 hour</button>
+                    <button className="menu-item" onClick={() => handleSetSleep(null)} style={{color: '#ff4d7a'}}>Off</button>
+                </div>
+            )}
+        </div>
+
         <button className={`icon-btn ${song?.liked ? "liked" : ""}`} onClick={onToggleLike} title={song?.liked ? 'Unlike' : 'Like'} aria-pressed={!!song?.liked}>
           <Heart size={20} fill={song?.liked ? "currentColor" : "none"}/>
         </button>
@@ -261,7 +293,6 @@ export default function Player({
         autoPlay={playing}
         playsInline
         style={{ display: 'none' }}
-        // === FIXED: THIS MAKES REPEAT ONE WORK ===
         loop={repeatMode === 'one'} 
       />
     </div>
