@@ -304,17 +304,14 @@ html, body, #root {
 *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:4px; }
 
 /* ------------------ MOBILE LAYOUT FIXES ------------------ */
-/* ------------------ MOBILE LAYOUT FIXES ------------------ */
 @media (max-width: 768px) {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; width: 100%; }
 
-  /* === HIDE COLLAPSE BUTTON ON MOBILE === */
-  .collapse-btn {
-    display: none !important;
-  }
+  /* === HIDE COLLAPSE BUTTON === */
+  .collapse-btn { display: none !important; }
 
   /* === LIBRARY (Background Layer) === */
-  .library:not(.collapsed) {
+  .library, .library:not(.collapsed) {
     width: 100% !important; 
     max-width: 100% !important; 
     height: 100%;
@@ -322,7 +319,30 @@ html, body, #root {
     margin: 0; 
     padding: 20px 12px 90px 12px; 
     z-index: 10;
+    
+    /* REMOVED ANIMATION FOR MOBILE */
+    transition: none !important; 
   }
+  
+  /* === HEADER COMPACTING (Icons shift left) === */
+  /* Target the main header row */
+  .library > div:first-child { 
+    gap: 16px !important; 
+    justify-content: flex-start !important; /* Pack items to the left */
+  }
+  
+  /* Target the "Library" Text/Logo container */
+  .library > div:first-child > div:first-child {
+    flex: 0 0 auto !important; /* Stop taking up all space */
+    width: auto !important;
+  }
+
+  /* Target the Icons container */
+  .library > div:first-child > div:last-child { 
+    gap: 8px !important; 
+  }
+
+  .library h3 { font-size: 18px; }
   
   /* Ensure Library stays visible behind the player */
   .library.collapsed {
@@ -330,38 +350,17 @@ html, body, #root {
     width: 100%;
     height: 100%;
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     z-index: 1; 
   }
-  
-  .library > div:first-child { gap: 8px !important; }
-  .library > div:first-child > div:last-child { gap: 4px !important; }
-  .library h3 { font-size: 18px; }
 
-  /* === FULL SCREEN PLAYER (Sliding Layer) === */
+  /* === FULL SCREEN PLAYER (Vertical Slide) === */
   .player-area {
-    display: flex; 
-    flex-direction: column; 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: var(--bg-primary); 
-    
-    /* Z-Index higher than Library so it slides OVER it */
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; 
+    width: 100%; height: 100%; background: var(--bg-primary); 
     z-index: 200;
-    
-    padding: 20px 16px; 
-    overflow-y: auto; 
-    overflow-x: hidden; 
-    max-width: 100vw;
-    
-    /* === THE ANIMATION (Vertical Slide) === */
+    padding: 20px 16px; overflow-y: auto; overflow-x: hidden; max-width: 100vw;
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    
-    /* State: OPEN (On Screen) */
     transform: translateY(0); 
     will-change: transform; 
   }
