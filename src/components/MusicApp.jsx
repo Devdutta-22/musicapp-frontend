@@ -453,9 +453,10 @@ export default function MusicApp() {
                       onToggleShuffle={toggleShuffle}
                       hideCover={true}
                       hideMeta={true}
+                      // Progress callback
                       onProgress={(curr, total) => setSongProgress(total ? (curr / total) * 100 : 0)}
                       
-                      // --- NEW: Pass sleep props to Player ---
+                      // --- 4. PASSING SLEEP PROPS TO PLAYER ---
                       sleepTime={sleepTime}
                       onSetSleepTimer={activateSleepTimer}
                     />
