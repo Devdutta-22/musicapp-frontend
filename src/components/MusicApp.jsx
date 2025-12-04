@@ -9,7 +9,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
   MoreHorizontal, Plus, ListMusic, Shuffle, 
-  QrCode, ChevronDown, ChevronLeft, ChevronRight, // <--- CHANGED ICONS
+  QrCode, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Upload, ListPlus, SkipForward, PlayCircle
 } from "lucide-react";
 
@@ -38,6 +38,10 @@ export default function MusicApp() {
   // State to track song progress for mini-player
   const [songProgress, setSongProgress] = useState(0);
 
+  // --- SLEEP TIMER STATE ---
+  const [sleepTime, setSleepTime] = useState(null); 
+  const sleepIntervalRef = useRef(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
@@ -52,6 +56,28 @@ export default function MusicApp() {
   useEffect(() => { songsRef.current = songs }, [songs]);
 
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
+
+  /* --- SLEEP TIMER LOGIC --- */
+  useEffect(() => {
+    if (sleepTime !== null && sleepTime > 0) {
+      sleepIntervalRef.current = setTimeout(() => {
+        setSleepTime(prev => {
+          if (prev <= 1) {
+            setPlaying(false); // STOP MUSIC
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 60000); // Count down every 1 minute
+    }
+    return () => clearTimeout(sleepIntervalRef.current);
+  }, [sleepTime]);
+
+  const activateSleepTimer = (minutes) => {
+    setSleepTime(minutes);
+    if(minutes) alert(`Sleep timer set for ${minutes} minutes`);
+    else alert("Sleep timer turned off");
+  };
 
   /* ---------- util ---------- */
   function shuffleArray(arr) {
@@ -251,7 +277,7 @@ export default function MusicApp() {
               gap: 10, 
               cursor: 'pointer',
               flex: 1, 
-              minWidth: 0, /* Allows text to truncate if needed */
+              minWidth: 0,
               userSelect: 'none'
             }}
             title="Refresh App"
@@ -268,7 +294,7 @@ export default function MusicApp() {
             )}
           </div>
 
-          {/* RIGHT SIDE: Action Buttons (Fixed width container prevents cutoff) */}
+          {/* RIGHT SIDE: Action Buttons */}
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
              
              {!isLibraryCollapsed && (
@@ -290,8 +316,7 @@ export default function MusicApp() {
                </>
              )}
 
-             {/* COLLAPSE/EXPAND: Uses Simple Arrows now */}
-            {/* COLLAPSE/EXPAND: Added 'collapse-btn' to class list */}
+             {/* COLLAPSE/EXPAND */}
              <button 
                 className="small-btn icon-only collapse-btn" 
                 onClick={() => setIsLibraryCollapsed(v => !v)} 
@@ -428,8 +453,11 @@ export default function MusicApp() {
                       onToggleShuffle={toggleShuffle}
                       hideCover={true}
                       hideMeta={true}
-                      // Progress callback
                       onProgress={(curr, total) => setSongProgress(total ? (curr / total) * 100 : 0)}
+                      
+                      // --- NEW: Pass sleep props to Player ---
+                      sleepTime={sleepTime}
+                      onSetSleepTimer={activateSleepTimer}
                     />
                   </div>
                 </div>
