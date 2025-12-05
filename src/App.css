@@ -1,4 +1,4 @@
-/* src/App.css — Final Version with Header Gradient */
+/* src/App.css — Final Version: Stronger Header Gradient */
 
 /* 1. UNIVERSAL RESET */
 * {
@@ -95,26 +95,24 @@ html, body, #root {
   border-right: 1px solid rgba(255,255,255,0.02);
 }
 
-/* === NEW: Purple Header Gradient === */
-/* Targeting the first child div of library (the header row) */
+/* === NEW: Stronger Purple Header Gradient === */
 .library > div:first-child {
   position: relative;
-  /* Ensure z-index is handled so content sits on top */
   z-index: 2; 
 }
 
-/* Create the gradient glow behind the header */
 .library::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 180px; /* Adjust height of fade */
-  background: linear-gradient(180deg, rgba(145, 70, 255, 0.15) 0%, rgba(6, 6, 11, 0) 100%);
-  pointer-events: none; /* Let clicks pass through */
+  height: 160px;
+  /* UPDATED: Increased opacity to 0.45 (45%) for better visibility */
+  background: linear-gradient(180deg, rgba(145, 70, 255, 0.45) 0%, rgba(6, 6, 11, 0) 100%);
+  pointer-events: none; 
   z-index: 0;
-  border-top-left-radius: 16px; /* Match library border radius */
+  border-top-left-radius: 16px; 
   border-top-right-radius: 16px;
 }
 
@@ -226,7 +224,7 @@ html, body, #root {
 .search-input {
   flex: 1; padding: 10px 12px; border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff;
-  position: relative; z-index: 2; /* Sit above gradient */
+  position: relative; z-index: 2; 
 }
 
 /* ------------------ Player Area ------------------ */
@@ -236,17 +234,16 @@ html, body, #root {
 
 .glow-container { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 32px auto; }
 
-/* === 1. UPDATED GLOW EFFECT === */
 .glow-bg { 
   position: absolute; 
-  top: 0;           /* Centered vertically */
+  top: 0;           
   left: 0; 
   width: 100%; 
   height: 100%; 
-  filter: blur(70px) saturate(200%); /* Softer, wider blur */
+  filter: blur(70px) saturate(200%); 
   opacity: 0.6; 
   z-index: 0; 
-  transform: scale(1.1); /* Spills out on all sides */
+  transform: scale(1.1); 
   border-radius: 40px; 
 }
 
@@ -272,7 +269,7 @@ html, body, #root {
 }
 .neon-range::-webkit-slider-thumb:active { transform: scale(1.4); }
 
-/* --- PLAY BUTTON (FIXED) --- */
+/* --- PLAY BUTTON --- */
 .play-btn {
   width: 72px; height: 72px; min-width: 72px; min-height: 72px;
   flex-shrink: 0; 
@@ -332,10 +329,8 @@ html, body, #root {
 @media (max-width: 768px) {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; width: 100%; }
 
-  /* === HIDE COLLAPSE BUTTON === */
   .collapse-btn { display: none !important; }
 
-  /* === LIBRARY (Background Layer) === */
   .library, .library:not(.collapsed) {
     width: 100% !important; 
     max-width: 100% !important; 
@@ -344,37 +339,31 @@ html, body, #root {
     margin: 0; 
     padding: 20px 12px 90px 12px; 
     z-index: 10;
-    
-    /* REMOVED ANIMATION FOR MOBILE */
     transition: none !important; 
   }
   
-  /* Gradient fix for mobile library to span full width */
+  /* === UPDATE GRADIENT FOR MOBILE === */
   .library::before {
-    border-radius: 0; /* Remove top corners radius on mobile */
+    border-radius: 0; 
+    height: 160px; /* Ensure gradient height is consistent */
   }
   
-  /* === HEADER COMPACTING (Icons shift left) === */
-  /* Target the main header row */
   .library > div:first-child { 
     gap: 16px !important; 
-    justify-content: flex-start !important; /* Pack items to the left */
+    justify-content: flex-start !important; 
   }
   
-  /* Target the "Library" Text/Logo container */
   .library > div:first-child > div:first-child {
-    flex: 0 0 auto !important; /* Stop taking up all space */
+    flex: 0 0 auto !important; 
     width: auto !important;
   }
 
-  /* Target the Icons container */
   .library > div:first-child > div:last-child { 
     gap: 8px !important; 
   }
 
   .library h3 { font-size: 18px; }
   
-  /* Ensure Library stays visible behind the player */
   .library.collapsed {
     display: flex !important;
     width: 100%;
@@ -384,7 +373,7 @@ html, body, #root {
     z-index: 1; 
   }
 
-  /* === FULL SCREEN PLAYER (Vertical Slide) === */
+  /* === FULL SCREEN PLAYER === */
   .player-area {
     display: flex; flex-direction: column; position: fixed; top: 0; left: 0; 
     width: 100%; height: 100%; background: var(--bg-primary); 
@@ -395,7 +384,6 @@ html, body, #root {
     will-change: transform; 
   }
 
-  /* State: CLOSED (Hidden Below Screen) */
   .player-area.mobile-hidden {
     display: flex !important; 
     transform: translateY(100%); 
@@ -412,7 +400,7 @@ html, body, #root {
   .queue-panel { margin-top: 20px; width: 100%; flex: 0 0 auto; padding-bottom: 60px; }
   .mini-title, .mini-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
 
-  /* === MINI PLAYER (Glass Effect) === */
+  /* === MINI PLAYER === */
   .mini-player {
     display: flex; position: fixed; bottom: 16px; left: 12px; right: 12px;
     height: 68px; 
