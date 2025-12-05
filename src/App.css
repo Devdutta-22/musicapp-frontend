@@ -353,7 +353,7 @@ html, body, #root {
 .progress-text { font-size: 11px; color: var(--neon); text-align: right; margin-top: 4px; font-weight: 600; }
 
 /* =========================================================================
-   MOBILE & TINY SCREEN FIXES (Corrected Version)
+   MOBILE & TINY SCREEN FIXES (Final Polish)
    ========================================================================= */
 
 @media (max-width: 768px) {
@@ -368,9 +368,14 @@ html, body, #root {
     height: 100%;
     border-radius: 0; 
     margin: 0; 
-    padding: 16px 10px 100px 10px; 
+    padding: 16px 12px 0 12px; /* Remove bottom padding here, move to song-list */
     z-index: 10;
     transition: none !important; 
+  }
+  
+  /* FIX 2: Add HUGE bottom padding to the list so you can scroll above the player */
+  .library .song-list {
+    padding-bottom: 140px !important; 
   }
   
   .library::before { border-radius: 0; height: 160px; }
@@ -379,31 +384,45 @@ html, body, #root {
   .library > div:first-child { 
     display: flex;
     flex-wrap: wrap; 
-    gap: 12px !important; 
+    gap: 8px !important; 
     align-items: center;
     justify-content: space-between !important; 
     margin-bottom: 16px;
+    padding-right: 4px; /* Keep buttons away from the edge */
   }
   
   .library h3 { font-size: 18px; margin: 0; white-space: nowrap;}
 
   /* SEARCH INPUT */
   .search-input {
-    min-width: 100%; /* Force search to take full row */
-    order: 3; /* Push search bar below logo and buttons */
+    min-width: 100%; 
+    order: 3; 
     margin-top: 5px;
     font-size: 16px; 
   }
 
-  /* --- SONG LIST ITEM --- */
+  /* FIX 1: PREVENT RIGHT EDGE CUT-OFF */
   .song-item {
-    gap: 10px; 
-    padding: 8px 4px; 
+    gap: 8px; /* Reduce gap between cover and text */
+    padding: 8px 6px; /* Reduce side padding */
     width: 100%;
+    max-width: 100%;
+    overflow: hidden; /* Ensure it stays in box */
   }
 
-  .song-item .cover { width: 44px; height: 44px; flex: 0 0 44px; }
-  .song-info { min-width: 0; flex: 1; }
+  .song-item .cover { width: 42px; height: 42px; flex: 0 0 42px; }
+  
+  /* Make buttons slightly smaller (32px) to save horizontal space */
+  .song-item .icon-btn {
+    width: 32px; height: 32px;
+  }
+  
+  /* Ensure text shrinks properly */
+  .song-info { 
+    min-width: 0; 
+    flex: 1; 
+    margin-right: 4px; 
+  }
   
   /* Restore Menu Visibility */
   .more-wrap, .icon-btn { 
@@ -435,14 +454,14 @@ html, body, #root {
   
   .controls { justify-content: space-between; width: 100%; margin-top: 24px; padding: 0 4px; }
   
-  /* FIX: PREVENT OVAL PLAY BUTTON */
+  /* Fix Oval Play Button */
   .play-btn { 
       width: 64px !important; 
       height: 64px !important; 
       min-width: 64px !important; 
       min-height: 64px !important; 
       border-radius: 50% !important;
-      flex-shrink: 0 !important; /* Critical to stop squashing */
+      flex-shrink: 0 !important;
   }
   
   .lyrics-right { width: 100%; height: auto; min-height: 400px; flex: 0 0 auto; margin-bottom: 40px; }
@@ -452,7 +471,7 @@ html, body, #root {
   .mini-player {
     display: flex; position: fixed; bottom: 12px; left: 12px; right: 12px; 
     height: 60px; 
-    background: rgba(18, 18, 25, 0.85); 
+    background: rgba(18, 18, 25, 0.95); 
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
     align-items: center; padding: 0 10px; z-index: 100;
@@ -466,38 +485,13 @@ html, body, #root {
   .mini-progress-fill { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); }
 }
 
-/* ------------------ TINY SCREEN EMERGENCY FIXES (< 385px) ------------------ */
-@media (max-width: 385px) {
-  
-  /* 1. Header Fixes: Don't replace icons, just hide text */
-  .library h3 { display: none !important; } /* Hide "ASTRONOTES" Title */
-  
-  /* Make buttons strictly square */
-  .library > div:first-child .small-btn {
-     padding: 0 !important;
-     width: 36px !important; 
-     height: 36px !important;
-     display: flex; 
-     align-items: center; 
-     justify-content: center;
-  }
-  
-  /* 2. Song List: Ensure 3-Dots are visible */
-  .more-wrap {
-    margin-left: auto !important; 
-    display: block !important;
-    width: 30px;
-  }
-  
-  /* Hide the Heart button ONLY on tiny screens */
+/* ------------------ TINY SCREEN EMERGENCY FIXES (< 360px) ------------------ */
+@media (max-width: 360px) {
+  /* HIDE THE HEART on very small phones to save space for the menu */
   .song-item .icon-btn.liked { display: none; }
   
-  .song-item { padding: 6px 2px !important; gap: 8px !important; }
-  .song-item .cover { width: 40px; height: 40px; flex: 0 0 40px; }
+  .library h3 { display: none !important; } 
+  .library > div:first-child .small-btn { padding: 4px; width: 34px; height: 34px; }
   
-  .song-info .title { font-size: 13px; max-width: 140px; }
-  .song-info .artist { font-size: 11px; max-width: 140px; }
-
-  .queue-controls { gap: 4px !important; }
-  .queue-controls .small-btn { width: auto !important; padding: 4px 8px !important; }
+  .song-info .title { font-size: 13px; max-width: 120px; }
 }
