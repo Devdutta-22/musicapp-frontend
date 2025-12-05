@@ -498,3 +498,40 @@ html, body, #root {
   font-size: 11px; color: var(--neon);
   text-align: right; margin-top: 4px; font-weight: 600;
 }
+/* ------------------ ULTRA THIN DEVICES (< 360px) ------------------ */
+@media (max-width: 360px) {
+  
+  /* 1. Reduce side padding to the bare minimum */
+  .library, .library:not(.collapsed) {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  /* 2. Shrink the Logo/Brand Image to fit */
+  .library > div:first-child > div:first-child img {
+    max-width: 90px !important; /* Force logo to be smaller */
+    height: 24px !important;    /* Slightly shorter height */
+  }
+
+  /* 3. Tighten the gap between the Logo and Buttons */
+  .library > div:first-child {
+    gap: 4px !important;
+  }
+
+  /* 4. Make the top buttons (QR, Upload) slightly smaller and tighter */
+  .library > div:first-child > div:last-child {
+    gap: 2px !important;
+  }
+  
+  .small-btn.icon-only {
+    width: 30px !important;
+    height: 30px !important;
+    padding: 4px !important; /* Reduce internal padding */
+  }
+  
+  /* Adjust icon size inside the button */
+  .small-btn.icon-only svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
