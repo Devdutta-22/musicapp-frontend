@@ -1,4 +1,4 @@
-/* src/App.css — Final Version: Better Glow & Glass Effect */
+/* src/App.css — Final Version with Header Gradient */
 
 /* 1. UNIVERSAL RESET */
 * {
@@ -95,16 +95,40 @@ html, body, #root {
   border-right: 1px solid rgba(255,255,255,0.02);
 }
 
+/* === NEW: Purple Header Gradient === */
+/* Targeting the first child div of library (the header row) */
+.library > div:first-child {
+  position: relative;
+  /* Ensure z-index is handled so content sits on top */
+  z-index: 2; 
+}
+
+/* Create the gradient glow behind the header */
+.library::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 180px; /* Adjust height of fade */
+  background: linear-gradient(180deg, rgba(145, 70, 255, 0.15) 0%, rgba(6, 6, 11, 0) 100%);
+  pointer-events: none; /* Let clicks pass through */
+  z-index: 0;
+  border-top-left-radius: 16px; /* Match library border radius */
+  border-top-right-radius: 16px;
+}
+
 .library.collapsed { padding: 12px 6px; }
 .library.collapsed .song-item { justify-content: center; padding: 8px 0; background: transparent; }
 .library.collapsed .song-list::-webkit-scrollbar { display: none; }
 
 .library h3 { margin: 6px 0 16px; font-weight: 800; font-size: 20px; color: #fff; }
-.library .song-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-bottom: 12px; }
+.library .song-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-bottom: 12px; z-index: 2; position: relative;}
 
 /* === UPLOAD AREA ANIMATION === */
 .upload-area {
   animation: fadeSlideIn 0.3s ease forwards;
+  position: relative; z-index: 2;
 }
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -202,6 +226,7 @@ html, body, #root {
 .search-input {
   flex: 1; padding: 10px 12px; border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff;
+  position: relative; z-index: 2; /* Sit above gradient */
 }
 
 /* ------------------ Player Area ------------------ */
@@ -324,6 +349,11 @@ html, body, #root {
     transition: none !important; 
   }
   
+  /* Gradient fix for mobile library to span full width */
+  .library::before {
+    border-radius: 0; /* Remove top corners radius on mobile */
+  }
+  
   /* === HEADER COMPACTING (Icons shift left) === */
   /* Target the main header row */
   .library > div:first-child { 
@@ -402,6 +432,7 @@ html, body, #root {
   .mini-progress { position: absolute; bottom: -1px; left: 14px; right: 14px; height: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
   .mini-progress-fill { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); }
 }
+
 /* --- BUFFERING ANIMATION (Slider) --- */
 @keyframes buffer-slide {
   0% { background-position: 200% 0; }
