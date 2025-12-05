@@ -449,73 +449,43 @@ html, body, #root {
 .progress-fill { height: 100%; background: var(--neon); transition: width 0.2s ease; box-shadow: 0 0 8px var(--neon); }
 .progress-text { font-size: 11px; color: var(--neon); text-align: right; margin-top: 4px; font-weight: 600; }
 
-/* ------------------ ULTRA THIN DEVICES (< 385px) ------------------ */
+/* ------------------ TINY SCREEN FIXES (< 385px) ------------------ */
 @media (max-width: 385px) {
   
-  /* 1. Reduce side padding to the bare minimum */
-  .library, .library:not(.collapsed) {
-    padding-left: 4px !important;
-    padding-right: 4px !important;
-  }
-
-  /* 2. Shrink the Logo/Brand Image to fit */
-  .library > div:first-child > div:first-child img {
-    max-width: 80px !important; /* Force logo to be smaller */
-    height: 22px !important;    /* Slightly shorter height */
-  }
-
-  /* 3. Tighten the gap between the Logo and Buttons */
-  .library > div:first-child {
-    gap: 2px !important;
-    justify-content: space-between !important;
-  }
-
-  /* 4. Make the top buttons (QR, Upload) very compact */
-  .library > div:first-child > div:last-child {
-    gap: 2px !important;
-  }
+  /* 1. Header: Hide "ASTRONOTES" text, keep Logo + Buttons */
+  .library h3 { display: none !important; }
+  .library > div:first-child { gap: 4px !important; }
   
-  .small-btn.icon-only {
-    width: 28px !important;  /* Tiny buttons */
-    height: 28px !important;
-    padding: 0 !important;   /* Remove internal padding */
-    border-radius: 6px !important;
-  }
-  
-  /* Adjust icon size inside the button */
-  .small-btn.icon-only svg {
-    width: 14px !important;
-    height: 14px !important;
-  }
+  /* 2. Search Bar */
+  .search-input { width: 100% !important; min-width: 0 !important; font-size: 13px !important; }
 
-  /* === NEW ADDITIONS TO FIX OVERFLOW === */
-
-  /* 5. Force Search Bar to shrink */
-  .search-input {
-    width: 100% !important;
-    min-width: 0 !important; /* ALLOWS SHRINKING */
-    font-size: 12px !important;
-  }
-  
-  /* 6. Compact Song List Items */
+  /* 3. Song List Row: Fix Missing Three Dots */
   .song-item {
-    padding: 6px 2px !important;
+    gap: 8px !important;
+    padding: 6px 4px !important;
+    /* Ensure container handles overflow */
+    overflow: hidden; 
+  }
+  
+  /* HIDE Like Heart to save space for Three Dots */
+  .song-item .like-wrap { display: none !important; }
+  
+  /* Force Three Dots to stay visible */
+  .song-item .more-wrap {
+    flex-shrink: 0 !important; /* Never shrink this button */
+    margin-left: 2px !important;
+  }
+  
+  /* Allow text to shrink/truncate aggressively */
+  .song-info {
+    flex: 1 !important;
+    min-width: 0 !important; /* Critical for truncation */
   }
 
-  .song-item .cover {
-    width: 36px !important; 
-    height: 36px !important;
-    flex: 0 0 36px !important;
-  }
-
-  /* 7. HIDE LIKE BUTTON IN LIST (Save Space) */
-  .song-item .like-wrap {
-    display: none !important;
-  }
-
-  /* 8. Make Queue Buttons Tiny */
-  .queue-controls .small-btn {
-    padding: 4px 6px !important;
-    font-size: 10px !important;
-  }
+  /* 4. Queue Header */
+  .queue-controls { gap: 8px !important; }
+  .queue-controls .small-btn { padding: 4px 6px !important; }
+  
+  /* 5. General Padding */
+  .library, .player-area { padding-left: 6px !important; padding-right: 6px !important; }
 }
