@@ -1,4 +1,4 @@
-/* src/App.css — Final Version: Stronger Header Gradient */
+/* src/App.css — Final Version: Fully Responsive for Tiny Screens */
 
 /* 1. UNIVERSAL RESET */
 * {
@@ -9,7 +9,7 @@
 }
 
 :root {
-  /* --- ELECTRIC VIOLET THEME (#9146ff) --- */
+  /* --- ELECTRIC VIOLET THEME --- */
   --neon: #9146ff;        
   --neon-hover: #7c2cf2;  
   --neon-pink: #ff3bf0;   
@@ -95,11 +95,8 @@ html, body, #root {
   border-right: 1px solid rgba(255,255,255,0.02);
 }
 
-/* === NEW: Stronger Purple Header Gradient === */
-.library > div:first-child {
-  position: relative;
-  z-index: 2; 
-}
+/* Purple Header Gradient */
+.library > div:first-child { position: relative; z-index: 2; }
 
 .library::before {
   content: "";
@@ -108,7 +105,6 @@ html, body, #root {
   left: 0;
   width: 100%;
   height: 160px;
-  /* UPDATED: Increased opacity to 0.45 (45%) for better visibility */
   background: linear-gradient(180deg, rgba(145, 70, 255, 0.45) 0%, rgba(6, 6, 11, 0) 100%);
   pointer-events: none; 
   z-index: 0;
@@ -212,7 +208,6 @@ html, body, #root {
 }
 .small-btn.icon-only { padding: 8px; }
 
-/* Library Button Hover Effect */
 .small-btn:hover {
   border-color: var(--neon);
   color: var(--neon);
@@ -225,6 +220,7 @@ html, body, #root {
   flex: 1; padding: 10px 12px; border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff;
   position: relative; z-index: 2; 
+  min-width: 0; /* Important for flex shrinking */
 }
 
 /* ------------------ Player Area ------------------ */
@@ -235,16 +231,9 @@ html, body, #root {
 .glow-container { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1; margin: 0 auto 32px auto; }
 
 .glow-bg { 
-  position: absolute; 
-  top: 0;           
-  left: 0; 
-  width: 100%; 
-  height: 100%; 
-  filter: blur(70px) saturate(200%); 
-  opacity: 0.6; 
-  z-index: 0; 
-  transform: scale(1.1); 
-  border-radius: 40px; 
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+  filter: blur(70px) saturate(200%); opacity: 0.6; z-index: 0; 
+  transform: scale(1.1); border-radius: 40px; 
 }
 
 .real-cover { position: relative; z-index: 1; width: 100%; height: 100%; border-radius: 20px; object-fit: cover; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
@@ -325,79 +314,73 @@ html, body, #root {
 *::-webkit-scrollbar { width:6px; }
 *::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius:4px; }
 
-/* ------------------ MOBILE LAYOUT FIXES ------------------ */
-/* ------------------ MOBILE LAYOUT FIXES ------------------ */
+/* ------------------ MOBILE LAYOUT FIXES (Robust for <385px) ------------------ */
 @media (max-width: 768px) {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; width: 100%; }
 
-  /* === HIDE COLLAPSE BUTTON === */
   .collapse-btn { display: none !important; }
 
-  /* === LIBRARY (Background Layer) === */
+  /* LIBRARY CONTAINER */
   .library, .library:not(.collapsed) {
     width: 100% !important; 
     max-width: 100% !important; 
     height: 100%;
     border-radius: 0; 
     margin: 0; 
-    padding: 20px 12px 90px 12px; 
+    /* Reduced Padding for small screens */
+    padding: 20px 10px 90px 10px; 
     z-index: 10;
     transition: none !important; 
   }
   
-  /* Gradient fix for mobile */
-  .library::before {
-    border-radius: 0; 
-    height: 160px;
-  }
+  .library::before { border-radius: 0; height: 160px; }
   
-  /* === HEADER LAYOUT ADJUSTMENTS === */
-  /* Main header row: Space between Logo (left) and Buttons (right) */
+  /* HEADER ROW */
   .library > div:first-child { 
-    justify-content: space-between !important; 
     gap: 8px !important; 
+    justify-content: space-between !important; 
   }
   
-  /* Logo/Title container */
-  .library > div:first-child > div:first-child {
-    flex: 1; 
-    min-width: 0; /* Allows text truncation */
-  }
-
-  /* Brand Name Sizing */
   .library h3 { font-size: 18px; }
 
-  /* Buttons Container (Right) */
-  .library > div:first-child > div:last-child { 
-    gap: 12px !important; /* Good spacing between icons */
-    flex-shrink: 0; /* Prevents buttons from squishing */
+  /* --- SONG LIST ITEM (Compact for Mobile) --- */
+  .song-item {
+    gap: 10px; /* Reduced gap */
+    padding: 8px 4px; /* Reduced padding */
   }
 
-  /* Ensure Library stays visible behind the player */
-  .library.collapsed {
-    display: flex !important;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0; left: 0;
-    z-index: 1; 
+  .song-item .cover {
+    width: 42px; /* Smaller Cover */
+    height: 42px;
+    flex: 0 0 42px;
+  }
+  
+  .song-info {
+    min-width: 0; /* CRITICAL for text truncation */
+    flex: 1;
+  }
+  
+  /* HIDE EXTRA PLAY BUTTON ON MOBILE (Saves Space) */
+  .play-mini { display: none !important; }
+
+  /* Make action icons smaller on mobile */
+  .icon-btn {
+    width: 34px; height: 34px;
+    min-width: 34px; min-height: 34px;
   }
 
-  /* === FULL SCREEN PLAYER === */
+  /* --- FULL SCREEN PLAYER --- */
   .player-area {
     display: flex; flex-direction: column; position: fixed; top: 0; left: 0; 
     width: 100%; height: 100%; background: var(--bg-primary); 
     z-index: 200;
     padding: 20px 16px; overflow-y: auto; overflow-x: hidden; max-width: 100vw;
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    transform: translateY(0); 
-    will-change: transform; 
+    transform: translateY(0); will-change: transform; 
   }
 
   .player-area.mobile-hidden {
-    display: flex !important; 
-    transform: translateY(100%); 
-    pointer-events: none; 
+    display: flex !important; transform: translateY(100%); pointer-events: none; 
   }
 
   .mobile-only-header { display: flex; justify-content: flex-start; padding-bottom: 10px; flex-shrink: 0; }
@@ -410,23 +393,21 @@ html, body, #root {
   .queue-panel { margin-top: 20px; width: 100%; flex: 0 0 auto; padding-bottom: 60px; }
   .mini-title, .mini-artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
 
-  /* === MINI PLAYER === */
+  /* --- MINI PLAYER --- */
   .mini-player {
-    display: flex; position: fixed; bottom: 16px; left: 12px; right: 12px;
-    height: 68px; 
+    display: flex; position: fixed; bottom: 16px; left: 10px; right: 10px; /* Tighter margins */
+    height: 64px; /* Slightly shorter */
     background: rgba(15, 15, 20, 0.45); 
-    backdrop-filter: blur(40px) saturate(180%); 
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08); 
-    border-radius: 14px;
-    align-items: center; padding: 0 12px; z-index: 100;
+    backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
+    align-items: center; padding: 0 10px; z-index: 100;
     box-shadow: 0 10px 40px rgba(0,0,0,0.6); cursor: pointer;
     transition: opacity 0.3s ease;
   }
   
-  .mini-cover { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; }
-  .mini-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; }
-  .mini-artist { font-size: 13px; color: #bbb; }
+  .mini-cover { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+  .mini-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .mini-artist { font-size: 12px; color: #bbb; }
   .mini-progress { position: absolute; bottom: -1px; left: 14px; right: 14px; height: 2px; background: rgba(255,255,255,0.1); overflow: hidden; }
   .mini-progress-fill { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); }
 }
