@@ -375,7 +375,7 @@ html, body, #root {
   
   .library::before { border-radius: 0; height: 160px; }
   
-  /* HEADER ROW - Better Wrapping */
+  /* HEADER ROW */
   .library > div:first-child { 
     display: flex;
     flex-wrap: wrap; 
@@ -389,7 +389,7 @@ html, body, #root {
 
   /* SEARCH INPUT */
   .search-input {
-    min-width: 100%; /* Force search to take full row if needed */
+    min-width: 100%; /* Force search to take full row */
     order: 3; /* Push search bar below logo and buttons */
     margin-top: 5px;
     font-size: 16px; 
@@ -403,10 +403,9 @@ html, body, #root {
   }
 
   .song-item .cover { width: 44px; height: 44px; flex: 0 0 44px; }
-  
   .song-info { min-width: 0; flex: 1; }
   
-  /* Restore the Menu Button visibility */
+  /* Restore Menu Visibility */
   .more-wrap, .icon-btn { 
     display: inline-flex !important; 
     visibility: visible !important; 
@@ -433,8 +432,19 @@ html, body, #root {
   .content-split { display: flex; flex-direction: column; height: auto; padding: 0; gap: 24px; flex-shrink: 0; width: 100%; }
   .nowplaying-left { width: 100%; flex: 0 0 auto; }
   .glow-container { width: 100%; max-width: 300px; aspect-ratio: 1/1; margin: 0 auto 24px auto; height: auto;}
+  
   .controls { justify-content: space-between; width: 100%; margin-top: 24px; padding: 0 4px; }
-  .play-btn { width: 64px; height: 64px; min-width: 64px; }
+  
+  /* FIX: PREVENT OVAL PLAY BUTTON */
+  .play-btn { 
+      width: 64px !important; 
+      height: 64px !important; 
+      min-width: 64px !important; 
+      min-height: 64px !important; 
+      border-radius: 50% !important;
+      flex-shrink: 0 !important; /* Critical to stop squashing */
+  }
+  
   .lyrics-right { width: 100%; height: auto; min-height: 400px; flex: 0 0 auto; margin-bottom: 40px; }
   .queue-panel { margin-top: 20px; width: 100%; flex: 0 0 auto; margin-bottom: 80px; }
 
@@ -459,49 +469,35 @@ html, body, #root {
 /* ------------------ TINY SCREEN EMERGENCY FIXES (< 385px) ------------------ */
 @media (max-width: 385px) {
   
-  /* 1. Header Fixes: Squash the Upload Button */
-  .library h3 { display: none !important; } /* Hide "ASTRONOTES" Text */
+  /* 1. Header Fixes: Don't replace icons, just hide text */
+  .library h3 { display: none !important; } /* Hide "ASTRONOTES" Title */
   
+  /* Make buttons strictly square */
   .library > div:first-child .small-btn {
-     padding: 8px !important;
-     width: 40px !important; /* Force square shape */
-     height: 40px !important;
-     overflow: hidden;
-     color: transparent; /* Hide the text "Upload" */
-     position: relative;
+     padding: 0 !important;
+     width: 36px !important; 
+     height: 36px !important;
+     display: flex; 
+     align-items: center; 
+     justify-content: center;
   }
   
-  /* Re-add a Plus sign centered in the button since we hid the text */
-  .library > div:first-child .small-btn::after {
-    content: "+";
-    color: var(--neon);
-    font-size: 24px;
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    font-weight: bold;
-    visibility: visible;
-  }
-
   /* 2. Song List: Ensure 3-Dots are visible */
   .more-wrap {
-    margin-left: auto !important; /* Push to right */
+    margin-left: auto !important; 
     display: block !important;
     width: 30px;
   }
   
-  /* Hide the Heart button ONLY on tiny screens to make room for dots */
+  /* Hide the Heart button ONLY on tiny screens */
   .song-item .icon-btn.liked { display: none; }
   
   .song-item { padding: 6px 2px !important; gap: 8px !important; }
   .song-item .cover { width: 40px; height: 40px; flex: 0 0 40px; }
   
-  /* 3. Text Truncation */
   .song-info .title { font-size: 13px; max-width: 140px; }
   .song-info .artist { font-size: 11px; max-width: 140px; }
 
-  /* 4. Queue Fix */
   .queue-controls { gap: 4px !important; }
-  .queue-controls .small-btn { width: auto !important; color: #ddd !important; padding: 4px 8px !important; }
-  .queue-controls .small-btn::after { content: none; } /* Don't apply the plus sign here */
+  .queue-controls .small-btn { width: auto !important; padding: 4px 8px !important; }
 }
