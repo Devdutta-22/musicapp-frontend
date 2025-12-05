@@ -268,17 +268,16 @@ export default function MusicApp() {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
-          {/* LEFT SIDE: Brand Image Only (Click to Refresh) */}
+          {/* LEFT SIDE: Brand Image (Logo as Rectangle) */}
           <div 
             onClick={() => window.location.reload()} 
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
               cursor: 'pointer',
-              flex: 1, 
-              minWidth: 0,
-              userSelect: 'none',
-              paddingRight: 8 // Space between logo and buttons
+              flex: 1, /* Takes remaining space */
+              minWidth: 0, 
+              userSelect: 'none'
             }}
             title="Refresh App"
           >
@@ -286,17 +285,12 @@ export default function MusicApp() {
               src="/logo192.png" 
               alt="Astronotes" 
               style={{ 
-                height: 28,  /* Fixed height keeps it aligned */
-                width: 'auto', /* Allows it to be a wide rectangle */
-                maxWidth: '140px', /* Prevents it from hitting the buttons */
-                objectFit: 'contain',
-                display: isLibraryCollapsed ? 'none' : 'block'
+                height: 28, 
+                width: 'auto', 
+                maxWidth: '120px', /* Prevents logo from pushing buttons off screen */
+                objectFit: 'contain'
               }}
             />
-            {/* Fallback Icon when collapsed */}
-            {isLibraryCollapsed && (
-               <img src="/logo192.png" alt="" style={{ width: 28, height: 28 }} />
-            )}
           </div>
 
           {/* RIGHT SIDE: Action Buttons */}
@@ -458,6 +452,7 @@ export default function MusicApp() {
                       onToggleShuffle={toggleShuffle}
                       hideCover={true}
                       hideMeta={true}
+                      // Progress callback
                       onProgress={(curr, total) => setSongProgress(total ? (curr / total) * 100 : 0)}
                       
                       // --- Passing Sleep Props ---
