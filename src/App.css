@@ -353,7 +353,7 @@ html, body, #root {
 .progress-text { font-size: 11px; color: var(--neon); text-align: right; margin-top: 4px; font-weight: 600; }
 
 /* =========================================================================
-   MOBILE & TINY SCREEN FIXES (Grid Layout - Like Button Removed)
+   MOBILE & TINY SCREEN FIXES (FLEXBOX SAFEMODE)
    ========================================================================= */
 
 @media (max-width: 768px) {
@@ -361,7 +361,7 @@ html, body, #root {
   .app-shell { flex-direction: column; height: 100vh; overflow: hidden; width: 100%; }
   .collapse-btn { display: none !important; }
 
-  /* 2. Library Container */
+  /* 2. Library Container - Full Width */
   .library, .library:not(.collapsed) {
     width: 100% !important; 
     max-width: 100% !important; 
@@ -372,9 +372,13 @@ html, body, #root {
     z-index: 10;
   }
   
+  /* PADDING FOR SCROLLING */
   .library .song-list {
-    padding-bottom: 150px !important; 
+    padding-bottom: 160px !important; 
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Safe gap between rows */
   }
 
   .library::before { border-radius: 0; height: 160px; }
@@ -388,19 +392,21 @@ html, body, #root {
   .library h3 { font-size: 18px; margin: 0; white-space: nowrap;}
   .search-input { min-width: 100%; order: 3; margin-top: 8px; font-size: 16px; }
 
-  /* 4. Song Item - GRID LAYOUT (Clean & Wide) */
+  /* 4. Song Item - FLEXBOX (Prevents Overlap) */
   .song-item {
-    display: grid !important;
-    /* Columns: Cover (44px) | Text (Fills Space) | Dots (Auto) */
-    grid-template-columns: 44px 1fr auto !important; 
-    align-items: center;
+    display: flex !important; /* Stacks correctly */
+    flex-direction: row !important;
+    align-items: center !important;
+    width: 100%;
+    height: auto !important;
+    min-height: 60px; /* Ensures row has body */
     gap: 12px; 
     padding: 8px 6px; 
-    width: 100%;
-    overflow: hidden; 
+    background: transparent;
   }
 
-  /* REMOVE LIKE BUTTON COMPLETELY */
+  /* 5. CRITICAL FIX: HIDE LIKE WRAPPER */
+  /* This removes the invisible block causing the squash */
   .song-item .like-wrap {
     display: none !important;
   }
@@ -408,17 +414,19 @@ html, body, #root {
   /* Cover Image */
   .song-item .cover { 
     width: 44px; height: 44px; 
+    min-width: 44px; /* Never shrink */
     object-fit: cover;
+    flex-shrink: 0;
   }
   
-  /* Text Container - Now has room to breathe */
+  /* Text Container */
   .song-info { 
-    min-width: 0; /* Required for grid text truncation */
+    flex: 1; /* Grow to fill space */
+    min-width: 0; /* Allow truncation */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    margin: 0;
-    width: 100%; /* Force it to fill the 1fr column */
+    margin-right: 8px;
   }
   
   .song-info .title { 
@@ -442,10 +450,12 @@ html, body, #root {
     align-items: center;
     justify-content: center;
     width: 34px;
+    flex-shrink: 0; /* Never shrink */
   }
 
   .song-item .icon-btn {
     width: 34px; height: 34px;
+    flex-shrink: 0;
   }
   
   .play-mini { display: none !important; }
@@ -496,7 +506,7 @@ html, body, #root {
 
 /* ------------------ TINY PHONES (< 385px) ------------------ */
 @media (max-width: 385px) {
-  /* Just refinements for tiny screens, the Grid logic above handles the layout */
+  /* Just small tweaks, Flexbox above handles the heavy lifting */
   .library h3 { display: none !important; } 
   
   .library > div:first-child .small-btn { 
