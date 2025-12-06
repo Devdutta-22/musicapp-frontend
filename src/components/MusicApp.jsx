@@ -283,7 +283,7 @@ export default function MusicApp() {
             title="Refresh App"
           >
             <img 
-              src="/logo192.png" 
+              src="/my-brand.png" 
               alt="Astronotes" 
               style={{ 
                 height: 28, 
