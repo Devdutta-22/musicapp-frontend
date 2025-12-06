@@ -11,7 +11,7 @@ import {
   MoreVertical, Plus, ListMusic, Shuffle, 
   QrCode, ChevronDown, ChevronLeft, ChevronRight, Timer, 
   Search, Upload,Rocket, ListPlus, SkipForward, PlayCircle,
-  RotateCcw // <--- 1. NEW IMPORT (for Restore icon)
+  RotateCcw ,ArrowLeft// <--- 1. NEW IMPORT (for Restore icon)
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -302,7 +302,7 @@ export default function MusicApp() {
     {/* 1. Upload Button (Now a Rocket) */}
     <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
       {/* If menu is open, show 'Back', otherwise show Rocket */}
-      {showUpload ? 'Back' : <Rocket size={18} />} 
+      {showUpload ? <ArrowLeft  size={18}/>: <Rocket size={18} />} 
     </button>
 
     {/* 2. QR Code Button */}
