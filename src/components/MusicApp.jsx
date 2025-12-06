@@ -10,7 +10,7 @@ import {
   Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
   MoreVertical, Plus, ListMusic, Shuffle, 
   QrCode, ChevronDown, ChevronLeft, ChevronRight, Timer, 
-  Search, Upload, ListPlus, SkipForward, PlayCircle,
+  Search, Upload,Rocket, ListPlus, SkipForward, PlayCircle,
   RotateCcw // <--- 1. NEW IMPORT (for Restore icon)
 } from "lucide-react";
 
@@ -298,23 +298,26 @@ export default function MusicApp() {
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
              
              {!isLibraryCollapsed && (
-               <>
-                 <div style={{ position: 'relative' }}>
-                   <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
-                      <QrCode size={18}/>
-                   </button>
-                   {showQR && (
-                    <div style={{ position: "absolute", right: 0, top: "45px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
-                      <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
-                    </div>
-                  )}
-                 </div>
+  <>
+    {/* 1. Upload Button (Now a Rocket) */}
+    <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
+      {/* If menu is open, show 'Back', otherwise show Rocket */}
+      {showUpload ? 'Back' : <Rocket size={18} />} 
+    </button>
 
-                 <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload">
-                    {showUpload ? 'Back' : <Upload size={18}/>}
-                 </button>
-               </>
-             )}
+    {/* 2. QR Code Button */}
+    <div style={{ position: 'relative' }}>
+      <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
+        <QrCode size={18}/>
+      </button>
+      {showQR && (
+        <div style={{ position: "absolute", right: 0, top: "45px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
+          <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
+        </div>
+      )}
+    </div>
+  </>
+)}
 
              {/* COLLAPSE/EXPAND */}
              <button 
