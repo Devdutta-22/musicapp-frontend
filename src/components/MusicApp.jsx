@@ -8,14 +8,13 @@ import '../App.css';
 import { QRCodeCanvas } from "qrcode.react";
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
-  MoreVertical, Plus, ListMusic, Shuffle, 
-  QrCode, ChevronDown, ChevronLeft, ChevronRight, Timer, 
-  Search, Upload,Rocket, ListPlus, SkipForward, PlayCircle,
-  RotateCcw ,ArrowLeft,Sparkle// <--- 1. NEW IMPORT (for Restore icon)
+  MoreVertical, ListMusic, Shuffle, 
+  QrCode, ChevronDown, ChevronLeft, ChevronRight, 
+  Search, Upload, Rocket, ListPlus, SkipForward, PlayCircle,
+  RotateCcw, ArrowLeft, Sparkle, LogOut // <--- 1. NEW IMPORT
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
-const LOADING_GIF = '/loading.svg'; 
 
 function CoverImage({ srcs = [], alt, className }) {
   const [src, setSrc] = useState(srcs.find(Boolean) || PERSON_PLACEHOLDER);
@@ -24,7 +23,8 @@ function CoverImage({ srcs = [], alt, className }) {
   return <img src={src} alt={alt} className={className} onError={onError} />;
 }
 
-export default function MusicApp() {
+// 2. UPDATED FUNCTION SIGNATURE to accept user and logout
+export default function MusicApp({ user, onLogout }) {
   const [songs, setSongs] = useState([]);                
   const [queue, setQueue] = useState([]);                
   const [currentIndex, setCurrentIndex] = useState(-1); 
@@ -96,8 +96,14 @@ export default function MusicApp() {
     try {
       const API = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/,''); 
       const requestUrl = `${API}/api/songs`; 
-
+      
+      // OPTIONAL: Pass User ID header if you want personalized likes immediately
+      // const headers = user ? { 'X-User-Id': user.id } : {};
+      // const res = await axios.get(requestUrl, { headers });
+      
+      // For now, keeping your existing simple fetch
       const res = await axios.get(requestUrl);
+
       const data = (res.data || []).map(s => ({
         ...s,
         liked: !!s.liked,
@@ -167,6 +173,7 @@ export default function MusicApp() {
       const newCount = Math.max(0, (s.likeCount || 0) + (newLiked ? 1 : -1));
       return { ...s, liked: newLiked, likeCount: newCount };
     }));
+    // TODO: Call API to toggle like on backend using user.id
   }
 
   function toggleShuffle() {
@@ -269,28 +276,16 @@ export default function MusicApp() {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
-          {/* LEFT SIDE: Brand Image (Logo as Rectangle) */}
+          {/* LEFT SIDE: Brand Image */}
           <div 
             onClick={() => window.location.reload()} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              cursor: 'pointer',
-              flex: 1, 
-              minWidth: 0, 
-              userSelect: 'none'
-            }}
-            title="Refresh App"
+            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flex: 1, minWidth: 0, userSelect: 'none' }}
+            title={`Logged in as ${user ? user.username : 'Guest'}`}
           >
             <img 
               src="/my-brand.png" 
               alt="Astronotes" 
-              style={{ 
-                height: 33, 
-                width: 'auto', 
-                maxWidth: '120px', 
-                objectFit: 'contain'
-              }}
+              style={{ height: 33, width: 'auto', maxWidth: '120px', objectFit: 'contain' }}
             />
           </div>
 
@@ -298,26 +293,30 @@ export default function MusicApp() {
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
              
              {!isLibraryCollapsed && (
-  <>
-    {/* 1. Upload Button (Now a Rocket) */}
-    <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
-      {/* If menu is open, show 'Back', otherwise show Rocket */}
-      {showUpload ? <ArrowLeft  size={18}/>: <Rocket size={18} />} 
-    </button>
+              <>
+                {/* 1. Upload Button */}
+                <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
+                  {showUpload ? <ArrowLeft  size={18}/>: <Rocket size={18} />} 
+                </button>
 
-    {/* 2. QR Code Button */}
-    <div style={{ position: 'relative' }}>
-      <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
-        <QrCode size={18}/>
-      </button>
-      {showQR && (
-        <div style={{ position: "absolute", right: 0, top: "45px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
-          <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
-        </div>
-      )}
-    </div>
-  </>
-)}
+                {/* 2. QR Code Button */}
+                <div style={{ position: 'relative' }}>
+                  <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
+                    <QrCode size={18}/>
+                  </button>
+                  {showQR && (
+                    <div style={{ position: "absolute", right: 0, top: "45px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
+                      <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. LOGOUT BUTTON (NEW) */}
+                <button className="small-btn icon-only" onClick={onLogout} title="Sign Out">
+                  <LogOut size={18}/>
+                </button>
+              </>
+            )}
 
              {/* COLLAPSE/EXPAND */}
              <button 
@@ -355,15 +354,7 @@ export default function MusicApp() {
               
               {isLoading ? (
                 <div className="loading-container">
-                  <svg 
-                    className="loading-logo" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  >
+                  <svg className="loading-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
                   <div className="loading-text">Loading Library</div>
@@ -495,7 +486,6 @@ export default function MusicApp() {
                 <Trash2 size={16}/>
               </button>
               
-              {/* === 2. CHANGED RESTORE TEXT TO ICON === */}
               <button 
                 className="small-btn icon-only" 
                 onClick={() => { if (songsRef.current) setQueue(songsRef.current.map(s => s.id)); }} 
@@ -552,15 +542,8 @@ export default function MusicApp() {
              </button>
            </div>
            
-           {/* Mini Progress Bar - CONNECTED TO STATE */}
            <div className="mini-progress">
-             <div 
-                className="mini-progress-fill" 
-                style={{ 
-                  width: `${songProgress}%`,
-                  transition: 'width 0.1s linear'
-                }}
-             ></div>
+             <div className="mini-progress-fill" style={{ width: `${songProgress}%`, transition: 'width 0.1s linear' }}></div>
            </div>
         </div>
       )}
