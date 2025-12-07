@@ -1,8 +1,8 @@
-// src/Player.jsx
+// src/components/Player.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Shuffle, Repeat, Repeat1, Heart, Timer // <--- 1. ADDED TIMER IMPORT
+  Shuffle, Repeat, Repeat1, Heart, Timer 
 } from "lucide-react";
 import '../App.css';
 
@@ -15,7 +15,7 @@ export default function Player({
   onToggleLike,
   onNext,
   onPrev,
-  onEnded,
+  onEnded, // <--- The function that saves your stats
   repeatMode = 'off',
   onToggleRepeat,
   shuffle = false,
@@ -23,8 +23,8 @@ export default function Player({
   hideCover = false,
   hideMeta = false,
   onProgress, 
-  sleepTime,       // <--- 2. NEW PROP
-  onSetSleepTimer, // <--- 3. NEW PROP
+  sleepTime,       
+  onSetSleepTimer, 
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
@@ -33,10 +33,9 @@ export default function Player({
   const [seeking, setSeeking] = useState(false);
   const [buffering, setBuffering] = useState(false);
   
-  // Local state for the Sleep Timer menu
   const [showSleepMenu, setShowSleepMenu] = useState(false);
 
-  // Ref to prevent infinite loops with the progress bar
+  // Sync ref for progress callback
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
 
@@ -72,60 +71,38 @@ export default function Player({
     }
   }
 
-  // --- AUDIO EVENTS SETUP ---
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+  // --- AUDIO EVENT HANDLERS (Moved from useEffect to props) ---
 
-    function onLoadedMetadata(e) {
-      const d = Math.floor(e.target.duration) || 0;
-      setDuration(d);
-      setBuffering(false);
-      updateRange(d ? (audio.currentTime / d) * 100 : 0);
+  const handleLoadedMetadata = (e) => {
+    const d = Math.floor(e.target.duration) || 0;
+    setDuration(d);
+    setBuffering(false);
+    updateRange(d ? (e.target.currentTime / d) * 100 : 0);
+  };
+
+  const handleTimeUpdate = (e) => {
+    if (!seeking) {
+      const t = e.target.currentTime || 0;
+      setTime(t);
+      updateRange(duration ? (t / duration) * 100 : 0);
+      if (onProgressRef.current) onProgressRef.current(t, duration); 
     }
+  };
 
-    function onTimeUpdate(e) {
-      if (!seeking) {
-        const t = e.target.currentTime || 0;
-        setTime(t);
-        updateRange(duration ? (t / duration) * 100 : 0);
-        if (onProgressRef.current) onProgressRef.current(t, duration); 
-      }
-    }
+  const handleEnded = () => {
+    console.log("Player: Song ended. Saving stats..."); // Debug log
+    if (onEnded) onEnded(); 
+  };
 
-    function onLoadStart() { setBuffering(true); }
-    function onWaiting() { setBuffering(true); }
-    
-    function onCanPlay() { 
-        setBuffering(false);
-        if (playing) attemptPlay(); 
-    }
-    
-    function onStalled() { setBuffering(true); }
-    function onEndedInternal() { if (typeof onEnded === 'function') onEnded(); }
-    function onError(e) { console.warn('Audio error', e); setBuffering(false); }
+  const handleCanPlay = () => {
+    setBuffering(false);
+    if (playing) attemptPlay(); 
+  };
 
-    audio.addEventListener('loadstart', onLoadStart);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('waiting', onWaiting);
-    audio.addEventListener('canplay', onCanPlay);
-    audio.addEventListener('stalled', onStalled);
-    audio.addEventListener('ended', onEndedInternal);
-    audio.addEventListener('error', onError);
-
-    return () => {
-      audio.removeEventListener('loadstart', onLoadStart);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('waiting', onWaiting);
-      audio.removeEventListener('canplay', onCanPlay);
-      audio.removeEventListener('stalled', onStalled);
-      audio.removeEventListener('ended', onEndedInternal);
-      audio.removeEventListener('error', onError);
-      if (stuckIntervalRef.current) { clearInterval(stuckIntervalRef.current); stuckIntervalRef.current = null; }
-    };
-  }, [duration, seeking, playing, onEnded, time]);
+  const handleError = (e) => {
+    console.warn('Audio error', e); 
+    setBuffering(false);
+  };
 
   // --- SOURCE CHANGE ---
   useEffect(() => {
@@ -147,7 +124,7 @@ export default function Player({
     }
   }, [song?.id, song?.streamUrl]);
 
-  // --- WATCHDOG ---
+  // --- WATCHDOG (Stuck Check) ---
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -178,6 +155,7 @@ export default function Player({
     }
   }, [playing]);
 
+  // --- SEEKING ---
   function handleSeekChange(e) {
     const val = Number(e.target.value);
     const audio = audioRef.current;
@@ -188,11 +166,11 @@ export default function Player({
     if (playing) attemptPlay();
   }
 
+  // --- UI HANDLERS ---
   function handlePrev() { if (typeof onPrev === 'function') onPrev(); }
   function handleNext() { if (typeof onNext === 'function') onNext(); }
   function handleToggle() { if (typeof onToggle === 'function') onToggle(); }
 
-  // Helper to select timer and close menu
   function handleSetSleep(min) {
     if (onSetSleepTimer) onSetSleepTimer(min);
     setShowSleepMenu(false);
@@ -260,7 +238,7 @@ export default function Player({
           {repeatMode === "one" ? <Repeat1 size={20}/> : <Repeat size={20}/>}
         </button>
         
-        {/* --- 4. SLEEP TIMER BUTTON & MENU --- */}
+        {/* SLEEP TIMER */}
         <div style={{ position: 'relative' }}>
             <button 
                 className={`icon-btn ${sleepTime ? 'active' : ''}`} 
@@ -271,7 +249,6 @@ export default function Player({
             </button>
             
             {showSleepMenu && (
-                // Opens Upwards (bottom: 100%) so it doesn't get cut off
                 <div className="more-menu" style={{ bottom: '100%', right: '-10px', top: 'auto', marginBottom: 12, width: 120 }}>
                     <button className="menu-item" onClick={() => handleSetSleep(15)}>15 min</button>
                     <button className="menu-item" onClick={() => handleSetSleep(30)}>30 min</button>
@@ -294,6 +271,15 @@ export default function Player({
         playsInline
         style={{ display: 'none' }}
         loop={repeatMode === 'one'} 
+        
+        // ✅ EVENTS ATTACHED DIRECTLY (This fixes the bug)
+        onLoadedMetadata={handleLoadedMetadata}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleEnded} 
+        onWaiting={() => setBuffering(true)}
+        onCanPlay={handleCanPlay}
+        onError={handleError}
+        onStalled={() => setBuffering(true)}
       />
     </div>
   );
