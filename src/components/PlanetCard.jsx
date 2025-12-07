@@ -2,17 +2,19 @@ import React from 'react';
 import { X, Sparkles, Clock, Music2, Quote } from 'lucide-react';
 
 export default function PlanetCard({ user, onClose }) {
-  if (!user) return null;
-
-  // --- NEW STATE FOR CARD FLIP ---
-  const [isFlipped, setIsFlipped] = React.useState(false);
   
+  // FIX: ALL HOOKS MUST BE DEFINED FIRST
+  const [isFlipped, setIsFlipped] = React.useState(false); 
+
   // Handle flip on click
   const handleFlip = () => {
     if (!isFlipped) {
       setIsFlipped(true);
     }
   };
+
+  // CONDITIONAL RETURN GOES AFTER HOOKS
+  if (!user) return null;
 
   // --- 1. THE TAROT LORE SYSTEM (NOW WITH HYBRIDS) ---
   const getPlanetDetails = (type) => {
@@ -286,141 +288,140 @@ export default function PlanetCard({ user, onClose }) {
 
         /* --- PLANET IMAGE FIX (CIRCULAR) --- */
         .art-frame {
-          width: 100%;
+          width: 100%;
           padding-top: 100%; /* FIX 1: Make it a square box */
           height: 0;        /* FIX 1: Reset height */
-          border: 1px solid #333;
-          border-radius: 12px;
-          position: relative;
-          overflow: hidden;
-          margin-bottom: 20px;
-          background: #000;
-        }
+          border: 1px solid #333;
+          border-radius: 12px;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 20px;
+          background: #000;
+        }
 
-        .planet-img {
-          width: 100%;
-          height: 100%;
+        .planet-img {
+          width: 100%;
+          height: 100%;
           position: absolute; /* FIX 2: Needed for padding-top to work */
           top: 0;
           left: 0;
-          object-fit: cover;
-          border-radius: 50%; /* FIX 3: Mask to a circle */
-          z-index: 2;
-          transition: transform 10s ease-in-out;
-        }
+          object-fit: cover;
+          border-radius: 50%; /* FIX 3: Mask to a circle */
+          z-index: 2;
+          transition: transform 10s ease-in-out;
+        }
 
         /* --- STANDARD STYLES (Kept) --- */
 
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 20px;
-          font-size: 0.8rem;
-          margin-top: 10px;
-        }
-        /* ... (rest of standard CSS rules) ... */
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 20px;
+          font-size: 0.8rem;
+          margin-top: 10px;
+        }
         
-        .tarot-card:hover .planet-img {
-          transform: scale(1.1);
-        }
+        .tarot-card:hover .planet-img {
+          transform: scale(1.1);
+        }
 
-        .glow-effect {
-          position: absolute;
-          bottom: 0; left: 0; right: 0;
-          height: 100px;
-          opacity: 0.3;
-          filter: blur(20px);
-          z-index: 1;
-        }
+        .glow-effect {
+          position: absolute;
+          bottom: 0; left: 0; right: 0;
+          height: 100px;
+          opacity: 0.3;
+          filter: blur(20px);
+          z-index: 1;
+        }
 
-        .card-body {
-          text-align: center;
-          width: 100%;
-        }
+        .card-body {
+          text-align: center;
+          width: 100%;
+        }
 
-        .planet-title {
-          font-size: 1.8rem;
-          font-weight: 800;
-          margin: 0;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
+        .planet-title {
+          font-size: 1.8rem;
+          font-weight: 800;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
 
-        .user-name {
-          color: #666;
-          font-size: 0.9rem;
-          margin-top: 4px;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-        }
+        .user-name {
+          color: #666;
+          font-size: 0.9rem;
+          margin-top: 4px;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
 
-        .divider {
-          height: 1px;
-          width: 40px;
-          margin: 15px auto;
-          opacity: 0.5;
-        }
+        .divider {
+          height: 1px;
+          width: 40px;
+          margin: 15px auto;
+          opacity: 0.5;
+        }
 
-        .lore-box {
-          font-style: italic;
-          color: #ccc;
-          font-size: 0.9rem;
-          line-height: 1.4;
-          margin-bottom: 25px;
-          padding: 0 10px;
-          position: relative;
-        }
-        
-        .quote-icon {
-          position: absolute;
-          top: -8px;
-          left: -5px;
-          opacity: 0.6;
-        }
+        .lore-box {
+          font-style: italic;
+          color: #ccc;
+          font-size: 0.9rem;
+          line-height: 1.4;
+          margin-bottom: 25px;
+          padding: 0 10px;
+          position: relative;
+        }
+        
+        .quote-icon {
+          position: absolute;
+          top: -8px;
+          left: -5px;
+          opacity: 0.6;
+        }
 
-        .stats-row {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-          font-size: 0.8rem;
-          color: #888;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
+        .stats-row {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          font-size: 0.8rem;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
 
-        .stat {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255,255,255,0.05);
-          padding: 4px 10px;
-          border-radius: 20px;
-        }
+        .stat {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255,255,255,0.05);
+          padding: 4px 10px;
+          border-radius: 20px;
+        }
 
-        .close-btn {
-          position: absolute;
-          top: 15px;
-          right: 15px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          opacity: 0.5;
-          z-index: 10;
-        }
-        .close-btn:hover { opacity: 1; }
+        .close-btn {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          opacity: 0.5;
+          z-index: 10;
+        }
+        .close-btn:hover { opacity: 1; }
 
-        @keyframes floatIn {
-          from { opacity: 0; transform: translateY(20px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
-    </div>
-  );
+        @keyframes floatIn {
+          from { opacity: 0; transform: translateY(20px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
-  zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+  background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+  zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'
 };
