@@ -124,25 +124,30 @@ export default function MusicApp({ user, onLogout }) {
 
   useEffect(() => { fetchSongs(); }, []); 
 
-  // --- 1. NEW FUNCTION TO TRACK TIME (ADDED HERE) ---
-  async function recordListen(durationSeconds) {
+  // --- UPDATED: RECORD LISTEN WITH GENRE ---
+  async function recordListen(durationSeconds, songGenre) {
     if (!user || !durationSeconds) return;
 
-    // 🛑 HARDCODED BACKEND URL TO FIX "ZERO" ISSUE
+    // YOUR RENDER URL
     const API_BASE = "https://musicapp-o3ow.onrender.com"; 
     
-    // Convert seconds to minutes (minimum 1 minute)
     const minutes = Math.ceil(durationSeconds / 60);
-    console.log(`Recording ${minutes} minutes for user ${user.username}...`);
+    const genrePayload = songGenre || "Unknown"; // Logic: Send genre if available
+
+    console.log(`Sending Data: ${minutes} mins of ${genrePayload} to user ${user.username}`);
 
     try {
-      await axios.post(`${API_BASE}/api/users/${user.id}/add-minutes`, { minutes });
+      // Logic Update: We now send 'genre' in the body
+      await axios.post(`${API_BASE}/api/users/${user.id}/add-minutes`, { 
+        minutes: minutes,
+        genre: genrePayload 
+      });
       
-      // Update local user state immediately so the card changes
+      // Update local user state immediately
       if (user) {
          user.totalMinutesListened = (user.totalMinutesListened || 0) + minutes;
       }
-      console.log("Stats updated!");
+      console.log("Stats & Evolution Updated!");
     } catch (e) {
       console.error("Could not record stats:", e);
     }
@@ -450,7 +455,7 @@ export default function MusicApp({ user, onLogout }) {
                   <div className="big-artist">{current.artistName}</div>
                   <div style={{ marginTop: 12 }}>
                     
-                    {/* 2. UPDATED PLAYER TO CALL RECORDLISTEN */}
+                    {/* UPDATED PLAYER */}
                     <Player
                       song={current}
                       playing={playing}
@@ -459,11 +464,11 @@ export default function MusicApp({ user, onLogout }) {
                       onNext={() => playNext({ manual: true })}
                       onPrev={() => playPrev()}
                       
-                      // THIS IS THE KEY FIX:
+                      // --- THIS IS THE KEY UPDATE ---
                       onEnded={() => { 
-                         // Track time when song ends
-                         recordListen(current.durationSeconds || 180); 
-                         // Then go to next song
+                         // Pass Genre to 'recordListen'
+                         recordListen(current.durationSeconds || 180, current.genre); 
+                         // Logic Preserved: Auto play next song
                          playNext({ manual: false });
                       }}
                       
