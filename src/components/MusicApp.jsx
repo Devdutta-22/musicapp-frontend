@@ -290,45 +290,44 @@ export default function MusicApp({ user, onLogout }) {
           </div>
 
           {/* RIGHT SIDE: Action Buttons */}
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-             
-             {!isLibraryCollapsed && (
-              <>
-                {/* 1. Upload Button */}
-                <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
-                  {showUpload ? <ArrowLeft  size={18}/>: <Rocket size={18} />} 
-                </button>
+<div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+   
+   {!isLibraryCollapsed && (
+    <>
+      {/* 1. Upload Button */}
+      <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
+        {showUpload ? <ArrowLeft size={18}/>: <Rocket size={18} />} 
+      </button>
 
-                {/* 2. QR Code Button */}
-                <div style={{ position: 'relative' }}>
-                  <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
-                    <QrCode size={18}/>
-                  </button>
-                  {showQR && (
-                    <div style={{ position: "absolute", right: 0, top: "45px", background: "rgba(0,0,0,0.9)", padding: "12px", borderRadius: "10px", zIndex: 200 }}>
-                      <QRCodeCanvas value={qrUrl} size={160} bgColor="#000" fgColor="#fff" />
-                    </div>
-                  )}
-                </div>
+      {/* 2. QR Code Button */}
+      <div style={{ position: 'relative' }}>
+        <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
+          <QrCode size={18}/>
+        </button>
+        {/* ... QR popup code ... */}
+      </div>
 
-                {/* 3. LOGOUT BUTTON (NEW) */}
-                <button className="small-btn icon-only" onClick={onLogout} title="Sign Out">
-                  <LogOut size={18}/>
-                </button>
-              </>
-            )}
+      {/* 3. PLANET PROFILE BUTTON (PASTE IT HERE!) */}
+      <button className="small-btn icon-only" onClick={() => setShowPlanet(true)} title="My Planet">
+         <User size={18}/>
+      </button>
 
-             {/* COLLAPSE/EXPAND */}
-             <button 
-                className="small-btn icon-only collapse-btn" 
-                onClick={() => setIsLibraryCollapsed(v => !v)} 
-                title={isLibraryCollapsed ? "Expand Library" : "Collapse Library"}
-                style={{ zIndex: 50 }} 
-             >
-                {isLibraryCollapsed ? <ChevronRight size={22}/> : <ChevronLeft size={22}/>}
-             </button>
-          </div>
-        </div>
+      {/* 4. LOGOUT BUTTON */}
+      <button className="small-btn icon-only" onClick={onLogout} title="Sign Out">
+        <LogOut size={18}/>
+      </button>
+    </>
+  )}
+
+   {/* COLLAPSE/EXPAND BUTTON */}
+   <button 
+      className="small-btn icon-only collapse-btn" 
+      onClick={() => setIsLibraryCollapsed(v => !v)} 
+      // ...
+   >
+      {isLibraryCollapsed ? <ChevronRight size={22}/> : <ChevronLeft size={22}/>}
+   </button>
+</div>
 
         {!isLibraryCollapsed && (
           <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', }}>
