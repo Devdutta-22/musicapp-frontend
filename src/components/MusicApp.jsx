@@ -11,7 +11,7 @@ import {
   MoreVertical, ListMusic, Shuffle, 
   QrCode, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Upload, Rocket, ListPlus, SkipForward, PlayCircle,
-  RotateCcw, ArrowLeft, Sparkle, LogOut // <--- 1. NEW IMPORT
+  RotateCcw, ArrowLeft, Sparkle, LogOut ,User// <--- 1. NEW IMPORT
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
