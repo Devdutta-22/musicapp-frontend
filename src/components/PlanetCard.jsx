@@ -4,6 +4,16 @@ import { X, Sparkles, Clock, Music2, Quote } from 'lucide-react';
 export default function PlanetCard({ user, onClose }) {
   if (!user) return null;
 
+  // --- NEW STATE FOR CARD FLIP ---
+  const [isFlipped, setIsFlipped] = React.useState(false);
+  
+  // Handle flip on click
+  const handleFlip = () => {
+    if (!isFlipped) {
+      setIsFlipped(true);
+    }
+  };
+
   // --- 1. THE TAROT LORE SYSTEM (NOW WITH HYBRIDS) ---
   const getPlanetDetails = (type) => {
     switch (type) {
@@ -66,8 +76,6 @@ export default function PlanetCard({ user, onClose }) {
         color: '#9d00ff', // Purple
         accent: 'linear-gradient(45deg, #ff00cc, #00ffff)'
       };
-      // ... inside switch(type) ...
-
       case 'Forest World': return { // Pop + Chill
         image: '/planets/forest.png',
         tarotName: 'III. THE EMPRESS',
@@ -76,8 +84,6 @@ export default function PlanetCard({ user, onClose }) {
         color: '#2ecc71', // Emerald Green
         accent: 'linear-gradient(45deg, #2ecc71, #a8e063)' // Green to Lime
       };
-
-      // ... existing cases ...
 
       // === DEFAULT ===
       default: return { // Nebula
@@ -95,84 +101,133 @@ export default function PlanetCard({ user, onClose }) {
 
   return (
     <div style={overlayStyle}>
-      {/* --- THE TAROT CARD CONTAINER --- */}
-      <div className="tarot-card">
-        
-        {/* Close Button */}
-        <button onClick={onClose} className="close-btn">
-          <X size={24} color="white" />
-        </button>
+      
+      {/* --- NEW: FLIP CONTAINER --- */}
+      <div className={`flip-container ${isFlipped ? 'flipped' : ''}`} onClick={isFlipped ? null : handleFlip}>
+        <div className="flipper">
 
-        {/* --- CARD HEADER (The "Tarot" Name) --- */}
-        <div className="card-header">
-          <Sparkles size={16} color={details.color} />
-          <span style={{ letterSpacing: '3px', fontWeight: 'bold', color: details.color }}>
-            {details.tarotName}
-          </span>
-          <Sparkles size={16} color={details.color} />
-        </div>
-
-        {/* --- THE ARTWORK FRAME --- */}
-        <div className="art-frame" style={{ borderColor: details.color }}>
-          <img 
-            src={details.image} 
-            alt={details.title} 
-            className="planet-img"
-            onError={(e) => e.target.src = '/planets/nebula.png'} 
-          />
-          <div className="glow-effect" style={{ background: details.accent }}></div>
-        </div>
-
-        {/* --- THE TITLE --- */}
-        <div className="card-body">
-          <h1 className="planet-title" style={{ background: details.accent, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            {details.title}
-          </h1>
-          <div className="user-name">Explorer: {user.username}</div>
-          
-          <div className="divider" style={{ background: details.color }}></div>
-
-          {/* --- THE LORE / DESCRIPTION --- */}
-          <div className="lore-box">
-            <Quote size={12} className="quote-icon" style={{ color: details.color }}/>
-            <p>{details.desc}</p>
-          </div>
-
-          {/* --- STATS FOOTER --- */}
-          <div className="stats-row">
-            <div className="stat">
-              <Clock size={14} color="#888"/>
-              <span>{user.totalMinutesListened || 0} min</span>
-            </div>
-            <div className="stat">
-              <Music2 size={14} color="#888"/>
-              <span>Level {(user.totalMinutesListened / 60).toFixed(1)}</span>
+          {/* --- CARD BACK (The Initial View) --- */}
+          <div className="card-face back">
+            <div className="back-content">
+              {/* Close button for the back face */}
+              <button onClick={onClose} className="close-btn back-btn">
+                <X size={24} color="#888" />
+              </button>
+              <Sparkles size={48} color="#a855f7" className="tarot-sparkle" />
+              <h1>Tap to Reveal Your Cosmic Destiny</h1>
+              <p>Processing {user.username}'s music energy...</p>
             </div>
           </div>
-        </div>
 
+          {/* --- CARD FRONT (The Tarot Card Content) --- */}
+          <div className="card-face front">
+            
+            <button onClick={onClose} className="close-btn front-btn">
+              <X size={24} color="white" />
+            </button>
+            
+            {/* --- CARD HEADER (The "Tarot" Name) --- */}
+            <div className="card-header">
+              <Sparkles size={16} color={details.color} />
+              <span style={{ letterSpacing: '3px', fontWeight: 'bold', color: details.color }}>
+                {details.tarotName}
+              </span>
+              <Sparkles size={16} color={details.color} />
+            </div>
+
+            {/* --- THE ARTWORK FRAME --- */}
+            <div className="art-frame" style={{ borderColor: details.color }}>
+              <img 
+                src={details.image} 
+                alt={details.title} 
+                className="planet-img"
+                onError={(e) => e.target.src = '/planets/nebula.png'} 
+              />
+              <div className="glow-effect" style={{ background: details.accent }}></div>
+            </div>
+
+            {/* --- THE TITLE --- */}
+            <div className="card-body">
+              <h1 className="planet-title" style={{ background: details.accent, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                {details.title}
+              </h1>
+              <div className="user-name">Explorer: {user.username}</div>
+              
+              <div className="divider" style={{ background: details.color }}></div>
+
+              {/* --- THE LORE / DESCRIPTION --- */}
+              <div className="lore-box">
+                <Quote size={12} className="quote-icon" style={{ color: details.color }}/>
+                <p>{details.desc}</p>
+              </div>
+
+              {/* --- STATS FOOTER --- */}
+              <div className="stats-row">
+                <div className="stat">
+                  <Clock size={14} color="#888"/>
+                  {/* NOTE: Time displays correctly now that AuthController is fixed */}
+                  <span>{user.totalMinutesListened || 0} min</span>
+                </div>
+                <div className="stat">
+                  <Music2 size={14} color="#888"/>
+                  <span>Level {(user.totalMinutesListened / 60).toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
 
       {/* --- CSS STYLES --- */}
       <style>{`
-        .tarot-card {
+        /* --- CARD BASE STYLES --- */
+        
+        /* NOTE: The original .tarot-card styles are now applied to the .card-face classes */
+
+        /* --- NEW FLIP CSS RULES --- */
+        .flip-container {
+          /* Set the same size as the card */
           width: 320px;
-          height: 540px; /* Tall Tarot Aspect Ratio */
-          background: #0a0a0a;
-          border: 1px solid #333;
-          border-radius: 20px;
+          height: 540px; 
           position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 20px;
-          box-shadow: 0 0 40px rgba(0,0,0,0.8);
-          animation: floatIn 0.5s ease-out;
-          overflow: hidden;
+          /* Allows the 3D effect */
+          perspective: 1000px; 
+          cursor: pointer;
+          animation: floatIn 0.5s ease-out; /* Keeps the initial float animation */
         }
 
+        .flipper {
+          transition: 0.6s;
+          transform-style: preserve-3d;
+          position: relative;
+          width: 100%;
+          height: 100%;
+        }
+
+        /* The actual flip action */
+        .flip-container.flipped .flipper {
+          transform: rotateY(180deg);
+        }
+
+        .card-face {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          backface-visibility: hidden; 
+          border-radius: 20px;
+          overflow: hidden;
+          
+          /* Shared Card Styles */
+          background: #0a0a0a;
+          border: 1px solid #333;
+          box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+        
         /* Gold/Colored Border Effect */
-        .tarot-card::before {
+        .card-face::before {
           content: '';
           position: absolute;
           top: 6px; left: 6px; right: 6px; bottom: 6px;
@@ -181,135 +236,191 @@ export default function PlanetCard({ user, onClose }) {
           pointer-events: none;
         }
 
-        .card-header {
+
+        /* Front face is the existing card */
+        .card-face.front {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 10px;
-          margin-bottom: 20px;
-          font-size: 0.8rem;
-          margin-top: 10px;
+          padding: 20px;
+          transform: rotateY(180deg); /* Starts facing backwards */
         }
 
-        .art-frame {
-          width: 100%;
-          height: 240px;
-          border: 1px solid #333;
-          border-radius: 12px;
-          position: relative;
-          overflow: hidden;
-          margin-bottom: 20px;
-          background: #000;
-        }
-
-        .planet-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          z-index: 2;
-          position: relative;
-          transition: transform 10s ease-in-out;
-        }
-        
-        .tarot-card:hover .planet-img {
-          transform: scale(1.1);
-        }
-
-        .glow-effect {
-          position: absolute;
-          bottom: 0; left: 0; right: 0;
-          height: 100px;
-          opacity: 0.3;
-          filter: blur(20px);
-          z-index: 1;
-        }
-
-        .card-body {
-          text-align: center;
-          width: 100%;
-        }
-
-        .planet-title {
-          font-size: 1.8rem;
-          font-weight: 800;
-          margin: 0;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-
-        .user-name {
-          color: #666;
-          font-size: 0.9rem;
-          margin-top: 4px;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-        }
-
-        .divider {
-          height: 1px;
-          width: 40px;
-          margin: 15px auto;
-          opacity: 0.5;
-        }
-
-        .lore-box {
-          font-style: italic;
-          color: #ccc;
-          font-size: 0.9rem;
-          line-height: 1.4;
-          margin-bottom: 25px;
-          padding: 0 10px;
-          position: relative;
-        }
-        
-        .quote-icon {
-          position: absolute;
-          top: -8px;
-          left: -5px;
-          opacity: 0.6;
-        }
-
-        .stats-row {
+        /* Back face is the splash screen */
+        .card-face.back {
           display: flex;
+          flex-direction: column;
+          align-items: center;
           justify-content: center;
-          gap: 20px;
-          font-size: 0.8rem;
-          color: #888;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+          color: #aaa;
         }
 
-        .stat {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(255,255,255,0.05);
-          padding: 4px 10px;
-          border-radius: 20px;
+        .back-content {
+          text-align: center;
+          padding: 40px;
         }
 
-        .close-btn {
-          position: absolute;
-          top: 15px;
-          right: 15px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          opacity: 0.5;
-          z-index: 10;
+        .back-content h1 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #d1d5db;
+          margin-top: 15px;
         }
-        .close-btn:hover { opacity: 1; }
 
-        @keyframes floatIn {
-          from { opacity: 0; transform: translateY(20px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+        .back-content p {
+          font-size: 0.9rem;
+          color: #666;
+          margin-top: 5px;
         }
-      `}</style>
-    </div>
-  );
+
+        .tarot-sparkle {
+          animation: pulse 1.5s infinite;
+          opacity: 0.8;
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+
+
+        /* --- PLANET IMAGE FIX (CIRCULAR) --- */
+        .art-frame {
+          width: 100%;
+          padding-top: 100%; /* FIX 1: Make it a square box */
+          height: 0;        /* FIX 1: Reset height */
+          border: 1px solid #333;
+          border-radius: 12px;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 20px;
+          background: #000;
+        }
+
+        .planet-img {
+          width: 100%;
+          height: 100%;
+          position: absolute; /* FIX 2: Needed for padding-top to work */
+          top: 0;
+          left: 0;
+          object-fit: cover;
+          border-radius: 50%; /* FIX 3: Mask to a circle */
+          z-index: 2;
+          transition: transform 10s ease-in-out;
+        }
+
+        /* --- STANDARD STYLES (Kept) --- */
+
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 20px;
+          font-size: 0.8rem;
+          margin-top: 10px;
+        }
+        /* ... (rest of standard CSS rules) ... */
+        
+        .tarot-card:hover .planet-img {
+          transform: scale(1.1);
+        }
+
+        .glow-effect {
+          position: absolute;
+          bottom: 0; left: 0; right: 0;
+          height: 100px;
+          opacity: 0.3;
+          filter: blur(20px);
+          z-index: 1;
+        }
+
+        .card-body {
+          text-align: center;
+          width: 100%;
+        }
+
+        .planet-title {
+          font-size: 1.8rem;
+          font-weight: 800;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .user-name {
+          color: #666;
+          font-size: 0.9rem;
+          margin-top: 4px;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
+
+        .divider {
+          height: 1px;
+          width: 40px;
+          margin: 15px auto;
+          opacity: 0.5;
+        }
+
+        .lore-box {
+          font-style: italic;
+          color: #ccc;
+          font-size: 0.9rem;
+          line-height: 1.4;
+          margin-bottom: 25px;
+          padding: 0 10px;
+          position: relative;
+        }
+        
+        .quote-icon {
+          position: absolute;
+          top: -8px;
+          left: -5px;
+          opacity: 0.6;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: center;
+          gap: 20px;
+          font-size: 0.8rem;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        }
+
+        .stat {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255,255,255,0.05);
+          padding: 4px 10px;
+          border-radius: 20px;
+        }
+
+        .close-btn {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          opacity: 0.5;
+          z-index: 10;
+        }
+        .close-btn:hover { opacity: 1; }
+
+        @keyframes floatIn {
+          from { opacity: 0; transform: translateY(20px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  );
 }
 
 const overlayStyle = {
-  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-  background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
-  zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+  background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+  zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center'
 };
