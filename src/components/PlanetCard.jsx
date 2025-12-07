@@ -13,6 +13,28 @@ export default function PlanetCard({ user, onClose }) {
     }
   };
 
+  // --- NEW: HANDLE SHARE FUNCTION ---
+  const handleShare = async () => {
+    // Get the dynamic details
+    const details = getPlanetDetails(user.planetType);
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `My Cosmic Music Profile: ${details.title}`,
+          text: `My music taste has evolved into the ${details.title} (${details.tarotName})! Find out what kind of planet your listening habits create on the Music App.`,
+          url: window.location.href // Shares the current app link
+        });
+        console.log('Shared successfully');
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      alert("Sharing is not supported on this browser. Please copy the link manually.");
+    }
+  };
+
   // CONDITIONAL RETURN GOES AFTER HOOKS
   if (!user) return null;
 
@@ -167,12 +189,16 @@ export default function PlanetCard({ user, onClose }) {
               <div className="stats-row">
                 <div className="stat">
                   <Clock size={14} color="#888"/>
-                  {/* TIME DATA DISPLAY: Will show correct value after Java fix deployment */}
                   <span>{user.totalMinutesListened || 0} min</span>
                 </div>
                 <div className="stat">
                   <Music2 size={14} color="#888"/>
                   <span>Level {(user.totalMinutesListened / 60).toFixed(1)}</span>
+                </div>
+                {/* --- NEW SHARE BUTTON --- */}
+                <div className="stat share-button" onClick={handleShare}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  <span>Share</span>
                 </div>
               </div>
             </div>
@@ -316,9 +342,9 @@ export default function PlanetCard({ user, onClose }) {
           display: flex;
           align-items: center;
           gap: 10px;
-          margin-bottom: 15px; /* Reduced margin slightly for better vertical space */
+          margin-bottom: 15px; 
           font-size: 0.8rem;
-          margin-top: 0; /* Adjusted for new flex container */
+          margin-top: 0; 
         }
         
         .tarot-card:hover .planet-img {
@@ -337,7 +363,6 @@ export default function PlanetCard({ user, onClose }) {
         .card-body {
           text-align: center;
           width: 100%;
-          /* FIX FOR OVERFLOW: Allow card body to take minimal vertical space */
           flex-grow: 1; 
           display: flex;
           flex-direction: column;
@@ -363,7 +388,7 @@ export default function PlanetCard({ user, onClose }) {
         .divider {
           height: 1px;
           width: 40px;
-          margin: 10px auto; /* Reduced margin */
+          margin: 10px auto; 
           opacity: 0.5;
         }
 
@@ -372,10 +397,9 @@ export default function PlanetCard({ user, onClose }) {
           color: #ccc;
           font-size: 0.9rem;
           line-height: 1.4;
-          margin-bottom: 10px; /* Reduced margin */
+          margin-bottom: 10px; 
           padding: 0 10px;
           position: relative;
-          /* FIX FOR OVERFLOW: Ensure content pushes stats down */
           flex-grow: 1;
         }
         
@@ -389,12 +413,12 @@ export default function PlanetCard({ user, onClose }) {
         .stats-row {
           display: flex;
           justify-content: center;
-          gap: 20px;
+          gap: 10px; /* Reduced gap for the new share button */
           font-size: 0.8rem;
           color: #888;
           text-transform: uppercase;
           letter-spacing: 1px;
-          margin-top: auto; /* Pushes stats to the bottom */
+          margin-top: auto; 
         }
 
         .stat {
@@ -404,6 +428,16 @@ export default function PlanetCard({ user, onClose }) {
           background: rgba(255,255,255,0.05);
           padding: 4px 10px;
           border-radius: 20px;
+        }
+        
+        /* NEW: Hover effect for the share button */
+        .share-button {
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .share-button:hover {
+          background: rgba(255,255,255,0.15); /* Brighter hover */
         }
 
         .close-btn {
