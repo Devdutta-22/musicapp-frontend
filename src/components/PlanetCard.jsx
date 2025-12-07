@@ -4,9 +4,10 @@ import { X, Sparkles, Clock, Music2, Quote } from 'lucide-react';
 export default function PlanetCard({ user, onClose }) {
   if (!user) return null;
 
-  // --- 1. THE TAROT LORE SYSTEM ---
+  // --- 1. THE TAROT LORE SYSTEM (NOW WITH HYBRIDS) ---
   const getPlanetDetails = (type) => {
     switch (type) {
+      // === ORIGINAL PLANETS ===
       case 'Volcanic': return {
         image: '/planets/volcanic.png',
         tarotName: 'IV. THE FORGE',
@@ -39,7 +40,35 @@ export default function PlanetCard({ user, onClose }) {
         color: '#c0c0c0',
         accent: 'linear-gradient(45deg, #e0e0e0, #757575)'
       };
-      default: return { // Nebula (Default)
+
+      // === NEW HYBRID PLANETS ===
+      case 'Plasma World': return { // Rock + Pop
+        image: '/planets/plasma.png',
+        tarotName: 'XI. THE FUSION',
+        title: 'Plasma Reactor',
+        desc: "A volatile mix of Rock heat and Pop energy. Your taste is intense, bright, and explosive.",
+        color: '#FF5F1F', // Neon Orange
+        accent: 'linear-gradient(45deg, #FF0000, #FF00CC)'
+      };
+      case 'Steam World': return { // Rock + Chill
+        image: '/planets/steam.png',
+        tarotName: 'XIV. THE ALCHEMY',
+        title: 'Geothermal World',
+        desc: "Where Fire meets Ice. A complex balance of intense energy and deep calm.",
+        color: '#00ffa2', // Teal/Seafoam
+        accent: 'linear-gradient(45deg, #ff4d4d, #00e5ff)'
+      };
+      case 'Cyberpunk': return { // Pop + Rap
+        image: '/planets/cyberpunk.png',
+        tarotName: 'XXI. THE NEOPOLIS',
+        title: 'Neon Chrome',
+        desc: "The intersection of Pop vibrance and Hip-Hop structure. A futuristic, glowing cityscape.",
+        color: '#9d00ff', // Purple
+        accent: 'linear-gradient(45deg, #ff00cc, #00ffff)'
+      };
+
+      // === DEFAULT ===
+      default: return { // Nebula
         image: '/planets/nebula.png',
         tarotName: '0. THE BEGINNING',
         title: 'Stardust Nebula',
@@ -112,7 +141,7 @@ export default function PlanetCard({ user, onClose }) {
 
       </div>
 
-      {/* --- CSS STYLES (Paste this into App.css for cleaner code, or keep here) --- */}
+      {/* --- CSS STYLES --- */}
       <style>{`
         .tarot-card {
           width: 320px;
@@ -169,7 +198,6 @@ export default function PlanetCard({ user, onClose }) {
           transition: transform 10s ease-in-out;
         }
         
-        /* Subtle zoom effect on image */
         .tarot-card:hover .planet-img {
           transform: scale(1.1);
         }
