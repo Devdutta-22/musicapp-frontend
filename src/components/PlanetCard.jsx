@@ -167,7 +167,7 @@ export default function PlanetCard({ user, onClose }) {
               <div className="stats-row">
                 <div className="stat">
                   <Clock size={14} color="#888"/>
-                  {/* NOTE: Time displays correctly now that AuthController is fixed */}
+                  {/* TIME DATA DISPLAY: Will show correct value after Java fix deployment */}
                   <span>{user.totalMinutesListened || 0} min</span>
                 </div>
                 <div className="stat">
@@ -226,6 +226,11 @@ export default function PlanetCard({ user, onClose }) {
           background: #0a0a0a;
           border: 1px solid #333;
           box-shadow: 0 0 40px rgba(0,0,0,0.8);
+          /* FIX FOR DESCRIPTION OVERFLOW: The card itself is a flex container */
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
         }
         
         /* Gold/Colored Border Effect */
@@ -241,18 +246,12 @@ export default function PlanetCard({ user, onClose }) {
 
         /* Front face is the existing card */
         .card-face.front {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 20px;
+          /* Padding and alignment are now inherited from .card-face, removing redundancy */
           transform: rotateY(180deg); /* Starts facing backwards */
         }
 
         /* Back face is the splash screen */
         .card-face.back {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
           justify-content: center;
           color: #aaa;
         }
@@ -289,8 +288,8 @@ export default function PlanetCard({ user, onClose }) {
         /* --- PLANET IMAGE FIX (CIRCULAR) --- */
         .art-frame {
           width: 100%;
-          padding-top: 100%; /* FIX 1: Make it a square box */
-          height: 0;        /* FIX 1: Reset height */
+          padding-top: 100%; 
+          height: 0;        
           border: 1px solid #333;
           border-radius: 12px;
           position: relative;
@@ -302,24 +301,24 @@ export default function PlanetCard({ user, onClose }) {
         .planet-img {
           width: 100%;
           height: 100%;
-          position: absolute; /* FIX 2: Needed for padding-top to work */
+          position: absolute; 
           top: 0;
           left: 0;
           object-fit: cover;
-          border-radius: 50%; /* FIX 3: Mask to a circle */
+          border-radius: 50%; /* Mask to a circle */
           z-index: 2;
           transition: transform 10s ease-in-out;
         }
 
-        /* --- STANDARD STYLES (Kept) --- */
+        /* --- STANDARD STYLES --- */
 
         .card-header {
           display: flex;
           align-items: center;
           gap: 10px;
-          margin-bottom: 20px;
+          margin-bottom: 15px; /* Reduced margin slightly for better vertical space */
           font-size: 0.8rem;
-          margin-top: 10px;
+          margin-top: 0; /* Adjusted for new flex container */
         }
         
         .tarot-card:hover .planet-img {
@@ -338,6 +337,11 @@ export default function PlanetCard({ user, onClose }) {
         .card-body {
           text-align: center;
           width: 100%;
+          /* FIX FOR OVERFLOW: Allow card body to take minimal vertical space */
+          flex-grow: 1; 
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
         }
 
         .planet-title {
@@ -359,7 +363,7 @@ export default function PlanetCard({ user, onClose }) {
         .divider {
           height: 1px;
           width: 40px;
-          margin: 15px auto;
+          margin: 10px auto; /* Reduced margin */
           opacity: 0.5;
         }
 
@@ -368,9 +372,11 @@ export default function PlanetCard({ user, onClose }) {
           color: #ccc;
           font-size: 0.9rem;
           line-height: 1.4;
-          margin-bottom: 25px;
+          margin-bottom: 10px; /* Reduced margin */
           padding: 0 10px;
           position: relative;
+          /* FIX FOR OVERFLOW: Ensure content pushes stats down */
+          flex-grow: 1;
         }
         
         .quote-icon {
@@ -388,6 +394,7 @@ export default function PlanetCard({ user, onClose }) {
           color: #888;
           text-transform: uppercase;
           letter-spacing: 1px;
+          margin-top: auto; /* Pushes stats to the bottom */
         }
 
         .stat {
