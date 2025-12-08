@@ -1397,47 +1397,61 @@ html, body, #root {
     gap: 8px !important;
   }
 }
-/* DESKTOP SCROLL FIX - Complete Solution */
+/* DESKTOP SCROLL FIX - Complete Solution (CORRECTED) */
 @media (min-width: 769px) {
-  /* 1. Unlock the root elements */
+  /* 1. LOCK the root elements. 
+     We want the APP to be fixed, and internal divs to scroll. 
+     Do NOT use 'visible' here, or the sidebar grows infinitely. */
   html, body, #root {
-    overflow: visible !important;
-    position: static !important;
+    overflow: hidden !important; 
+    height: 100% !important;
+    width: 100% !important;
+    position: fixed !important; /* Locks viewport to prevent page bounce */
   }
   
-  /* 2. Fix library sidebar scrolling */
+  /* 2. Fix library sidebar layout 
+     It must be exactly 100% height of the screen */
   .library {
     display: flex !important;
     flex-direction: column !important;
     height: 100% !important;
-    overflow: hidden !important;
+    max-height: 100vh !important;
+    overflow: hidden !important; /* Wrapper does not scroll */
   }
   
+  /* 3. The Scrollable Area
+     'min-height: 0' is the magic fix for Flexbox scrolling bugs */
   .library-content {
-    flex: 1 !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
+    flex: 1 1 0 !important; /* Grow, Shrink, Basis 0 */
+    min-height: 0 !important; /* CRITICAL: Allows flex child to scroll */
+    height: auto !important;
+    overflow-y: auto !important; /* Scroll happens HERE */
     overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
     display: flex !important;
     flex-direction: column !important;
+    padding-bottom: 20px;
   }
   
-  /* CRITICAL: Let song-list grow to enable scroll */
+  /* 4. Ensure the wrapper around the song list doesn't restrict height */
   .library-content > div {
     flex-shrink: 0 !important;
+    height: auto !important;
   }
   
+  /* 5. The actual list of songs 
+     Should grow naturally to fit content */
   .song-list {
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
     flex-shrink: 0 !important;
+    height: auto !important;
     min-height: min-content !important;
   }
   
-  /* 3. Ensure player area scrolls */
+  /* 6. Ensure player area scrolls independently on the right side */
   .player-area {
+    height: 100% !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
   }
