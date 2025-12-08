@@ -582,3 +582,45 @@ html, body, #root {
     transform: translateY(-10px);
   }
 }
+/* Add this to your src/App.css */
+.ad-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s;
+    overflow: hidden; /* Ensures content stays inside */
+    height: 60px; /* Gives a fixed, prominent height */
+    margin-bottom: 5px; /* Spacing below the search bar */
+}
+
+.ad-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+}
+
+.ad-content {
+    flex-grow: 1;
+    margin: 0 10px;
+    min-width: 0;
+}
+
+.ad-title {
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ad-subtitle {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
