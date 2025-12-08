@@ -21,6 +21,6 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#9146ff",
-  // 🔑 This is the property you must change to control the splash screen background.
+  //  This is the property you must change to control the splash screen background.
   "background_color": "#9146ff" 
 }
