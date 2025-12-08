@@ -13,7 +13,7 @@ import {
   QrCode, ChevronDown, ChevronLeft, ChevronRight, 
   Search, Upload, Rocket, ListPlus, SkipForward, PlayCircle,
   RotateCcw, ArrowLeft, Sparkle, LogOut, User ,Globe,
-  TrendingUp, HardHat, Zap, Orbit, Clock, Download // Added Download import
+  TrendingUp, HardHat, Zap, Orbit, Clock, Download 
 } from "lucide-react"; 
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -178,7 +178,6 @@ export default function MusicApp({ user, onLogout }) {
     console.log(`User response to the install prompt: ${outcome}`);
     setDeferredPrompt(null);
     setIsInstallable(false);
-    setShowAccountMenu(false);
   };
 
   // Mascot expressions with messages (Keep this structure)
@@ -733,6 +732,26 @@ export default function MusicApp({ user, onLogout }) {
               
               {!isLibraryCollapsed && (
               <>
+                {/* --- NEW: INSTALL APP BUTTON (Only visible if installable) --- */}
+                {/* Placed FIRST in the row, with text and green styling */}
+                {isInstallable && (
+                  <button 
+                    className="small-btn" 
+                    onClick={handleInstallClick} 
+                    title="Install App"
+                    style={{ 
+                      background: 'rgba(0, 255, 128, 0.15)', 
+                      color: '#00ff80', 
+                      borderColor: '#00ff80',
+                      fontWeight: 'bold',
+                      fontSize: '12px'
+                    }}
+                  >
+                    <Download size={16} style={{marginRight: 6}}/>
+                    Install App
+                  </button>
+                )}
+
                 {/* 1. Upload Button */}
                 <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
                   {showUpload ? <ArrowLeft size={18}/>: <Rocket size={18} />} 
@@ -772,13 +791,6 @@ export default function MusicApp({ user, onLogout }) {
                         }}>
                             {user.username}
                         </div>
-
-                        {/* --- NEW: INSTALL APP BUTTON (Only visible if installable) --- */}
-                        {isInstallable && (
-                            <button className="menu-item" onClick={handleInstallClick}>
-                                <Download size={16} style={{marginRight: 8}}/> Install App
-                            </button>
-                        )}
 
                         {/* Logout Button */}
                         <button className="menu-item" onClick={onLogout}>
