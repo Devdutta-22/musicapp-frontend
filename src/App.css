@@ -1,4 +1,4 @@
-/* src/App.css — Final Version: Fully Responsive with Tiny Screen Fixes */
+/* src/App.css — Final Version: Fully Responsive with Ad Grid Slider */
 
 /* 1. UNIVERSAL RESET */
 * {
@@ -10,7 +10,7 @@
 
 :root {
   /* --- ELECTRIC VIOLET THEME --- */
-  --neon: #9146ff;        
+  --neon: #9146ff;      
   --neon-hover: #7c2cf2;  
   --neon-pink: #ff3bf0;   
   
@@ -110,7 +110,7 @@ html, body, #root {
     180deg, 
     rgba(145, 70, 255, 0.35) 0%,  
     rgba(145, 70, 255, 0.1) 40%,  
-    rgba(6, 6, 11, 0) 100%        
+    rgba(6, 6, 11, 0) 100%       
   );
   pointer-events: none; 
   z-index: 0;
@@ -341,7 +341,7 @@ html, body, #root {
 .upload-input { width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 14px; outline: none; transition: all 0.2s; }
 .upload-input:focus { border-color: var(--neon); box-shadow: 0 0 0 2px rgba(145, 70, 255, 0.2); background: rgba(0, 0, 0, 0.5); }
 .file-label-text { font-size: 12px; font-weight: 600; color: #aaa; margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-.file-input { width: 100%; font-size: 12px; color: #888; }
+.file-input { width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; font-size: 14px; outline: none; transition: all 0.2s; } /* Corrected input for file selector padding */
 .file-input::file-selector-button { background: rgba(255, 255, 255, 0.1); border: none; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-right: 10px; transition: background 0.2s; font-weight: 500; }
 .file-input::file-selector-button:hover { background: rgba(255, 255, 255, 0.2); }
 .upload-btn { width: 100%; padding: 12px; background: var(--neon); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; }
@@ -353,8 +353,8 @@ html, body, #root {
 .progress-text { font-size: 11px; color: var(--neon); text-align: right; margin-top: 4px; font-weight: 600; }
 
 /* =========================================================================
-   MOBILE FIXES: SHORT LOGO + GLASSY PLAYER + WRAPPED TEXT
-   ========================================================================= */
+  MOBILE FIXES: SHORT LOGO + GLASSY PLAYER + WRAPPED TEXT
+  ========================================================================= */
 
 @media (max-width: 768px) {
   /* 1. Global Reset */
@@ -582,35 +582,73 @@ html, body, #root {
     transform: translateY(-10px);
   }
 }
-/* Add this to your src/App.css */
-.ad-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 15px;
-    border-radius: 12px;
-    color: white;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    transition: transform 0.2s;
-    overflow: hidden; /* Ensures content stays inside */
-    height: 60px; /* Gives a fixed, prominent height */
-    margin-bottom: 5px; /* Spacing below the search bar */
+
+/* ------------------ AD GRID SLIDER STYLES (NEW) ------------------ */
+
+/* Old .ad-box styles removed */
+
+.ad-grid-wrapper {
+    position: relative;
+    overflow: hidden; /* Clips the overflow from the horizontal scroll */
+    width: 100%;
+    margin-bottom: 10px;
 }
 
-.ad-box:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+.ad-grid-scroll-container {
+    display: flex;
+    /* Hide the scroll bar visually */
+    overflow-x: hidden; 
+    /* Enable touch scrolling behavior (for mobile swipe) */
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory; 
+    transition: transform 0.3s ease-in-out; /* Smooth slide effect is now handled via JS scroll animation */
+}
+
+.ad-grid-page {
+    /* Each page takes up exactly the width of the parent container */
+    flex-shrink: 0; 
+    width: 100%;
+    
+    /* 2x2 Grid Layout */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px; /* Space between the four mini-cards */
+    padding-bottom: 5px; /* Space for the dots */
+    scroll-snap-align: start;
+}
+
+.ad-box-item {
+    display: flex;
+    flex-direction: column; /* Stack content vertically */
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    height: 90px; /* Fixed height for the mini-card */
+    transition: transform 0.1s;
+}
+
+.ad-box-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ad-box-item svg {
+    margin-bottom: 5px; /* Spacing between icon and title */
 }
 
 .ad-content {
-    flex-grow: 1;
-    margin: 0 10px;
     min-width: 0;
+    width: 100%;
+    margin-top: 5px;
 }
 
 .ad-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
@@ -618,9 +656,53 @@ html, body, #root {
 }
 
 .ad-subtitle {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Page Indicators (Dots) */
+.ad-grid-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.ad-dot {
+    width: 6px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.ad-dot.active {
+    background: #00ffff;
+    width: 12px;
+    border-radius: 3px;
+}
+
+/* Navigation Arrows (Optional) */
+.ad-arrow {
+    position: absolute;
+    top: 40%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0.8;
+}
+
+.ad-arrow.left { left: 5px; }
+.ad-arrow.right { right: 5px; }
