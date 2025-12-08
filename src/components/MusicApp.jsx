@@ -34,6 +34,7 @@ export default function MusicApp({ user, onLogout }) {
   const [shuffle, setShuffle] = useState(false);
   
   const [showPlanet, setShowPlanet] = useState(false); 
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
 
   // Loading State
   const [isLoading, setIsLoading] = useState(true);
@@ -157,6 +158,14 @@ export default function MusicApp({ user, onLogout }) {
     }
 
     const handleBackButton = () => {
+        // Priority 1: Close exit prompt if open
+        if (showExitPrompt) {
+            setShowExitPrompt(false);
+            window.history.pushState(null, '', window.location.href);
+            return;
+        }
+
+        // Priority 2: Handle open modals/views
         if (showPlanet || showUpload) {
             setShowPlanet(false);
             setShowUpload(false);
@@ -164,13 +173,16 @@ export default function MusicApp({ user, onLogout }) {
             return;
         }
 
+        // Priority 3: Collapse the expanded player view
         if (isLibraryCollapsed) {
             setIsLibraryCollapsed(false);
             window.history.pushState(null, '', window.location.href);
             return;
         }
         
-        // Main screen - allow OS to minimize PWA
+        // Priority 4: Main screen - Show exit prompt instead of closing
+        setShowExitPrompt(true);
+        window.history.pushState(null, '', window.location.href);
     };
 
     // Push initial state once
@@ -181,16 +193,16 @@ export default function MusicApp({ user, onLogout }) {
     return () => {
         window.removeEventListener('popstate', handleBackButton);
     };
-  }, [showPlanet, showUpload, isLibraryCollapsed]);
+  }, [showPlanet, showUpload, isLibraryCollapsed, showExitPrompt]);
 
   /* --- PWA: PUSH STATE WHEN VIEWS OPEN --- */
   useEffect(() => {
     if (!window.matchMedia('(display-mode: standalone)').matches) return;
     
-    if (showPlanet || showUpload || isLibraryCollapsed) {
+    if (showPlanet || showUpload || isLibraryCollapsed || showExitPrompt) {
       window.history.pushState(null, '', window.location.href);
     }
-  }, [showPlanet, showUpload, isLibraryCollapsed]);
+  }, [showPlanet, showUpload, isLibraryCollapsed, showExitPrompt]);
 
   /* --- SLEEP TIMER LOGIC --- */
   useEffect(() => {
@@ -768,6 +780,115 @@ export default function MusicApp({ user, onLogout }) {
 
       {/* PLANET CARD OVERLAY */}
       {showPlanet && <PlanetCard user={user} onClose={() => setShowPlanet(false)} />}
+
+      {/* EXIT PROMPT OVERLAY */}
+      {showExitPrompt && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={() => setShowExitPrompt(false)}
+        >
+          <div 
+            style={{
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              borderRadius: '24px',
+              padding: '32px',
+              maxWidth: '400px',
+              width: '100%',
+              textAlign: 'center',
+              border: '2px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+              animation: 'slideUp 0.3s ease-out'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Custom Mascot Image */}
+            <div style={{ marginBottom: '20px' }}>
+              <img 
+                src="/mascot-sad.png" 
+                alt="Sad Mascot" 
+                style={{ 
+                  width: '120px', 
+                  height: '120px', 
+                  objectFit: 'contain',
+                  animation: 'float 3s ease-in-out infinite',
+                  filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3))'
+                }}
+                onError={(e) => {
+                  // Fallback to emoji if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement.innerHTML = '<div style="font-size: 80px; animation: float 3s ease-in-out infinite">🚀😢</div>';
+                }}
+              />
+            </div>
+            
+            <h2 style={{ 
+              color: 'white', 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              marginBottom: '12px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              Don't leave me alone in space! 🌌
+            </h2>
+            
+            <p style={{ 
+              color: 'rgba(255, 255, 255, 0.7)', 
+              fontSize: '16px', 
+              lineHeight: '1.5',
+              marginBottom: '24px' 
+            }}>
+              I'll be floating here with your music waiting for you to come back! 🎵
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              <button
+                onClick={() => setShowExitPrompt(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '14px 24px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Stay & Keep Listening 🎧
+              </button>
+
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.5)', 
+                fontSize: '13px',
+                marginTop: '8px'
+              }}>
+                💡 Use your phone's home button or minimize to put the app in background
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
