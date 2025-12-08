@@ -1,7 +1,12 @@
 // src/components/MusicApp.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-// ... other imports ...
+import Player from './Player';
+import UploadCard from './UploadCard';
+import LyricsPanel from './LyricsPanel';
+import PlanetCard from './PlanetCard'; 
+import '../App.css';
+import { QRCodeCanvas } from "qrcode.react";
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
   MoreVertical, ListMusic, Shuffle, 
@@ -14,11 +19,27 @@ import {
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
 // Custom hook for the slideshow interval
-// ... (useInterval hook remains the same) ...
+const useInterval = (callback, delay) => {
+    const savedCallback = useRef();
 
-// --- AD BOX CONTENT DEFINITION ---
+    useEffect(() => {
+        savedCallback.current = callback;
+    }, [callback]);
+
+    useEffect(() => {
+        function tick() {
+            savedCallback.current();
+        }
+        if (delay !== null) {
+            let id = setInterval(tick, delay);
+            return () => clearInterval(id);
+        }
+    }, [delay]);
+};
+
+// --- AD BOX CONTENT DEFINITION (GLOBAL) ---
 const ALL_PROMOS = [
-    // ... (ALL_PROMOS array remains the same) ...
+    // --- PAGE 1 (Default View) ---
     { title: "Planet Evolution", subtitle: "See your taste define your world.", icon: <Orbit size={20} color="#00ffff" />, accent: "#0f3460" },
     { title: "Go Premium Today", subtitle: "Unlimited uploads & lossless audio.", icon: <TrendingUp size={20} color="#ff00cc" />, accent: "#6e1c4e" },
     { title: "Collaborative Playlists", subtitle: "Share your queue with friends.", icon: <ListMusic size={20} color="#ffff00" />, accent: "#4c4e1c" },
@@ -31,9 +52,8 @@ const ALL_PROMOS = [
     { title: "Ad-Free Experience", subtitle: "Enjoy music with zero interruption.", icon: <SkipForward size={20} color="#cccccc" />, accent: "#4e4c4c" },
 ];
 
-// --- AD BOX GRID COMPONENT ---
+// --- AD BOX GRID COMPONENT (GLOBAL) ---
 function AdBoxGrid({ onFeatureClick }) {
-    // ... (AdBoxGrid component remains the same) ...
     const [pageIndex, setPageIndex] = useState(0);
     const containerRef = useRef(null);
 
@@ -43,10 +63,8 @@ function AdBoxGrid({ onFeatureClick }) {
     const handleScroll = (direction) => {
         setPageIndex(prev => {
             const newIndex = (prev + direction + TOTAL_PAGES) % TOTAL_PAGES;
-            // Scroll the container to the correct position (handled by CSS)
             if (containerRef.current) {
                 const scrollPos = containerRef.current.clientWidth * newIndex;
-                // Use smooth scroll for manual navigation
                 containerRef.current.scrollTo({ left: scrollPos, behavior: 'smooth' }); 
             }
             return newIndex;
@@ -55,9 +73,8 @@ function AdBoxGrid({ onFeatureClick }) {
 
     useInterval(() => {
         handleScroll(1);
-    }, 8000); // Auto-scroll every 8 seconds
+    }, 8000); 
 
-    // Map over ALL_PROMOS array in pages (ensure each group is wrapped)
     return (
         <div className="ad-grid-wrapper">
             <div className="ad-grid-scroll-container" ref={containerRef}>
@@ -114,7 +131,7 @@ function CoverImage({ srcs = [], alt, className }) {
 
 
 export default function MusicApp({ user, onLogout }) {
-    // ... existing state definitions ...
+    // --- START STATE DEFINITIONS ---
   const [songs, setSongs] = useState([]);          
   const [queue, setQueue] = useState([]);          
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -127,7 +144,7 @@ export default function MusicApp({ user, onLogout }) {
   const [showExitPrompt, setShowExitPrompt] = useState(false); 
   const [exitMascot, setExitMascot] = useState({}); 
 
-  // --- NEW: Account Menu State ---
+  // New Account Menu State
   const [showAccountMenu, setShowAccountMenu] = useState(false); 
 
   // --- NEW SCROLL LOGIC STATE & REFS ---
@@ -136,19 +153,28 @@ export default function MusicApp({ user, onLogout }) {
   const lastScrollY = useRef(0); // To track scroll position for direction detection
 
   // Loading State
-  // ... (loading states remain the same) ...
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [songProgress, setSongProgress] = useState(0);
 
   // Mascot expressions with messages (Keep this structure)
-  // ... (mascotExpressions remains the same) ...
+  const mascotExpressions = [
+    { img: '/mascots/mascot-sad.png', msg: "Don't leave me alone in space! 🌌", sub: "I'll be floating here with your music waiting for you to come back! 🎵" },
+    { img: '/mascots/mascot-crying.png', msg: "Please don't go! ", sub: "The stars won't be the same without you listening! ✨" },
+    { img: '/mascots/mascot-lonely.png', msg: "It's so quiet without you! ", sub: "Your playlists keep me company in the void! 🎶" },
+    { img: '/mascots/mascot-puppy-eyes.png', msg: "Just one more song? ", sub: "I promise this next track will blow your mind! 🚀" },
+    { img: '/mascots/mascot-waving.png', msg: "Come back soon, okay? ", sub: "I'll keep your queue warm for you! 🔥" }
+  ];
 
   // --- SLEEP TIMER STATE ---
-  // ... (sleep timer states remain the same) ...
+  const [sleepTime, setSleepTime] = useState(null); 
+  const sleepIntervalRef = useRef(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
 
-  const [showQR, setShowQR] = useState(false); 
+  const [showQR, setShowQR] = useState(false); // REMAINED for QR code component definition (even though not used in header)
   const qrUrl = window.location.href.replace("localhost", window.location.hostname);
 
   const [openMenuSongId, setOpenMenuSongId] = useState(null);
@@ -158,25 +184,30 @@ export default function MusicApp({ user, onLogout }) {
   useEffect(() => { songsRef.current = songs }, [songs]);
 
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
+    // --- END STATE DEFINITIONS ---
 
-  // --- AD BAR COLLAPSE LOGIC (NEW) ---
+  // --- AD BAR COLLAPSE LOGIC ---
   useEffect(() => {
     const handleScroll = () => {
+        if (!scrollRef.current) return;
+        
         const currentScrollY = scrollRef.current.scrollTop;
         const scrollDifference = currentScrollY - lastScrollY.current;
 
         // Threshold to determine if the user is scrolling significantly
         const scrollThreshold = 10; 
         
-        // Don't run logic if search bar/ad bar is already hidden/shown, or if at the very top
-        if (!isLibraryCollapsed && currentScrollY > 60) { // Start hiding after scrolling past header/top margin
+        // Only run logic if library is expanded
+        if (!isLibraryCollapsed) {
             
-            if (scrollDifference > scrollThreshold) {
-                // Scrolling Down (Hide the bar)
-                if (showAdBar) setShowAdBar(false);
-            } else if (scrollDifference < -scrollThreshold) {
-                // Scrolling Up (Show the bar)
-                if (!showAdBar) setShowAdBar(true);
+            if (currentScrollY > 60) { // Start hiding after scrolling past header/top margin
+                if (scrollDifference > scrollThreshold) {
+                    // Scrolling Down (Hide the bar)
+                    if (showAdBar) setShowAdBar(false);
+                } else if (scrollDifference < -scrollThreshold) {
+                    // Scrolling Up (Show the bar)
+                    if (!showAdBar) setShowAdBar(true);
+                }
             }
         }
         
@@ -198,7 +229,7 @@ export default function MusicApp({ user, onLogout }) {
             element.removeEventListener('scroll', handleScroll);
         }
     };
-  }, [isLibraryCollapsed, showAdBar]); // Dependencies: only run logic when these states change
+  }, [isLibraryCollapsed, showAdBar]); 
 
   // --- AD BOX CLICK HANDLER ---
   const handleAdClickLogic = (index) => {
@@ -752,7 +783,7 @@ export default function MusicApp({ user, onLogout }) {
                     gap: 10, 
                     flexShrink: 0, 
                     /* CRITICAL: Use transition for smooth hide/show */
-                    transition: 'transform 0.3s ease-out, opacity 0.3s ease-out',
+                    transition: 'transform 0.3s ease-out, opacity 0.3s ease-out, margin-bottom 0.3s ease-out, height 0.3s ease-out',
                     transform: showAdBar ? 'translateY(0)' : 'translateY(-100%)',
                     opacity: showAdBar ? 1 : 0,
                     marginBottom: showAdBar ? 10 : 0, // Adjust margin when hidden
