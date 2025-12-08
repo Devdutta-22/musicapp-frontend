@@ -73,7 +73,7 @@ function AdBoxGrid({ onFeatureClick }) {
 
     useInterval(() => {
         handleScroll(1);
-    }, 8000); 
+    }, 8000); // Auto-scroll every 8 seconds
 
     return (
         <div className="ad-grid-wrapper">
@@ -147,7 +147,7 @@ export default function MusicApp({ user, onLogout }) {
   // New Account Menu State
   const [showAccountMenu, setShowAccountMenu] = useState(false); 
 
-  // --- NEW SCROLL LOGIC STATE & REFS ---
+  // --- SCROLL LOGIC STATE & REFS ---
   const [showAdBar, setShowAdBar] = useState(true); // Control visibility of search/ad
   const scrollRef = useRef(null); // Ref for the scrollable container (.library-content)
   const lastScrollY = useRef(0); // To track scroll position for direction detection
@@ -186,7 +186,7 @@ export default function MusicApp({ user, onLogout }) {
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
     // --- END STATE DEFINITIONS ---
 
-  // --- AD BAR COLLAPSE LOGIC ---
+  // --- AD BAR COLLAPSE LOGIC (UPDATED FOR DESKTOP ONLY) ---
   useEffect(() => {
     const handleScroll = () => {
         if (!scrollRef.current) return;
@@ -194,11 +194,10 @@ export default function MusicApp({ user, onLogout }) {
         const currentScrollY = scrollRef.current.scrollTop;
         const scrollDifference = currentScrollY - lastScrollY.current;
 
-        // Threshold to determine if the user is scrolling significantly
         const scrollThreshold = 10; 
         
-        // Only run logic if library is expanded
-        if (!isLibraryCollapsed) {
+        // --- CRITICAL CHECK: ONLY APPLY ON DESKTOP/LARGE SCREENS ---
+        if (!isLibraryCollapsed && window.innerWidth > 768) { 
             
             if (currentScrollY > 60) { // Start hiding after scrolling past header/top margin
                 if (scrollDifference > scrollThreshold) {
@@ -221,12 +220,13 @@ export default function MusicApp({ user, onLogout }) {
 
     const element = scrollRef.current;
     if (element) {
-        element.addEventListener('scroll', handleScroll);
+        // Add passive: true for better scroll performance
+        element.addEventListener('scroll', handleScroll, { passive: true });
     }
     
     return () => {
         if (element) {
-            element.removeEventListener('scroll', handleScroll);
+            element.removeEventListener('scroll', handleScroll, { passive: true });
         }
     };
   }, [isLibraryCollapsed, showAdBar]); 
