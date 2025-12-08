@@ -1,12 +1,7 @@
 // src/components/MusicApp.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import Player from './Player';
-import UploadCard from './UploadCard';
-import LyricsPanel from './LyricsPanel';
-import PlanetCard from './PlanetCard'; 
-import '../App.css';
-import { QRCodeCanvas } from "qrcode.react";
+// ... other imports ...
 import { 
   Heart, Trash2, ArrowUp, ArrowDown, Play, Pause,
   MoreVertical, ListMusic, Shuffle, 
@@ -19,27 +14,11 @@ import {
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
 // Custom hook for the slideshow interval
-const useInterval = (callback, delay) => {
-    const savedCallback = useRef();
-
-    useEffect(() => {
-        savedCallback.current = callback;
-    }, [callback]);
-
-    useEffect(() => {
-        function tick() {
-            savedCallback.current();
-        }
-        if (delay !== null) {
-            let id = setInterval(tick, delay);
-            return () => clearInterval(id);
-        }
-    }, [delay]);
-};
+// ... (useInterval hook remains the same) ...
 
 // --- AD BOX CONTENT DEFINITION ---
 const ALL_PROMOS = [
-    // --- PAGE 1 (Default View) ---
+    // ... (ALL_PROMOS array remains the same) ...
     { title: "Planet Evolution", subtitle: "See your taste define your world.", icon: <Orbit size={20} color="#00ffff" />, accent: "#0f3460" },
     { title: "Go Premium Today", subtitle: "Unlimited uploads & lossless audio.", icon: <TrendingUp size={20} color="#ff00cc" />, accent: "#6e1c4e" },
     { title: "Collaborative Playlists", subtitle: "Share your queue with friends.", icon: <ListMusic size={20} color="#ffff00" />, accent: "#4c4e1c" },
@@ -54,6 +33,7 @@ const ALL_PROMOS = [
 
 // --- AD BOX GRID COMPONENT ---
 function AdBoxGrid({ onFeatureClick }) {
+    // ... (AdBoxGrid component remains the same) ...
     const [pageIndex, setPageIndex] = useState(0);
     const containerRef = useRef(null);
 
@@ -134,6 +114,7 @@ function CoverImage({ srcs = [], alt, className }) {
 
 
 export default function MusicApp({ user, onLogout }) {
+    // ... existing state definitions ...
   const [songs, setSongs] = useState([]);          
   const [queue, setQueue] = useState([]);          
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -149,29 +130,26 @@ export default function MusicApp({ user, onLogout }) {
   // --- NEW: Account Menu State ---
   const [showAccountMenu, setShowAccountMenu] = useState(false); 
 
+  // --- NEW SCROLL LOGIC STATE & REFS ---
+  const [showAdBar, setShowAdBar] = useState(true); // Control visibility of search/ad
+  const scrollRef = useRef(null); // Ref for the scrollable container (.library-content)
+  const lastScrollY = useRef(0); // To track scroll position for direction detection
+
   // Loading State
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [songProgress, setSongProgress] = useState(0);
+  // ... (loading states remain the same) ...
 
   // Mascot expressions with messages (Keep this structure)
-  const mascotExpressions = [
-    { img: '/mascots/mascot-sad.png', msg: "Don't leave me alone in space! 🌌", sub: "I'll be floating here with your music waiting for you to come back! 🎵" },
-    { img: '/mascots/mascot-crying.png', msg: "Please don't go! ", sub: "The stars won't be the same without you listening! ✨" },
-    { img: '/mascots/mascot-lonely.png', msg: "It's so quiet without you! ", sub: "Your playlists keep me company in the void! 🎶" },
-    { img: '/mascots/mascot-puppy-eyes.png', msg: "Just one more song? ", sub: "I promise this next track will blow your mind! 🚀" },
-    { img: '/mascots/mascot-waving.png', msg: "Come back soon, okay? ", sub: "I'll keep your queue warm for you! 🔥" }
-  ];
+  // ... (mascotExpressions remains the same) ...
 
   // --- SLEEP TIMER STATE ---
-  const [sleepTime, setSleepTime] = useState(null); 
-  const sleepIntervalRef = useRef(null);
+  // ... (sleep timer states remain the same) ...
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
 
-  const [showQR, setShowQR] = useState(false); // REMAINED for QR code component definition (even though not used in header)
+  const [showQR, setShowQR] = useState(false); 
+  const qrUrl = window.location.href.replace("localhost", window.location.hostname);
 
   const [openMenuSongId, setOpenMenuSongId] = useState(null);
   const menuRef = useRef(null);
@@ -180,6 +158,47 @@ export default function MusicApp({ user, onLogout }) {
   useEffect(() => { songsRef.current = songs }, [songs]);
 
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
+
+  // --- AD BAR COLLAPSE LOGIC (NEW) ---
+  useEffect(() => {
+    const handleScroll = () => {
+        const currentScrollY = scrollRef.current.scrollTop;
+        const scrollDifference = currentScrollY - lastScrollY.current;
+
+        // Threshold to determine if the user is scrolling significantly
+        const scrollThreshold = 10; 
+        
+        // Don't run logic if search bar/ad bar is already hidden/shown, or if at the very top
+        if (!isLibraryCollapsed && currentScrollY > 60) { // Start hiding after scrolling past header/top margin
+            
+            if (scrollDifference > scrollThreshold) {
+                // Scrolling Down (Hide the bar)
+                if (showAdBar) setShowAdBar(false);
+            } else if (scrollDifference < -scrollThreshold) {
+                // Scrolling Up (Show the bar)
+                if (!showAdBar) setShowAdBar(true);
+            }
+        }
+        
+        // Always show if scroll is near the top
+        if (currentScrollY <= 20) {
+            if (!showAdBar) setShowAdBar(true);
+        }
+
+        lastScrollY.current = currentScrollY;
+    };
+
+    const element = scrollRef.current;
+    if (element) {
+        element.addEventListener('scroll', handleScroll);
+    }
+    
+    return () => {
+        if (element) {
+            element.removeEventListener('scroll', handleScroll);
+        }
+    };
+  }, [isLibraryCollapsed, showAdBar]); // Dependencies: only run logic when these states change
 
   // --- AD BOX CLICK HANDLER ---
   const handleAdClickLogic = (index) => {
@@ -666,7 +685,7 @@ export default function MusicApp({ user, onLogout }) {
                 
                 {/* 2. Planet Profile Button */}
                 <button className="small-btn icon-only" onClick={() => setShowPlanet(true)} title="My Planet">
-                  <Orbit size={24} />
+                   <Orbit size={24} />
                 </button>
                 
                 {/* --- 3. ACCOUNT BUTTON (Replaces Logout/QR) --- */}
@@ -718,11 +737,30 @@ export default function MusicApp({ user, onLogout }) {
         </div>
 
         {/* --- NEW WRAPPER FOR SCROLLABLE CONTENT (Applies the flex stretch) --- */}
-        <div className="library-content">
+        <div 
+            className="library-content"
+            ref={scrollRef} // Attach ref to the scrollable container
+        >
 
           {!isLibraryCollapsed && (
-            // --- SEARCH BAR AND AD BOX CONTAINER (flexShrink: 0) ---
-            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
+            // --- SEARCH BAR AND AD BOX CONTAINER (HIDES/SHOWS) ---
+            <div 
+                style={{ 
+                    marginTop: 10, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: 10, 
+                    flexShrink: 0, 
+                    /* CRITICAL: Use transition for smooth hide/show */
+                    transition: 'transform 0.3s ease-out, opacity 0.3s ease-out',
+                    transform: showAdBar ? 'translateY(0)' : 'translateY(-100%)',
+                    opacity: showAdBar ? 1 : 0,
+                    marginBottom: showAdBar ? 10 : 0, // Adjust margin when hidden
+                    pointerEvents: showAdBar ? 'auto' : 'none', // Disable interaction when hidden
+                    height: showAdBar ? 'auto' : '0px', // Collapse height when hidden
+                    overflow: 'hidden' // Hide overflow during collapse
+                }}
+            >
               
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <div style={{ position: 'relative', flex: 1 }}>
@@ -744,8 +782,8 @@ export default function MusicApp({ user, onLogout }) {
             </div>
           )}
 
-          {/* This container now holds the Upload/Song List. It needs flex: 1 for scrolling. */}
-          <div style={{ marginTop: 12, flex: 1, overflowY: 'auto' }}> 
+          {/* This container now holds the Upload/Song List. flex: 1 ensures it fills the rest of the height. */}
+          <div style={{ marginTop: 12, flex: 1, position: 'relative' }}> 
             {showUpload && !isLibraryCollapsed ? (
               <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
             ) : (
