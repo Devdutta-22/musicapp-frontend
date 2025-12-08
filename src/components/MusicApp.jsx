@@ -58,58 +58,58 @@ export default function MusicApp({ user, onLogout }) {
 
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
 
-/* --- PWA SMART BACK BUTTON LOGIC (FINAL ROBUST FIX) --- */
+/* --- PWA FINAL BACK BUTTON OVERRIDE FIX --- */
 useEffect(() => {
     // 1. Only apply the fix if the app is installed as a PWA
     if (!window.matchMedia('(display-mode: standalone)').matches) {
         return;
     }
 
-    // --- Core Logic: The Action Handler ---
-    const handlePopState = (e) => {
-        // A. Handle open modals/views first (highest priority)
+    const handleBackButton = (e) => {
+        // --- 1. Handle Modals/Views (Highest Priority) ---
         if (showPlanet || showUpload) {
+            e.preventDefault(); // Stop the browser/OS default back action
             setShowPlanet(false);
             setShowUpload(false);
-            // Block the back action by pushing state back (stops app closure)
-            window.history.pushState(null, null, window.location.href);
             return;
         }
 
-        // B. Handle collapsing the player view (second priority)
+        // --- 2. Handle Player Collapse ---
         if (isLibraryCollapsed) {
+            e.preventDefault(); // Stop the browser/OS default back action
             setIsLibraryCollapsed(false);
-            // Block the back action by pushing state back
-            window.history.pushState(null, null, window.location.href);
+            return;
+        } 
+        
+        // --- 3. Block Final Exit (The Glitch Stopper) ---
+        // If we reach the main screen (library is NOT collapsed), block the action.
+        
+        // This is the most aggressive block, ensuring the JS runs first.
+        if (!isLibraryCollapsed) {
+            e.preventDefault(); // Stop the browser/OS default back action
+            
+            // OPTIONAL: You can display a message here if you want:
+            // console.log("Blocked PWA exit on main screen.");
+            
+            // We do NOT call pushState here; we simply preventDefault() and do nothing.
+            // This leaves the browser history intact, blocking the app closure command.
             return;
         }
-        
-        // C. Block the final exit from the main library screen (THE GLITCH FIX)
-        // If we reach this point, the user is on the main screen.
-        // We push state back to ensure the PWA window doesn't close entirely.
-        
-        // Use a slight delay to ensure the browser registers the action BEFORE closing.
-        setTimeout(() => {
-            if (window.history.length <= 2) {
-                window.history.pushState(null, null, window.location.href);
-            }
-        }, 50); 
     };
 
-    // --- Initial Setup and Cleanup ---
-    
-    // Always push an initial state to guarantee history.length starts correctly
-    if (window.history.length === 1 || window.history.length === 0) {
-        window.history.pushState(null, null, window.location.href);
-    }
-    
-    window.addEventListener('popstate', handlePopState);
-    
+    // Use event capture to ensure the listener runs BEFORE the browser's default history handler.
+    window.addEventListener('beforeunload', handleBackButton); // For general history/unload behavior
+    window.addEventListener('popstate', handleBackButton); // For explicit back button/gesture
+
     return () => {
-        window.removeEventListener('popstate', handlePopState);
+        window.removeEventListener('beforeunload', handleBackButton);
+        window.removeEventListener('popstate', handleBackButton);
     };
+
+// We DO NOT need to use window.history.pushState() manually for this aggressive fix.
+// The key is preventDefault().
 }, [isLibraryCollapsed, showPlanet, showUpload]); 
-/* --- END PWA SMART BACK BUTTON LOGIC --- */
+/* --- END PWA FINAL BACK BUTTON OVERRIDE FIX --- */
   /* --- SLEEP TIMER LOGIC --- */
   useEffect(() => {
     if (sleepTime !== null && sleepTime > 0) {
