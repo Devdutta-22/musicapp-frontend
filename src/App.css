@@ -1,4 +1,4 @@
-/* src/App.css — Final Version: Fully Responsive with Ad Grid Slider */
+/* src/App.css — Final Version: Fully Responsive with Ad Grid Slider and Dynamic Header */
 
 /* 1. UNIVERSAL RESET */
 * {
@@ -193,13 +193,18 @@ html, body, #root {
 }
 
 /* 2. SEARCH & AD GRID WRAPPER - This is the parent for search/ad components */
-.search-ad-wrapper {
-    /* This should be INSIDE library-content and scroll with everything */
-    flex-shrink: 0; /* Don't shrink */
+/* CRITICAL FIX: Add smooth transition to the element being dynamically hidden/shown */
+.library-content > div:first-child:not(.upload-area) {
+    /* Targets the div wrapper containing Search bar and AdBoxGrid */
+    flex-shrink: 0;
     margin-bottom: 12px;
     position: relative;
     z-index: 2;
+    /* ADDED TRANSITION FOR SMOOTH HIDE/SHOW */
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out, margin-top 0.3s ease-out, height 0.3s ease-out;
+    will-change: transform, opacity;
 }
+
 
 /* Custom scrollbar for desktop */
 .library-content::-webkit-scrollbar {
@@ -1377,26 +1382,3 @@ html, body, #root {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
 }
-/* --- AD BAR TRANSITION FIX (Add this to your CSS) --- */
-
-/* Wrapper for the Search Bar and Ad Grid placed INSIDE library-content */
-/* The parent component (MusicApp.jsx) uses inline styles to set transform and opacity 
-   based on the showAdBar state, but the transition property must be defined here for smoothness. */
-
-/* Note: The element being hidden/shown is the div containing the search and adbox */
-
-.library-content > div:first-child:not(.upload-area) {
-    /* Apply smooth transition to the scroll-related properties */
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out, margin-bottom 0.3s ease-out, height 0.3s ease-out;
-    will-change: transform, opacity, margin-bottom; /* Optimization hint */
-}
-
-/* We also need a slight margin/padding adjustment for the element containing the search bar 
-   to ensure the Song List slides up cleanly when the bar collapses */
-.library-content .song-list {
-    /* This ensures the list starts immediately after the search/ad section, 
-       even when the search/ad div's height collapses to 0. */
-    /* No change needed here, as the flex layout should handle it, but keep the padding consistent. */
-}
-
-/* === End AD BAR TRANSITION FIX === */
