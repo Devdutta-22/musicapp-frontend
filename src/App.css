@@ -32,20 +32,8 @@ html, body, #root {
   color: #edf0ff;
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   
-  /* Lock the page - no scroll at root level */
+  /* Allow normal scrolling on desktop */
   overflow: hidden;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  
-  /* Prevent pull-to-refresh and bounce effects */
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  
-  /* Prevent zoom on double-tap */
-  touch-action: pan-y;
 }
 
 .app-shell {
@@ -992,12 +980,15 @@ html, body, #root {
   MOBILE: Full-screen PWA experience
   ============================================================================ */
 @media (max-width: 768px) {
-  /* Lock body on mobile */
-  body {
+  /* Lock body on mobile to prevent page bounce */
+  html, body, #root {
     position: fixed;
     overflow: hidden;
     width: 100%;
     height: 100%;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
   
   /* App shell */
