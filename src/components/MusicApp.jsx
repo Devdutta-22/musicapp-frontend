@@ -58,71 +58,151 @@ export default function MusicApp({ user, onLogout }) {
 
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
 
-/* --- PWA FINAL SMART BACK BUTTON LOGIC --- */
-useEffect(() => {
-    // 1. Only apply the fix if the app is installed as a PWA
+  /* --- STATE PERSISTENCE: RESTORE ON MOUNT --- */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('musicAppState');
+      if (saved) {
+        const state = JSON.parse(saved);
+        
+        // Only restore if saved within last 24 hours
+        const timeDiff = Date.now() - (state.timestamp || 0);
+        if (timeDiff < 24 * 60 * 60 * 1000) {
+          
+          if (state.queue?.length > 0) {
+            setQueue(state.queue);
+            setCurrentIndex(state.currentIndex ?? -1);
+          }
+          
+          // Don't auto-resume playing - let user decide
+          if (state.shuffle !== undefined) setShuffle(state.shuffle);
+          if (state.repeatMode) setRepeatMode(state.repeatMode);
+          if (state.isLibraryCollapsed !== undefined) {
+            setIsLibraryCollapsed(state.isLibraryCollapsed);
+          }
+          
+          console.log('✅ Session restored from', Math.floor(timeDiff / 60000), 'minutes ago');
+        } else {
+          // Clear old state
+          localStorage.removeItem('musicAppState');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore state:', e);
+    }
+  }, []); // Run once on mount
+
+  /* --- STATE PERSISTENCE: SAVE ON CHANGES --- */
+  useEffect(() => {
+    // Only save if we have meaningful state
+    if (queue.length === 0) return;
+
+    const stateToSave = {
+      queue,
+      currentIndex,
+      shuffle,
+      repeatMode,
+      isLibraryCollapsed,
+      timestamp: Date.now()
+    };
+    
+    try {
+      localStorage.setItem('musicAppState', JSON.stringify(stateToSave));
+    } catch (e) {
+      console.error('Failed to save state:', e);
+    }
+  }, [queue, currentIndex, shuffle, repeatMode, isLibraryCollapsed]);
+
+  /* --- STATE PERSISTENCE: SAVE BEFORE CLOSE --- */
+  useEffect(() => {
+    const saveOnClose = () => {
+      if (queue.length === 0) return;
+
+      const stateToSave = {
+        queue,
+        currentIndex,
+        shuffle,
+        repeatMode,
+        isLibraryCollapsed,
+        timestamp: Date.now()
+      };
+      
+      try {
+        localStorage.setItem('musicAppState', JSON.stringify(stateToSave));
+      } catch (e) {
+        console.error('Failed to save on close:', e);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) saveOnClose();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', saveOnClose);
+    window.addEventListener('pagehide', saveOnClose);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', saveOnClose);
+      window.removeEventListener('pagehide', saveOnClose);
+    };
+  }, [queue, currentIndex, shuffle, repeatMode, isLibraryCollapsed]);
+
+  /* --- PWA SMART BACK BUTTON LOGIC --- */
+  useEffect(() => {
     if (!window.matchMedia('(display-mode: standalone)').matches) {
         return;
     }
 
-    const handleBackButton = (e) => {
-        // --- 1. Handle open modals/views (Highest Priority) ---
+    const handleBackButton = () => {
         if (showPlanet || showUpload) {
-            e.preventDefault(); // Stop the browser/OS default back action
             setShowPlanet(false);
             setShowUpload(false);
-            return; // Action handled
+            window.history.pushState(null, '', window.location.href);
+            return;
         }
 
-        // --- 2. Collapse the expanded player view ---
         if (isLibraryCollapsed) {
-            e.preventDefault(); // Block the default back (which would be 'close PWA')
-            setIsLibraryCollapsed(false); // Collapse the view to the library
-            
-            // OPTIONAL: Pushing state back here restores the history. This is safer.
-            window.history.pushState(null, null, window.location.href);
-            return; // Action handled
-        } 
+            setIsLibraryCollapsed(false);
+            window.history.pushState(null, '', window.location.href);
+            return;
+        }
         
-        // --- 3. Main Library Screen (The Goal) ---
-        // If we reach this point, the user is on the main screen (library is NOT collapsed).
-        // We do *nothing* and *do not call e.preventDefault()*. 
-        // We let the OS handle the back action, which should correctly minimize the PWA.
-        
-        // Ensure no history entries are left over from previous debugging attempts.
-        // We rely on the initial pushState below to stabilize history.
+        // Main screen - allow OS to minimize PWA
     };
 
-    // --- Initial Setup and Cleanup ---
+    // Push initial state once
+    window.history.pushState(null, '', window.location.href);
     
-    // Push an initial state ONLY ONCE to ensure history.length is always at least 2 
-    // when the app loads, stabilizing the base history layer.
-    if (window.history.length === 1 || window.history.length === 0) {
-        window.history.pushState(null, null, window.location.href);
-    }
-    
-    // We listen to popstate for history navigation, and beforeunload as a general check.
     window.addEventListener('popstate', handleBackButton);
-    // window.addEventListener('beforeunload', handleBackButton); // Removing this as it can interfere with OS minimization
     
     return () => {
         window.removeEventListener('popstate', handleBackButton);
-        // window.removeEventListener('beforeunload', handleBackButton);
     };
-}, [isLibraryCollapsed, showPlanet, showUpload]); 
-/* --- END PWA FINAL SMART BACK BUTTON LOGIC --- */
+  }, [showPlanet, showUpload, isLibraryCollapsed]);
+
+  /* --- PWA: PUSH STATE WHEN VIEWS OPEN --- */
+  useEffect(() => {
+    if (!window.matchMedia('(display-mode: standalone)').matches) return;
+    
+    if (showPlanet || showUpload || isLibraryCollapsed) {
+      window.history.pushState(null, '', window.location.href);
+    }
+  }, [showPlanet, showUpload, isLibraryCollapsed]);
+
   /* --- SLEEP TIMER LOGIC --- */
   useEffect(() => {
     if (sleepTime !== null && sleepTime > 0) {
       sleepIntervalRef.current = setTimeout(() => {
         setSleepTime(prev => {
           if (prev <= 1) {
-            setPlaying(false); // STOP MUSIC
+            setPlaying(false);
             return null;
           }
           return prev - 1;
         });
-      }, 60000); // Count down every 1 minute
+      }, 60000);
     }
     return () => clearTimeout(sleepIntervalRef.current);
   }, [sleepTime]);
@@ -161,11 +241,12 @@ useEffect(() => {
       const randomized = shuffleArray(data);
       setSongs(randomized);
 
+      // Only set queue if we didn't restore from localStorage
       if (randomized.length && queue.length === 0) {
         setQueue(randomized.map(d => d.id));
         setCurrentIndex(0);
       } else {
-        setQueue(q => q.filter(id => randomized.some(d => d.id === id) || queue.includes(id)));
+        setQueue(q => q.filter(id => randomized.some(d => d.id === id)));
       }
     } catch (e) {
       console.error('fetchSongs', e);
@@ -177,26 +258,22 @@ useEffect(() => {
 
   useEffect(() => { fetchSongs(); }, []); 
 
-  // --- UPDATED: RECORD LISTEN WITH GENRE ---
   async function recordListen(durationSeconds, songGenre) {
     if (!user || !durationSeconds) return;
 
-    // YOUR RENDER URL
     const API_BASE = "https://musicapp-o3ow.onrender.com"; 
     
     const minutes = Math.ceil(durationSeconds / 60);
-    const genrePayload = songGenre || "Unknown"; // Logic: Send genre if available
+    const genrePayload = songGenre || "Unknown";
 
     console.log(`Sending Data: ${minutes} mins of ${genrePayload} to user ${user.username}`);
 
     try {
-      // Logic Update: We now send 'genre' in the body
       await axios.post(`${API_BASE}/api/users/${user.id}/add-minutes`, { 
         minutes: minutes,
         genre: genrePayload 
       });
       
-      // Update local user state immediately
       if (user) {
           user.totalMinutesListened = (user.totalMinutesListened || 0) + minutes;
       }
@@ -352,7 +429,6 @@ useEffect(() => {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: isLibraryCollapsed ? 0 : 12 }}>
           
-          {/* LEFT SIDE: Brand Image */}
           <div 
             onClick={() => window.location.reload()} 
             style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flex: 1, minWidth: 0, userSelect: 'none' }}
@@ -365,28 +441,22 @@ useEffect(() => {
             />
           </div>
 
-          {/* RIGHT SIDE: Action Buttons */}
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
               
               {!isLibraryCollapsed && (
               <>
-                {/* 1. Upload Button */}
                 <button className="small-btn" onClick={() => setShowUpload(v => !v)} title="Upload Song">
                   {showUpload ? <ArrowLeft size={18}/>: <Rocket size={18} />} 
                 </button>
 
-                
-
-                {/* 3. PLANET PROFILE BUTTON */}
                 <button className="small-btn icon-only" onClick={() => setShowPlanet(true)} title="My Planet">
                    <Globe size={24} />
                 </button>
 
-                {/* 4. LOGOUT BUTTON */}
                 <button className="small-btn icon-only" onClick={onLogout} title="Sign Out">
                   <LogOut size={18}/>
                 </button>
-                {/* 2. QR Code Button */}
+                
                 <div style={{ position: 'relative' }}>
                   <button className="small-btn icon-only" onClick={() => setShowQR(v => !v)} title="QR Code">
                     <QrCode size={18}/>
@@ -400,7 +470,6 @@ useEffect(() => {
               </>
             )}
 
-              {/* COLLAPSE/EXPAND BUTTON */}
               <button 
                 className="small-btn icon-only collapse-btn" 
                 onClick={() => setIsLibraryCollapsed(v => !v)} 
@@ -509,7 +578,6 @@ useEffect(() => {
                   <div className="big-artist">{current.artistName}</div>
                   <div style={{ marginTop: 12 }}>
                     
-                    {/* UPDATED PLAYER */}
                     <Player
                       song={current}
                       playing={playing}
@@ -518,11 +586,8 @@ useEffect(() => {
                       onNext={() => playNext({ manual: true })}
                       onPrev={() => playPrev()}
                       
-                      // --- THIS IS THE KEY UPDATE ---
                       onEnded={() => { 
-                          // Pass Genre to 'recordListen'
                           recordListen(current.durationSeconds || 180, current.genre); 
-                          // Logic Preserved: Auto play next song
                           playNext({ manual: false });
                       }}
                       
