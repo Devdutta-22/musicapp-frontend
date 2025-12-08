@@ -1,4 +1,4 @@
-/* src/App.css — Final Version: PWA with Fixed Viewport & Internal Scrolling */
+/* src/App.css — Final Version: Fully Responsive with Ad Grid Slider */
 
 /* 1. UNIVERSAL RESET */
 * {
@@ -20,8 +20,8 @@
 }
 
 /* ============================================================================
-   PWA SETUP: Fixed viewport, no page scroll, only internal scrolling
-   ============================================================================ */
+  PWA SETUP: Fixed viewport, no page scroll, only internal scrolling
+  ============================================================================ */
 html, body, #root {
   height: 100%;
   width: 100%;
@@ -96,8 +96,8 @@ html, body, #root {
 }
 
 /* ============================================================================
-   Library (Sidebar) - Flex Container with Internal Scroll
-   ============================================================================ */
+  Library (Sidebar) - Flex Container with Internal Scroll
+  ============================================================================ */
 .library {
   width: 400px;
   padding: 20px;
@@ -105,10 +105,10 @@ html, body, #root {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));
   box-shadow: 0 14px 40px rgba(0,0,0,0.55);
   
-  /* CRITICAL: Flex column container */
+  /* CRITICAL CHANGE: Flex column container for scrolling */
   display: flex;
   flex-direction: column;
-  height: 100%; /* Take full available height */
+  height: 100%; 
   
   /* NO SCROLL at this level */
   overflow: hidden;
@@ -122,7 +122,7 @@ html, body, #root {
 .library > div:first-child { 
   position: relative; 
   z-index: 2; 
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0; /* Header content should not shrink */
 }
 
 .library::before {
@@ -166,12 +166,13 @@ html, body, #root {
 }
 
 /* ============================================================================
-   SCROLLABLE CONTENT AREA - This is where all scrolling happens
-   ============================================================================ */
+  SCROLLABLE CONTENT AREA - This is where all scrolling happens
+  ============================================================================ */
+
+/* 1. LIBRARY CONTENT - Make this the primary scroll container */
 .library-content {
-  /* Takes all remaining space */
+  /* Takes all remaining space below the header */
   flex: 1;
-  
   /* Flex column for internal layout */
   display: flex;
   flex-direction: column;
@@ -189,6 +190,15 @@ html, body, #root {
   
   padding-bottom: 20px;
   position: relative;
+}
+
+/* 2. SEARCH & AD GRID WRAPPER - This is the parent for search/ad components */
+.search-ad-wrapper {
+    /* This should be INSIDE library-content and scroll with everything */
+    flex-shrink: 0; /* Don't shrink */
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 2;
 }
 
 /* Custom scrollbar for desktop */
@@ -209,15 +219,14 @@ html, body, #root {
   background: rgba(255,255,255,0.15);
 }
 
-/* Song List - No scroll here, parent handles it */
+/* Song List - Just a flex container, parent handles scroll */
 .library .song-list { 
   display: flex; 
   flex-direction: column; 
   gap: 8px; 
-  padding-bottom: 12px; 
-  z-index: 2; 
+  flex-shrink: 0; /* Don't shrink */
   position: relative;
-  flex-shrink: 0;
+  z-index: 1;
 }
 
 /* === UPLOAD AREA ANIMATION === */
@@ -407,14 +416,13 @@ html, body, #root {
   min-width: 0;
 }
 
-/* ============================================================================
-   AD GRID SLIDER STYLES
-   ============================================================================ */
+/* ------------------ AD GRID SLIDER STYLES (NEW) ------------------ */
+
 .ad-grid-wrapper {
   position: relative;
   overflow: hidden;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 12px; /* Adjusted margin */
   flex-shrink: 0; 
 }
 
@@ -429,6 +437,8 @@ html, body, #root {
 .ad-grid-page {
   flex-shrink: 0; 
   width: 100%;
+  
+  /* 2x2 Grid Layout */
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
@@ -482,6 +492,7 @@ html, body, #root {
   text-overflow: ellipsis;
 }
 
+/* Page Indicators (Dots) */
 .ad-grid-dots {
   display: flex;
   justify-content: center;
@@ -504,6 +515,7 @@ html, body, #root {
   border-radius: 3px;
 }
 
+/* Navigation Arrows (Optional) */
 .ad-arrow {
   position: absolute;
   top: 40%;
@@ -524,16 +536,17 @@ html, body, #root {
 .ad-arrow.left { left: 5px; }
 .ad-arrow.right { right: 5px; }
 
-/* ============================================================================
-   Player Area - Also with internal scroll
-   ============================================================================ */
+
+/* ------------------ Player Area - Also with internal scroll ------------------ */
 .player-area { 
   flex: 1; 
   padding: 32px; 
   display: flex; 
   flex-direction: column; 
   height: 100%;
-  overflow-y: auto; 
+  
+  /* CRITICAL: Enable scroll for desktop */
+  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
@@ -819,14 +832,7 @@ html, body, #root {
   display: none; 
 }
 
-*::-webkit-scrollbar { 
-  width: 6px; 
-}
-
-*::-webkit-scrollbar-thumb { 
-  background: rgba(255,255,255,0.1); 
-  border-radius: 4px; 
-}
+/* Old scrollbar CSS removed in favor of library-content::-webkit-scrollbar */
 
 /* --- BUFFERING ANIMATION --- */
 @keyframes buffer-slide { 
@@ -978,8 +984,8 @@ html, body, #root {
 }
 
 /* ============================================================================
-   MOBILE: Full-screen PWA experience
-   ============================================================================ */
+  MOBILE: Full-screen PWA experience
+  ============================================================================ */
 @media (max-width: 768px) {
   /* Lock body on mobile */
   body {
