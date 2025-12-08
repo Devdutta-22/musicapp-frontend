@@ -179,10 +179,6 @@ export default function MusicApp({ user, onLogout }) {
 
   const current = songs.find(s => s.id === queue[currentIndex]) || null;
 
-  /* --- AD BOX SLIDESHOW STATE --- */
-  // The AdBoxGrid component manages its own page state and interval internally,
-  // so we don't need adActiveIndex state here anymore.
-
   // --- AD BOX CLICK HANDLER ---
   const handleAdClickLogic = (index) => {
       // Logic for what happens when a specific grid item is clicked (0 to 7)
@@ -665,115 +661,122 @@ export default function MusicApp({ user, onLogout }) {
           </div>
         </div>
 
-        {!isLibraryCollapsed && (
-          // --- SEARCH BAR AND AD BOX CONTAINER ---
-          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10, }}>
-            
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <Search size={16} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                  <input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search..."
-                  className="search-input"
-                  style={{ paddingLeft: 32, width: '100%' }}
-                  />
-                </div>
-                {searchTerm && <button className="small-btn" onClick={() => setSearchTerm('')}>Clear</button>}
-              </div>
+        {/* --- NEW WRAPPER FOR SCROLLABLE CONTENT (Applies the flex stretch) --- */}
+        <div className="library-content">
 
-            {/* --- NEW: MOVING SLIDESHOW AD BOX PLACEMENT --- */}
-            <AdBoxGrid onFeatureClick={handleAdClickLogic} />
-
-          </div>
-        )}
-
-        <div style={{ marginTop: 12 }}>
-          {showUpload && !isLibraryCollapsed ? (
-            <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
-          ) : (
-            <div className="song-list" style={{ height: 'calc(100vh - 200px)', overflowY: 'auto', paddingRight: isLibraryCollapsed ? 0 : 4, position: 'relative' }}>
+          {!isLibraryCollapsed && (
+            // --- SEARCH BAR AND AD BOX CONTAINER ---
+            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
               
-              {isLoading ? (
-                <div className="loading-container">
-                  <svg className="loading-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                  <div className="loading-text">Loading Library</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Search size={16} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                    <input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search..."
+                    className="search-input"
+                    style={{ paddingLeft: 32, width: '100%' }}
+                    />
+                  </div>
+                  {searchTerm && <button className="small-btn" onClick={() => setSearchTerm('')}>Clear</button>}
                 </div>
-              ) : visibleSongs.length === 0 ? (
-                  <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs found.</div>
-              ) : (
-                <>
-                  {visibleSongs.map(s => (
-                    <div key={s.id} className="song-item" onClick={() => playSong(s)} title={s.title}>
-                      <CoverImage srcs={[s.coverUrl, s.artistImageUrl, PERSON_PLACEHOLDER]} alt={s.title} className="cover" />
-                      
-                      {!isLibraryCollapsed && (
-                        <>
-                          <div className="song-info">
-                            <div className="title" title={s.title}>{s.title}</div>
-                            <div className="artist" title={s.artistName}>{s.artistName}</div>
-                          </div>
 
-                          <div className="like-wrap">
-                            <button className={`icon-btn ${s.liked ? 'liked' : ''}`} onClick={(e) => { e.stopPropagation(); toggleLike(s.id); }}>
-                              <Heart size={18} fill={s.liked ? "currentColor" : "none"} />
-                            </button>
-                          </div>
+              {/* --- NEW: MOVING SLIDESHOW AD BOX PLACEMENT --- */}
+              <AdBoxGrid onFeatureClick={handleAdClickLogic} />
 
-                          <div className="more-wrap" ref={menuRef}>
-                            <button className="icon-btn" onClick={(ev) => { ev.stopPropagation(); setOpenMenuSongId(openMenuSongId === s.id ? null : s.id); }}>
-                              <MoreVertical size={20}/>
-                            </button>
-                            {openMenuSongId === s.id && (
-                              <div className="more-menu" onClick={(ev) => ev.stopPropagation()}>
-                                <button className="menu-item" onClick={() => addToQueue(s.id)}>
-                                    <ListPlus size={16} style={{marginRight: 8}}/> Add to queue
-                                </button>
-                                <button className="menu-item" onClick={() => playNextNow(s.id)}>
-                                    <SkipForward size={16} style={{marginRight: 8}}/> Play next
-                                </button>
-                                <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>
-                                    <PlayCircle size={16} style={{marginRight: 8}}/> Play now
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {/* Loading More Indicator */}
-                  {isLoadingMore && (
-                    <div style={{ 
-                      padding: '16px', 
-                      textAlign: 'center', 
-                      color: 'var(--text-secondary)',
-                      fontSize: '13px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px'
-                    }}>
-                      <svg 
-                        style={{ animation: 'spin 1s linear infinite', width: '16px', height: '16px' }} 
-                        viewBox="0 0 24 24" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        strokeWidth="2"
-                      >
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                      </svg>
-                      Loading more songs...
-                    </div>
-                  )}
-                </>
-              )}
             </div>
           )}
+
+          <div style={{ marginTop: 12, flex: 1, overflowY: 'auto' }}>
+            {showUpload && !isLibraryCollapsed ? (
+              <div className="upload-area"><UploadCard onUploaded={() => { fetchSongs(); setShowUpload(false); }} /></div>
+            ) : (
+              <div 
+                className="song-list" 
+                // CRITICAL: Removed old height calculation, using flex: 1 and overflowY: 'auto' 
+                style={{ paddingRight: isLibraryCollapsed ? 0 : 4, position: 'relative', flex: 1, overflowY: 'auto' }} 
+              >
+                {isLoading ? (
+                  <div className="loading-container">
+                    <svg className="loading-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    <div className="loading-text">Loading Library</div>
+                  </div>
+                ) : visibleSongs.length === 0 ? (
+                    <div style={{ padding: 12, color: 'var(--text-secondary)' }}>No songs found.</div>
+                ) : (
+                  <>
+                    {visibleSongs.map(s => (
+                      <div key={s.id} className="song-item" onClick={() => playSong(s)} title={s.title}>
+                        <CoverImage srcs={[s.coverUrl, s.artistImageUrl, PERSON_PLACEHOLDER]} alt={s.title} className="cover" />
+                        
+                        {!isLibraryCollapsed && (
+                          <>
+                            <div className="song-info">
+                              <div className="title" title={s.title}>{s.title}</div>
+                              <div className="artist" title={s.artistName}>{s.artistName}</div>
+                            </div>
+
+                            <div className="like-wrap">
+                              <button className={`icon-btn ${s.liked ? 'liked' : ''}`} onClick={(e) => { e.stopPropagation(); toggleLike(s.id); }}>
+                                <Heart size={18} fill={s.liked ? "currentColor" : "none"} />
+                              </button>
+                            </div>
+
+                            <div className="more-wrap" ref={menuRef}>
+                              <button className="icon-btn" onClick={(ev) => { ev.stopPropagation(); setOpenMenuSongId(openMenuSongId === s.id ? null : s.id); }}>
+                                <MoreVertical size={20}/>
+                              </button>
+                              {openMenuSongId === s.id && (
+                                <div className="more-menu" onClick={(ev) => ev.stopPropagation()}>
+                                  <button className="menu-item" onClick={() => addToQueue(s.id)}>
+                                      <ListPlus size={16} style={{marginRight: 8}}/> Add to queue
+                                  </button>
+                                  <button className="menu-item" onClick={() => playNextNow(s.id)}>
+                                      <SkipForward size={16} style={{marginRight: 8}}/> Play next
+                                  </button>
+                                  <button className="menu-item" onClick={() => { playSong(s); setOpenMenuSongId(null); }}>
+                                      <PlayCircle size={16} style={{marginRight: 8}}/> Play now
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Loading More Indicator */}
+                    {isLoadingMore && (
+                      <div style={{ 
+                        padding: '16px', 
+                        textAlign: 'center', 
+                        color: 'var(--text-secondary)',
+                        fontSize: '13px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}>
+                        <svg 
+                          style={{ animation: 'spin 1s linear infinite', width: '16px', height: '16px' }} 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          strokeWidth="2"
+                        >
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        Loading more songs...
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
