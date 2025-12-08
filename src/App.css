@@ -1019,13 +1019,14 @@ html, body, #root {
   }
   
   /* App shell */
-  .app-shell { 
-    flex-direction: column; 
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height */
-    overflow: hidden; 
-    width: 100%; 
-  }
+.app-shell { 
+  flex-direction: column; 
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden; 
+  width: 100%;
+  max-width: 100vw; /* Force hard limit */
+}
   
   .collapse-btn { 
     display: none !important; 
@@ -1036,9 +1037,8 @@ html, body, #root {
     width: 100% !important; 
     max-width: 100% !important; 
     height: 100%;
-    border-radius: 0; 
-    margin: 0; 
-    padding: 12px 12px 0 12px;
+    border: none !important; /* Removes the 1px border causing the cut-off */
+    padding: 12px 10px 0 10px; /* Slightly reduced padding (12px -> 10px) to give content more room */
     z-index: 10;
     overflow: hidden; /* No scroll at this level */
   }
@@ -1067,20 +1067,20 @@ html, body, #root {
   }
   
   /* --- HEADER FIX: Allow wrapping so search bar doesn't push width out --- */
-  .library > div:first-child { 
-    display: flex; 
-    flex-wrap: wrap !important; /* CHANGED: Allows search to drop to next line */
-    gap: 8px !important; 
-    align-items: center; 
-    justify-content: space-between !important; 
-    margin-bottom: 12px;
-    padding-right: 0; /* CHANGED: Removed padding to ensure exact fit */
-    flex-shrink: 0;
-    position: relative;
-    z-index: 100;
-    width: 100%; /* Ensure container stays within screen */
-    box-sizing: border-box;
-  }
+.library > div:first-child { 
+  /* ... keep your flex settings ... */
+  display: flex; 
+  flex-wrap: wrap !important;
+  gap: 8px !important; 
+  align-items: center; 
+  justify-content: space-between !important; 
+  margin-bottom: 12px;
+  
+  /* Ensure no padding pushes width */
+  padding: 0 2px; 
+  width: 100%;
+  box-sizing: border-box;
+}
   
   /* Logo sizing */
   .library > div:first-child > div:first-child {
@@ -1299,26 +1299,35 @@ html, body, #root {
   }
 
   /* Mini player - fixed at bottom */
-  .mini-player {
-    display: flex; 
-    position: fixed; 
-    bottom: 12px; 
-    left: 12px; 
-    right: 12px; 
-    height: 64px; 
-    background: rgba(20, 20, 30, 0.45); 
-    backdrop-filter: blur(25px) saturate(180%); 
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15); 
-    border-radius: 16px;
-    align-items: center; 
-    padding: 0 12px; 
-    z-index: 100;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5); 
-    cursor: pointer;
-    box-sizing: border-box; /* CHANGED: Includes padding in width calculation */
-    max-width: calc(100% - 24px); /* CHANGED: Prevents overflow on tiny screens */
-  }
+/* Inside @media (max-width: 768px) */
+
+.mini-player {
+  display: flex; 
+  position: fixed; 
+  
+  /* CRITICAL FIX: Lifts player above Android/iOS navigation bars */
+  bottom: 20px; 
+  bottom: calc(12px + env(safe-area-inset-bottom)); 
+  
+  left: 12px; 
+  right: 12px; 
+  height: 64px; 
+  background: rgba(20, 20, 30, 0.45); 
+  backdrop-filter: blur(25px) saturate(180%); 
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15); 
+  border-radius: 16px;
+  align-items: center; 
+  padding: 0 12px; 
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); 
+  cursor: pointer;
+  box-sizing: border-box; 
+  
+  /* Ensure it never exceeds screen width minus margins */
+  width: auto;
+  max-width: calc(100% - 24px); 
+}
   
   .mini-cover { 
     width: 42px; 
