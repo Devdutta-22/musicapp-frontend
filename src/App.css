@@ -1482,3 +1482,30 @@ html, body, #root {
     padding-right: 4px;
   }
 }
+/* --- FIX FOR SUPER NARROW SCREENS (<360px) --- */
+@media (max-width: 360px) {
+  /* 1. Reduce side padding in the header container */
+  .library > div:first-child {
+    padding: 0 0px !important; 
+    gap: 2px !important; /* Minimal gap between logo and buttons */
+  }
+
+  /* 2. Shrink the logo slightly to make room */
+  .library > div:first-child > div:first-child img {
+    height: 20px !important; /* Smaller logo */
+    max-width: 100px !important;
+  }
+
+  /* 3. Make the action buttons smaller and closer together */
+  .library > div:first-child .small-btn {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 4px !important;
+    margin: 0 !important;
+  }
+
+  /* 4. Ensure the button container itself has tight spacing */
+  .library > div:first-child > div:last-child {
+    gap: 2px !important;
+  }
+}
