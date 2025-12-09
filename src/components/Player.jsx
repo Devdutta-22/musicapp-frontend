@@ -71,13 +71,35 @@ export default function Player({
     }
   }
 
-  // --- AUDIO EVENT HANDLERS (Moved from useEffect to props) ---
+  // --- NEW HELPER: SYNC MEDIA SESSION (CONTROL CENTER) ---
+  const updateMediaSessionPosition = () => {
+    if ('mediaSession' in navigator && audioRef.current) {
+      const audio = audioRef.current;
+      // Ensure we have valid numbers before setting state
+      if (!isFinite(audio.duration) || !isFinite(audio.currentTime)) return;
+
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: audio.currentTime,
+        });
+      } catch (error) {
+        console.error("Media Session error:", error);
+      }
+    }
+  };
+
+  // --- AUDIO EVENT HANDLERS ---
 
   const handleLoadedMetadata = (e) => {
     const d = Math.floor(e.target.duration) || 0;
     setDuration(d);
     setBuffering(false);
     updateRange(d ? (e.target.currentTime / d) * 100 : 0);
+    
+    // Fix 1: Tell Control Center the total duration immediately upon load
+    updateMediaSessionPosition();
   };
 
   const handleTimeUpdate = (e) => {
@@ -86,11 +108,16 @@ export default function Player({
       setTime(t);
       updateRange(duration ? (t / duration) * 100 : 0);
       if (onProgressRef.current) onProgressRef.current(t, duration); 
+
+      // Fix 2: Periodically update Control Center (every second) to prevent drift
+      if (Math.floor(t) !== Math.floor(time)) {
+        updateMediaSessionPosition();
+      }
     }
   };
 
   const handleEnded = () => {
-    console.log("Player: Song ended. Saving stats..."); // Debug log
+    console.log("Player: Song ended. Saving stats..."); 
     if (onEnded) onEnded(); 
   };
 
@@ -163,6 +190,10 @@ export default function Player({
     audio.currentTime = isFinite(val) ? val : 0;
     setTime(audio.currentTime);
     updateRange(duration ? (audio.currentTime / duration) * 100 : 0);
+    
+    // Fix 3: Update Control Center immediately after user seeks
+    updateMediaSessionPosition();
+    
     if (playing) attemptPlay();
   }
 
@@ -272,7 +303,7 @@ export default function Player({
         style={{ display: 'none' }}
         loop={repeatMode === 'one'} 
         
-        // ✅ EVENTS ATTACHED DIRECTLY (This fixes the bug)
+        // EVENTS ATTACHED DIRECTLY
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded} 
