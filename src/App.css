@@ -1485,18 +1485,14 @@ html, body, #root {
 /* --- FIX FOR SUPER NARROW SCREENS (<360px) --- */
 /* --- FIX FOR SUPER NARROW SCREENS (<380px) --- */
 /* --- FIX FOR SUPER NARROW SCREENS (<360px) --- */
-@media (max-width: 360px) {
-  /* ====================
-     1. GLOBAL CONTAINER
-     ==================== */
+@media (max-width: 380px) {
+  /* 1. Minimize main container padding */
   .library {
     padding-left: 4px !important;
     padding-right: 4px !important;
   }
 
-  /* ====================
-     2. HEADER (Logo + Top Buttons)
-     ==================== */
+  /* 2. Header Layout: standard spacing */
   .library > div:first-child {
     flex-wrap: nowrap !important;
     gap: 0px !important;
@@ -1505,75 +1501,44 @@ html, body, #root {
     width: 100% !important;
   }
 
-  /* Logo Container: Stop growing */
+  /* 3. Logo Container: STOP GROWING (flex: 0) */
+  /* This fixes the "unnecessarily wide" issue */
   .library > div:first-child > div:first-child {
-    flex: 0 1 auto !important;
+    flex: 0 1 auto !important; /* Only take needed space, don't grow */
     min-width: 0 !important;
     overflow: hidden;
-    margin-right: auto !important;
+    margin-right: auto !important; /* Pushes everything else to the right */
   }
 
-  /* Logo Image */
+  /* 4. Logo Image: Keep it small */
   .library > div:first-child > div:first-child img {
     height: 22px !important;
     width: auto !important;
-    max-width: 90px !important;
+    max-width: 100px !important;
   }
 
-  /* Button Container */
+  /* 5. Button Container: Add breathing room */
   .library > div:first-child > div:last-child {
     flex-shrink: 0 !important;
     display: flex !important;
-    gap: 4px !important;
+    gap: 5px !important; /* Increased gap for "space to breathe" */
+    align-items: center !important;
   }
 
-  /* Header Buttons */
+  /* 6. Buttons: Comfortable touch target size */
   .library > div:first-child .small-btn {
-    width: 32px !important;
-    height: 32px !important;
+    width: 34px !important; /* Slightly wider than before */
+    height: 34px !important;
     padding: 0 !important;
     margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   
+  /* 7. Icons inside buttons */
   .library > div:first-child .small-btn svg {
-    width: 16px !important;
-    height: 16px !important;
-  }
-
-  /* ====================
-     3. SEARCH BAR FIXES
-     ==================== */
-  
-  /* Target the Search Row Container (First child of the search wrapper) */
-  .library-content > div:first-child > div:first-child {
-    gap: 4px !important; /* Reduce gap between input and Clear button */
-    flex-wrap: nowrap !important; /* Force single line */
-  }
-
-  /* Target the Input Wrapper (The div holding the input + search icon) */
-  .library-content > div:first-child > div:first-child > div:first-child {
-    min-width: 0 !important; /* Allow this to shrink if needed */
-    flex: 1 1 auto !important;
-  }
-
-  /* The actual Search Input Field */
-  .search-input {
-    font-size: 13px !important; /* Slightly smaller text */
-    padding: 8px 8px 8px 30px !important; /* Compact padding */
-    height: 36px !important; /* Fixed compact height */
-  }
-
-  /* The Search Icon inside the input */
-  .search-input + svg { 
-    /* Note: In your JSX the icon is actually *before* the input, 
-       but if you need to target it, it's the sibling. 
-       Usually inline styles handle this, but we can nudge it if needed. */
-  }
-
-  /* The "Clear" Button (if visible) */
-  .library-content > div:first-child > div:first-child .small-btn {
-    padding: 0 8px !important; /* Smaller padding */
-    height: 36px !important;   /* Match input height */
-    font-size: 12px !important;
+    width: 18px !important;
+    height: 18px !important;
   }
 }
