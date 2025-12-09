@@ -1170,7 +1170,7 @@ html, body, #root {
   }
   
   .song-info .title { 
-    font-size: 15px; 
+    font-size: 12px; 
     width: 100%;
     white-space: normal !important; 
     line-height: 1.2;
@@ -1181,7 +1181,7 @@ html, body, #root {
   }
   
   .song-info .artist { 
-    font-size: 13px; 
+    font-size: 10px; 
     width: 100%;
     white-space: normal !important; 
     line-height: 1.2; 
