@@ -241,9 +241,12 @@ body {
 /* ============================================================================
    8. MINI PLAYER DOCK
    ============================================================================ */
+/* ============================================================================
+   8. MINI PLAYER DOCK
+   ============================================================================ */
 .glass-dock {
   position: fixed;
-  bottom: 85px; /* Sits above the Bottom Nav */
+  bottom: 85px;
   left: 10px; right: 10px;
   height: 64px;
   background: rgba(25, 25, 35, 0.9);
@@ -251,17 +254,43 @@ body {
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 16px;
-  display: flex; align-items: center;
+  display: flex; 
+  align-items: center; /* This centers items vertically */
   padding: 0 12px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.6);
   z-index: 100;
-  overflow: hidden; /* Clips the progress bar */
+  overflow: hidden;
 }
 
-/* Static Thumb (Removed Spin) */
-.dock-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; margin-right: 12px; }
+/* --- ADD THIS MISSING CLASS --- */
+.dock-left {
+  display: flex;
+  align-items: center;
+  flex: 1;       /* Takes up remaining space to push controls to the right */
+  min-width: 0;  /* Allows text truncation to work */
+  overflow: hidden; 
+}
 
-.dock-info { flex: 1; min-width: 0; padding-right: 10px; }
+/* Static Thumb */
+.dock-thumb { 
+  width: 44px; 
+  height: 44px; 
+  border-radius: 8px; 
+  object-fit: cover; 
+  margin-right: 12px;
+  flex-shrink: 0; /* Prevents image from squishing */
+}
+
+.dock-info { 
+  flex: 1; 
+  min-width: 0; 
+  padding-right: 10px; 
+  display: flex;        /* Optional: ensures clean vertical stacking */
+  flex-direction: column; 
+  justify-content: center;
+}
+
+/* ... rest of your existing CSS ... */
 .dock-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; }
 .dock-artist { font-size: 12px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -356,3 +385,382 @@ body {
 }
 
 .more-queue { text-align: center; color: #666; font-size: 12px; padding: 10px; }
+/* ... existing code ... */
+
+/* ============================================================================
+   11. NEW FEATURES: LIBRARY TABS & CONTEXT MENU
+   ============================================================================ */
+
+/* Library Tabs Switcher */
+.library-tabs {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.lib-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.lib-tab-btn.active {
+  color: white;
+}
+
+.lib-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -9px; /* Aligns with the border-bottom of container */
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--neon);
+  box-shadow: 0 0 10px var(--neon);
+}
+
+/* Song Row Actions Group */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Floating Context Menu (Three Dots) */
+.context-menu-container {
+  position: relative;
+}
+
+.context-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 160px;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #ddd;
+  padding: 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.menu-item svg {
+  width: 16px;
+  height: 16px;
+  color: var(--neon);
+}
+/* ============================================================================
+   11. NEW LIBRARY BOXES & MENU
+   ============================================================================ */
+
+/* The Container for the two boxes */
+.lib-box-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Individual Box Styling */
+.lib-box {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.lib-box:active {
+  transform: scale(0.96);
+}
+
+/* Active State (Neon Glow) */
+.lib-box.active {
+  background: linear-gradient(135deg, rgba(145, 70, 255, 0.25), rgba(145, 70, 255, 0.05));
+  border-color: var(--neon);
+  box-shadow: 0 8px 32px rgba(145, 70, 255, 0.15);
+}
+
+.lib-box-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+/* --- CONTEXT MENU (From previous request) --- */
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-container {
+  position: relative;
+}
+
+.context-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 170px;
+  background: #15151a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: #ddd;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.menu-item svg {
+  width: 16px;
+  height: 16px;
+  color: var(--neon);
+}
+/* ============================================================================
+   UPDATED PLAYER & MENU STYLES
+   ============================================================================ */
+
+.player-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; 
+}
+
+/* --- New Player Header --- */
+.player-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 4px;
+}
+
+.relative-menu-container {
+    position: relative;
+}
+
+/* --- Glass Dropdown Menu --- */
+.glass-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 160px;
+    background: rgba(25, 25, 35, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.menu-header {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #888;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 4px;
+}
+
+.menu-option {
+    background: transparent;
+    border: none;
+    color: #ddd;
+    text-align: left;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.menu-option.active {
+    color: var(--neon);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.menu-option.danger {
+    color: #ff4d7a;
+}
+.menu-option.danger:hover {
+    background: rgba(255, 77, 122, 0.1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Previous Styles (Keep these) --- */
+.progress-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seek-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  background-image: linear-gradient(to right, var(--neon), var(--neon));
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+}
+
+.seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  margin-top: -5px;
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.play-btn-large {
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.play-btn-large:active {
+  transform: scale(0.95);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.active-dot {
+  position: relative;
+}
+.active-dot::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  background: var(--neon);
+  border-radius: 50%;
+}
