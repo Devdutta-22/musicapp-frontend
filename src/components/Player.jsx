@@ -1,8 +1,9 @@
+// src/components/Player.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
   Shuffle, Repeat, Repeat1, Heart, 
-  ChevronDown, MoreHorizontal, Moon, Timer
+  ChevronDown, MoreHorizontal, Timer
 } from "lucide-react";
 import '../App.css';
 
@@ -49,6 +50,7 @@ export default function Player({
       setTime(c);
       if (onProgressRef.current) onProgressRef.current(c, d);
       updateRangeBackground(c, d);
+      // Sync Media Session occasionally to prevent drift
       if (Math.floor(c) !== Math.floor(time)) updateMediaSessionPosition();
     }
   };
@@ -70,7 +72,7 @@ export default function Player({
     updateMediaSessionPosition();
   };
 
-  // Sync Media Session
+  // Sync Media Session (Control Center on Phone)
   const updateMediaSessionPosition = () => {
     if ('mediaSession' in navigator && audioRef.current) {
       const audio = audioRef.current;
@@ -97,9 +99,9 @@ export default function Player({
       
       {/* 1. TOP HEADER (Minimize & Menu) */}
       <div className="player-header-row">
-          {<button className="icon-btn" onClick={onToggleLike}>
-            <Heart size={24} fill={song?.liked ? "#ff00cc" : "none"} color={song?.liked ? "#ff00cc" : "rgba(255,255,255,0.7)"} />
-         </button>}
+          <button className="icon-btn" onClick={onMinimize}>
+             <ChevronDown size={28} color="white" />
+          </button>
           
           <div className="relative-menu-container">
               <button 
@@ -151,9 +153,19 @@ export default function Player({
       {/* 3. CONTROLS AREA */}
       <div className="controls-row">
          
-         {/* Heart Icon (Front) */}
-         
+         {/* Heart Icon (Moved to Front) */}
+         <button 
+            className="icon-btn" 
+            onClick={onToggleLike}
+         >
+            <Heart 
+                size={24} 
+                fill={song?.liked ? "#ff00cc" : "none"} 
+                color={song?.liked ? "#ff00cc" : "rgba(255,255,255,0.7)"} 
+            />
+         </button>
 
+         {/* Standard Controls */}
          <button className={`icon-btn ${shuffle ? 'active-dot' : ''}`} onClick={onToggleShuffle}>
             <Shuffle size={20} color={shuffle ? "#00ff88" : "white"} />
          </button>
@@ -162,7 +174,7 @@ export default function Player({
             <SkipBack size={28} fill="white" />
          </button>
 
-         {/* Circular Play Button */}
+         {/* Play Button (Fixed Oval Issue) */}
          <button className="play-btn-large" onClick={onToggle}>
             {playing ? <Pause size={32} fill="black"/> : <Play size={32} fill="black" style={{marginLeft:4}}/>}
          </button>
