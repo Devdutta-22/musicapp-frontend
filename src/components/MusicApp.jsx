@@ -121,19 +121,21 @@ export default function MusicApp({ user, onLogout }) {
      setPlaying(true);
   };
 
-  // --- NEW: PLAY NOW LOGIC (Preserves Queue) ---
+  // --- PLAY NOW LOGIC (Preserves Queue) ---
   const playNow = (song) => {
       if (queue.length === 0) {
           playSong(song);
           return;
       }
-      // Insert song AFTER current playing song
+      
       const newQueue = [...queue];
       const insertIndex = currentIndex + 1;
+      
+      // Insert right after current song
       newQueue.splice(insertIndex, 0, song.id);
       
       setQueue(newQueue);
-      setCurrentIndex(insertIndex); // Jump to new song
+      setCurrentIndex(insertIndex); // Jump to new song immediately
       setPlaying(true);
   };
 
@@ -169,14 +171,14 @@ export default function MusicApp({ user, onLogout }) {
 
   // --- QUEUE ACTIONS ---
   
-  // 1. Play Next (Insert after current)
+  // 1. Play Next (Insert after current, don't jump)
   const playNext = (song) => {
       if (queue.length === 0) { playSong(song); return; }
       
       const newQueue = [...queue];
       const insertIndex = currentIndex + 1;
       
-      // Remove if already in queue to avoid duplicates
+      // Remove if already in queue (optional cleanup)
       const existingIdx = newQueue.indexOf(song.id);
       if (existingIdx > -1 && existingIdx !== currentIndex) {
           newQueue.splice(existingIdx, 1);
@@ -185,7 +187,7 @@ export default function MusicApp({ user, onLogout }) {
       
       newQueue.splice(insertIndex, 0, song.id);
       setQueue(newQueue);
-      alert("Added to play next!");
+      // Removed alert
   };
 
   // 2. Add to Queue (Append to end)
@@ -193,9 +195,7 @@ export default function MusicApp({ user, onLogout }) {
       if (queue.length === 0) { playSong(song); return; }
       if (!queue.includes(song.id)) {
           setQueue([...queue, song.id]);
-          alert("Added to queue!");
-      } else {
-          alert("Already in queue!");
+          // Removed alert
       }
   };
 
@@ -210,11 +210,10 @@ export default function MusicApp({ user, onLogout }) {
 
   // 4. Restore Queue (Reset to Home Feed)
   const restoreQueue = () => {
-      if(homeFeed.length === 0) return alert("No songs to restore.");
+      if(homeFeed.length === 0) return;
       if(window.confirm("Restore queue from Fresh Arrivals?")) {
           const newQ = homeFeed.map(s => s.id);
           setQueue(newQ);
-          // If playing, try to find current song in new queue
           const newIdx = newQ.indexOf(currentSong?.id);
           setCurrentIndex(newIdx !== -1 ? newIdx : 0);
       }
@@ -282,7 +281,6 @@ export default function MusicApp({ user, onLogout }) {
   useEffect(() => {
     if (!currentSong || !('mediaSession' in navigator)) return;
     
-    // Metadata for lock screen
     navigator.mediaSession.metadata = new MediaMetadata({
       title: currentSong.title,
       artist: currentSong.artistName,
@@ -292,13 +290,11 @@ export default function MusicApp({ user, onLogout }) {
       ]
     });
 
-    // Button handlers
     navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
     navigator.mediaSession.setActionHandler('pause', () => setPlaying(false));
     navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
     navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
-
-  }, [currentSong]);
+  }, [currentSong, currentIndex, queue]); // Updated dependency array to prevent stale state
 
   // --- SLEEP TIMER ---
   useEffect(() => {
@@ -318,8 +314,8 @@ export default function MusicApp({ user, onLogout }) {
 
 
   // --- SHARED SONG ROW COMPONENT ---
-  const SongRow = ({ s, list }) => (
-    <div className="glass-row" onClick={() => playSong(s, list)}>
+  const SongRow = ({ s, list, onClick }) => (
+    <div className="glass-row" onClick={onClick ? onClick : () => playSong(s, list)}>
         <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb" onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
         <div className="row-info">
             <div className="row-title">{s.title}</div>
@@ -424,7 +420,12 @@ export default function MusicApp({ user, onLogout }) {
                 </div>
                 <div className="list-vertical">
                     {searchResults.map(s => (
-                        <SongRow key={s.id} s={s} list={searchResults} />
+                        <SongRow 
+                           key={s.id} 
+                           s={s} 
+                           list={searchResults} 
+                           onClick={() => playNow(s)} 
+                        />
                     ))}
                 </div>
                 <div className="spacer"></div>
@@ -580,7 +581,7 @@ export default function MusicApp({ user, onLogout }) {
                                             <div className="row-title" style={{color: isCurrent ? 'var(--neon)' : 'white'}}>{s.title}</div>
                                             <div className="row-artist">{s.artistName}</div>
                                         </div>
-                                        {/* QUEUE ITEM ACTIONS - USING ARROWS FOR STABILITY */}
+                                        {/* QUEUE ITEM ACTIONS */}
                                         <div className="row-actions">
                                             {!isCurrent && (
                                                 <button className="icon-btn" onClick={() => { setCurrentIndex(i); setPlaying(true); }}>
