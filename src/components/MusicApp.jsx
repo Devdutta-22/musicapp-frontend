@@ -6,7 +6,7 @@ import LyricsPanel from './LyricsPanel';
 import PlanetCard from './PlanetCard'; 
 import '../App.css';
 import { 
-  Home, Search, Library, User, PlusCircle, 
+  Home, Search, Library, User, PlusCircle, // New Upload Icon
   Play, Pause, Heart, ChevronDown, 
   Sparkles, Zap, Mic2, ListMusic, MoreHorizontal 
 } from "lucide-react"; 
@@ -55,6 +55,7 @@ export default function MusicApp({ user, onLogout }) {
           setHomeFeed(recent.data);
           const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
           setDiscoveryFeed(random.data);
+          // Pre-load liked songs so the list is ready
           const liked = await axios.get(`${API_BASE}/api/songs/liked`, authHeaders);
           setLikedSongs(liked.data);
       } catch(e) { console.error(e); }
@@ -193,7 +194,7 @@ export default function MusicApp({ user, onLogout }) {
             </div>
          )}
 
-         {/* --- UPLOAD TAB --- */}
+         {/* --- UPLOAD TAB (NEW) --- */}
          {activeTab === 'upload' && (
              <div className="tab-pane">
                  <h2 className="page-title">Upload Music</h2>
@@ -203,10 +204,11 @@ export default function MusicApp({ user, onLogout }) {
              </div>
          )}
 
-         {/* --- LIBRARY TAB --- */}
+         {/* --- LIBRARY TAB (LIST VIEW) --- */}
          {activeTab === 'library' && (
              <div className="tab-pane">
                  <h2 className="page-title">Your Library</h2>
+                 
                  {likedSongs.length === 0 ? (
                      <div style={{textAlign:'center', marginTop: 50, color: '#666'}}>
                          <Heart size={48} style={{marginBottom:10, opacity:0.5}}/>
@@ -312,16 +314,19 @@ export default function MusicApp({ user, onLogout }) {
                 </div>
             </div>
 
-            {/* B. MINI PLAYER DOCK (RECTANGULAR & GLASS) */}
+            {/* B. MINI PLAYER DOCK */}
             {!isFullScreenPlayer && (
                 <div className="glass-dock" onClick={() => setIsFullScreenPlayer(true)}>
+                    {/* LEFT: STATIC IMAGE + INFO */}
                     <div className="dock-left">
-                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/>
+                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/> {/* No 'spin' class */}
                         <div className="dock-info">
                             <div className="dock-title">{currentSong.title}</div>
                             <div className="dock-artist">{currentSong.artistName}</div>
                         </div>
                     </div>
+
+                    {/* RIGHT: CONTROLS PUSHED TO CORNER */}
                     <div className="dock-right">
                         <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(currentSong.id)}}>
                             <Heart size={20} fill={currentSong.liked ? "#ff00cc" : "none"} color={currentSong.liked ? "#ff00cc" : "white"}/>
@@ -330,7 +335,8 @@ export default function MusicApp({ user, onLogout }) {
                             {playing ? <Pause size={20} fill="black"/> : <Play size={20} fill="black" style={{marginLeft:2}}/>}
                         </button>
                     </div>
-                    {/* The Progress Bar Line */}
+                    
+                    {/* ANIMATED PROGRESS BAR */}
                     <div className="dock-progress">
                         <div className="dock-progress-fill" style={{width: `${songProgress}%`}}></div>
                     </div>
@@ -339,7 +345,7 @@ export default function MusicApp({ user, onLogout }) {
           </>
       )}
 
-      {/* 3. BOTTOM NAVIGATION */}
+      {/* 3. BOTTOM NAVIGATION (5 Items) */}
       <nav className="glass-nav">
           <button className={activeTab === 'home' ? 'active' : ''} onClick={() => setActiveTab('home')}>
               <Home size={24}/><span>Home</span>
@@ -347,6 +353,7 @@ export default function MusicApp({ user, onLogout }) {
           <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
               <Search size={24}/><span>Search</span>
           </button>
+          {/* UPLOAD BUTTON IN MIDDLE */}
           <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => setActiveTab('upload')}>
               <PlusCircle size={32} color={activeTab === 'upload' ? '#9146ff' : '#ccc'} /><span>Upload</span>
           </button>
