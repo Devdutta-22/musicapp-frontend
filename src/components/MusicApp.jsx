@@ -6,14 +6,13 @@ import LyricsPanel from './LyricsPanel';
 import PlanetCard from './PlanetCard'; 
 import '../App.css';
 import { 
-  Home, Search, Library, User, 
+  Home, Search, Library, User, PlusCircle, // New Upload Icon
   Play, Pause, Heart, ChevronDown, 
   Sparkles, Zap, Mic2, ListMusic, MoreHorizontal 
 } from "lucide-react"; 
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
-// Premium USP Boxes (Horizontal Scroll)
 const USP_FEATURES = [
     { title: "Planet Evolution", subtitle: "Your taste creates a world.", icon: <Sparkles size={24} color="#00ffff" />, accent: "linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(0, 0, 0, 0))" },
     { title: "Neon Vibes", subtitle: "Experience the glow.", icon: <Zap size={24} color="#ff00cc" />, accent: "linear-gradient(135deg, rgba(255, 0, 204, 0.15), rgba(0, 0, 0, 0))" },
@@ -35,7 +34,7 @@ export default function MusicApp({ user, onLogout }) {
   const [queue, setQueue] = useState([]);          
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [playing, setPlaying] = useState(false);
-  const [songProgress, setSongProgress] = useState(0); // 0-100 for Mini Player
+  const [songProgress, setSongProgress] = useState(0); 
 
   // --- UI STATE ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,18 +45,22 @@ export default function MusicApp({ user, onLogout }) {
 
   // --- 1. INITIAL LOAD ---
   useEffect(() => {
-    async function loadFeeds() {
-        setLoading(true);
-        try {
-            const recent = await axios.get(`${API_BASE}/api/songs/recent`, authHeaders);
-            setHomeFeed(recent.data);
-            const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
-            setDiscoveryFeed(random.data);
-        } catch(e) { console.error(e); }
-        setLoading(false);
-    }
     loadFeeds();
   }, []);
+
+  async function loadFeeds() {
+      setLoading(true);
+      try {
+          const recent = await axios.get(`${API_BASE}/api/songs/recent`, authHeaders);
+          setHomeFeed(recent.data);
+          const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
+          setDiscoveryFeed(random.data);
+          // Pre-load liked songs so the list is ready
+          const liked = await axios.get(`${API_BASE}/api/songs/liked`, authHeaders);
+          setLikedSongs(liked.data);
+      } catch(e) { console.error(e); }
+      setLoading(false);
+  }
 
   // --- 2. TAB LOGIC ---
   useEffect(() => {
@@ -80,7 +83,6 @@ export default function MusicApp({ user, onLogout }) {
   }, [searchTerm]);
 
   // --- 4. PLAYER HELPERS ---
-  // Helper to find song object from ID across all lists (since queue is just IDs)
   function getSongById(id) {
       const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs];
       return all.find(s => s.id === id) || { id, title: 'Unknown', artistName: 'Unknown', coverUrl: null };
@@ -89,17 +91,13 @@ export default function MusicApp({ user, onLogout }) {
 
   const playSong = (song, contextList) => {
      if(!song) return;
-     // If clicking a song, make a queue from that list
      let newQueue = contextList && contextList.length > 0 ? contextList.map(s=>s.id) : [song.id];
-     
-     // Remove duplicates if needed, but for now simple mapping
      setQueue(newQueue);
      setCurrentIndex(newQueue.indexOf(song.id));
      setPlaying(true);
   };
 
   const toggleLike = async (songId) => {
-      // Optimistic update
       const update = (list) => list.map(s => s.id === songId ? {...s, liked: !s.liked} : s);
       setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update);
       try { await axios.post(`${API_BASE}/api/likes/${songId}`, {}, authHeaders); } catch(e) {}
@@ -109,7 +107,6 @@ export default function MusicApp({ user, onLogout }) {
       try {
           const mins = Math.ceil((duration || 180) / 60);
           await axios.post(`${API_BASE}/api/users/${user.id}/add-minutes`, { minutes: mins, genre: genre || "Unknown" });
-          // Update local user object if you want immediate planet reflex
           user.totalMinutesListened += mins; 
       } catch(e) {}
   };
@@ -131,7 +128,6 @@ export default function MusicApp({ user, onLogout }) {
                  </div>
               </header>
 
-              {/* USP SLIDER (Horizontal Scroll) */}
               <div className="usp-slider">
                   {USP_FEATURES.map((feat, i) => (
                       <div key={i} className="glass-card usp-card" style={{background: feat.accent}}>
@@ -198,22 +194,42 @@ export default function MusicApp({ user, onLogout }) {
             </div>
          )}
 
-         {/* --- LIBRARY TAB --- */}
+         {/* --- UPLOAD TAB (NEW) --- */}
+         {activeTab === 'upload' && (
+             <div className="tab-pane">
+                 <h2 className="page-title">Upload Music</h2>
+                 <p style={{color:'#aaa', marginBottom: 20}}>Share your vibes with the galaxy.</p>
+                 <UploadCard onUploaded={loadFeeds} />
+                 <div className="spacer"></div>
+             </div>
+         )}
+
+         {/* --- LIBRARY TAB (LIST VIEW) --- */}
          {activeTab === 'library' && (
              <div className="tab-pane">
                  <h2 className="page-title">Your Library</h2>
                  
-                 <div className="glass-card liked-box" onClick={() => likedSongs.length && playSong(likedSongs[0], likedSongs)}>
-                     <div className="liked-icon"><Heart size={28} fill="white"/></div>
-                     <div className="liked-text">
-                         <h3>Liked Songs</h3>
-                         <p>{likedSongs.length} tracks</p>
+                 {likedSongs.length === 0 ? (
+                     <div style={{textAlign:'center', marginTop: 50, color: '#666'}}>
+                         <Heart size={48} style={{marginBottom:10, opacity:0.5}}/>
+                         <p>Songs you like will appear here.</p>
                      </div>
-                     <Play size={24} fill="black" className="play-white"/>
-                 </div>
-
-                 <h3 className="section-title">Upload Music</h3>
-                 <UploadCard onUploaded={() => {}} />
+                 ) : (
+                     <div className="list-vertical">
+                        {likedSongs.map(s => (
+                            <div key={s.id} className="glass-row" onClick={() => playSong(s, likedSongs)}>
+                                <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb"/>
+                                <div className="row-info">
+                                    <div className="row-title">{s.title}</div>
+                                    <div className="row-artist">{s.artistName}</div>
+                                </div>
+                                <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(s.id)}}>
+                                    <Heart size={20} fill={s.liked ? "#ff00cc" : "none"} color={s.liked ? "#ff00cc" : "rgba(255,255,255,0.5)"}/>
+                                </button>
+                            </div>
+                        ))}
+                     </div>
+                 )}
                  <div className="spacer"></div>
              </div>
          )}
@@ -231,7 +247,7 @@ export default function MusicApp({ user, onLogout }) {
       {/* 2. PLAYER OVERLAY */}
       {currentSong && (
           <>
-            {/* A. FULL SCREEN MODAL (With Lyrics & Queue inside) */}
+            {/* A. FULL SCREEN MODAL */}
             <div className={`glass-modal ${isFullScreenPlayer ? 'open' : ''}`}>
                 <div className="modal-header">
                     <button onClick={() => setIsFullScreenPlayer(false)} className="icon-btn"><ChevronDown size={32}/></button>
@@ -239,9 +255,7 @@ export default function MusicApp({ user, onLogout }) {
                     <button className="icon-btn"><MoreHorizontal size={24}/></button>
                 </div>
                 
-                {/* Scrollable Body inside Modal */}
                 <div className="modal-scroll-body">
-                    {/* Cover Art with GLOW */}
                     <div className="art-glow-container">
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" />
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" />
@@ -252,7 +266,6 @@ export default function MusicApp({ user, onLogout }) {
                         <p>{currentSong.artistName}</p>
                     </div>
 
-                    {/* Controls */}
                     <div className="modal-controls-wrapper">
                         <Player 
                             song={currentSong}
@@ -270,7 +283,6 @@ export default function MusicApp({ user, onLogout }) {
                         />
                     </div>
 
-                    {/* Lyrics Section */}
                     <div className="modal-section">
                         <h3>Lyrics</h3>
                         <div className="glass-inset">
@@ -278,7 +290,6 @@ export default function MusicApp({ user, onLogout }) {
                         </div>
                     </div>
 
-                    {/* Queue Section */}
                     <div className="modal-section">
                         <div className="section-header">
                             <h3>Up Next</h3>
@@ -297,23 +308,25 @@ export default function MusicApp({ user, onLogout }) {
                                     </div>
                                 )
                             })}
-                            {queue.length - currentIndex > 10 && <div className="more-queue">...and more</div>}
                         </div>
                     </div>
                     <div className="spacer"></div>
                 </div>
             </div>
 
-            {/* B. MINI PLAYER DOCK (Floating Glass) */}
+            {/* B. MINI PLAYER DOCK */}
             {!isFullScreenPlayer && (
                 <div className="glass-dock" onClick={() => setIsFullScreenPlayer(true)}>
+                    {/* LEFT: STATIC IMAGE + INFO */}
                     <div className="dock-left">
-                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb spin-slow"/>
+                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/> {/* No 'spin' class */}
                         <div className="dock-info">
                             <div className="dock-title">{currentSong.title}</div>
                             <div className="dock-artist">{currentSong.artistName}</div>
                         </div>
                     </div>
+
+                    {/* RIGHT: CONTROLS PUSHED TO CORNER */}
                     <div className="dock-right">
                         <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(currentSong.id)}}>
                             <Heart size={20} fill={currentSong.liked ? "#ff00cc" : "none"} color={currentSong.liked ? "#ff00cc" : "white"}/>
@@ -322,7 +335,8 @@ export default function MusicApp({ user, onLogout }) {
                             {playing ? <Pause size={20} fill="black"/> : <Play size={20} fill="black" style={{marginLeft:2}}/>}
                         </button>
                     </div>
-                    {/* ANIMATED PROGRESS BAR LINE */}
+                    
+                    {/* ANIMATED PROGRESS BAR */}
                     <div className="dock-progress">
                         <div className="dock-progress-fill" style={{width: `${songProgress}%`}}></div>
                     </div>
@@ -331,13 +345,17 @@ export default function MusicApp({ user, onLogout }) {
           </>
       )}
 
-      {/* 3. BOTTOM NAVIGATION (Glass Dock) */}
+      {/* 3. BOTTOM NAVIGATION (5 Items) */}
       <nav className="glass-nav">
           <button className={activeTab === 'home' ? 'active' : ''} onClick={() => setActiveTab('home')}>
               <Home size={24}/><span>Home</span>
           </button>
           <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
               <Search size={24}/><span>Search</span>
+          </button>
+          {/* UPLOAD BUTTON IN MIDDLE */}
+          <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => setActiveTab('upload')}>
+              <PlusCircle size={32} color={activeTab === 'upload' ? '#9146ff' : '#ccc'} /><span>Upload</span>
           </button>
           <button className={activeTab === 'library' ? 'active' : ''} onClick={() => setActiveTab('library')}>
               <Library size={24}/><span>Library</span>
