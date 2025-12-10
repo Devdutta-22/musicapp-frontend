@@ -114,6 +114,11 @@ export default function MusicApp({ user, onLogout }) {
   return (
     <div className="glass-shell">
       
+      {/* --- ADDED: ANIMATED SPACE BACKGROUND --- */}
+      <div className="space-background">
+        <div className="stars"></div>
+      </div>
+      
       {/* 1. SCROLLABLE VIEWPORT */}
       <div className="glass-viewport">
          
