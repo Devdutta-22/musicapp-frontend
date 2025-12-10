@@ -314,31 +314,54 @@ export default function MusicApp({ user, onLogout }) {
                 </div>
             </div>
 
-            {/* B. MINI PLAYER DOCK */}
+{/* B. SEMI-CIRCLE MINI PLAYER (The Arc Reactor) */}
             {!isFullScreenPlayer && (
-                <div className="glass-dock" onClick={() => setIsFullScreenPlayer(true)}>
-                    {/* LEFT: STATIC IMAGE + INFO */}
-                    <div className="dock-left">
-                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/> {/* No 'spin' class */}
-                        <div className="dock-info">
-                            <div className="dock-title">{currentSong.title}</div>
-                            <div className="dock-artist">{currentSong.artistName}</div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT: CONTROLS PUSHED TO CORNER */}
-                    <div className="dock-right">
-                        <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(currentSong.id)}}>
-                            <Heart size={20} fill={currentSong.liked ? "#ff00cc" : "none"} color={currentSong.liked ? "#ff00cc" : "white"}/>
-                        </button>
-                        <button className="icon-btn dock-play" onClick={(e)=>{e.stopPropagation(); setPlaying(!playing)}}>
-                            {playing ? <Pause size={20} fill="black"/> : <Play size={20} fill="black" style={{marginLeft:2}}/>}
-                        </button>
-                    </div>
+                <div className="arc-player-container" onClick={() => setIsFullScreenPlayer(true)}>
                     
-                    {/* ANIMATED PROGRESS BAR */}
-                    <div className="dock-progress">
-                        <div className="dock-progress-fill" style={{width: `${songProgress}%`}}></div>
+                    {/* 1. The Glass Semi-Circle */}
+                    <div className="arc-glass">
+                        
+                        {/* 2. SVG Circular Progress Bar (The Edge) */}
+                        <svg className="arc-progress-svg" viewBox="0 0 200 100">
+                            {/* Background Track (Gray) */}
+                            <path 
+                                d="M 10,100 A 90,90 0 0 1 190,100" 
+                                fill="none" 
+                                stroke="rgba(255,255,255,0.1)" 
+                                strokeWidth="4" 
+                                strokeLinecap="round"
+                            />
+                            {/* Active Progress (Neon) */}
+                            <path 
+                                d="M 10,100 A 90,90 0 0 1 190,100" 
+                                fill="none" 
+                                stroke="var(--neon-pink)" 
+                                strokeWidth="6" 
+                                strokeLinecap="round"
+                                strokeDasharray="283" /* Length of the arc approx */
+                                strokeDashoffset={283 - (283 * songProgress / 100)}
+                                className="arc-progress-fill"
+                            />
+                        </svg>
+
+                        {/* 3. Controls Layout */}
+                        <div className="arc-controls">
+                            
+                            {/* Left: Like Button */}
+                            <button className="arc-btn" onClick={(e) => { e.stopPropagation(); toggleLike(currentSong.id); }}>
+                                <Heart size={24} fill={currentSong.liked ? "#ff00cc" : "none"} color={currentSong.liked ? "#ff00cc" : "white"} />
+                            </button>
+
+                            {/* Center: Album Art (The Core) */}
+                            <div className="arc-album">
+                                <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} alt="Album" onError={e=>e.target.src=PERSON_PLACEHOLDER} />
+                            </div>
+
+                            {/* Right: Play Button */}
+                            <button className="arc-btn" onClick={(e) => { e.stopPropagation(); setPlaying(!playing); }}>
+                                {playing ? <Pause size={28} fill="white" /> : <Play size={28} fill="white" style={{marginLeft:4}} />}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
