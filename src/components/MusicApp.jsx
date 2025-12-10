@@ -2,39 +2,32 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Player from './Player';
 import UploadCard from './UploadCard';
+import LyricsPanel from './LyricsPanel';
 import PlanetCard from './PlanetCard'; 
 import '../App.css';
 import { 
-  Home, Search, Library, User, // Tab Icons
-  Play, Pause, Heart, ChevronDown, Sparkles, Zap
+  Home, Search, Library, User, 
+  Play, Pause, Heart, ChevronDown, 
+  Sparkles, Zap, Mic2, ListMusic, MoreHorizontal 
 } from "lucide-react"; 
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
-// USP / "Ad" Boxes for your Planet Feature
+// Premium USP Boxes (Horizontal Scroll)
 const USP_FEATURES = [
-    { 
-      title: "Planet Evolution", 
-      subtitle: "Your music taste creates a world.", 
-      icon: <Sparkles size={24} color="#00ffff" />, 
-      bg: "linear-gradient(135deg, rgba(26, 42, 108, 0.8), rgba(178, 31, 31, 0.6))" 
-    },
-    { 
-      title: "Neon Vibes", 
-      subtitle: "Experience the glow.", 
-      icon: <Zap size={24} color="#ff00cc" />, 
-      bg: "linear-gradient(135deg, rgba(17, 153, 142, 0.8), rgba(56, 239, 125, 0.6))" 
-    },
+    { title: "Planet Evolution", subtitle: "Your taste creates a world.", icon: <Sparkles size={24} color="#00ffff" />, accent: "linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(0, 0, 0, 0))" },
+    { title: "Neon Vibes", subtitle: "Experience the glow.", icon: <Zap size={24} color="#ff00cc" />, accent: "linear-gradient(135deg, rgba(255, 0, 204, 0.15), rgba(0, 0, 0, 0))" },
+    { title: "Lossless Audio", subtitle: "Crystal clear sound.", icon: <Mic2 size={24} color="#00ff88" />, accent: "linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 0, 0, 0))" },
 ];
 
 export default function MusicApp({ user, onLogout }) {
   // --- VIEW STATE ---
-  const [activeTab, setActiveTab] = useState('home'); // home, search, library, planet
+  const [activeTab, setActiveTab] = useState('home'); 
   const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
 
   // --- DATA STATE ---
-  const [homeFeed, setHomeFeed] = useState([]);      // Recent songs
-  const [discoveryFeed, setDiscoveryFeed] = useState([]); // Random songs
+  const [homeFeed, setHomeFeed] = useState([]);      
+  const [discoveryFeed, setDiscoveryFeed] = useState([]); 
   const [searchResults, setSearchResults] = useState([]);
   const [likedSongs, setLikedSongs] = useState([]);
   
@@ -42,40 +35,34 @@ export default function MusicApp({ user, onLogout }) {
   const [queue, setQueue] = useState([]);          
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [playing, setPlaying] = useState(false);
+  const [songProgress, setSongProgress] = useState(0); // 0-100 for Mini Player
 
   // --- UI STATE ---
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Ensure we handle the trailing slash correctly
   const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, ""); 
   const authHeaders = { headers: { "X-User-Id": user?.id || 0 } };
 
-  // --- 1. INITIAL LOAD (Feeds) ---
+  // --- 1. INITIAL LOAD ---
   useEffect(() => {
     async function loadFeeds() {
         setLoading(true);
         try {
-            // Load "Fresh Arrivals"
             const recent = await axios.get(`${API_BASE}/api/songs/recent`, authHeaders);
             setHomeFeed(recent.data);
-            
-            // Load "Discovery"
             const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
             setDiscoveryFeed(random.data);
-        } catch(e) { console.error("Feed error", e); }
+        } catch(e) { console.error(e); }
         setLoading(false);
     }
     loadFeeds();
   }, []);
 
-  // --- 2. TAB SWITCH LOGIC ---
+  // --- 2. TAB LOGIC ---
   useEffect(() => {
       if (activeTab === 'library') {
-          // Fetch liked songs when entering library
-          axios.get(`${API_BASE}/api/songs/liked`, authHeaders)
-               .then(r => setLikedSongs(r.data))
-               .catch(e => console.error(e));
+          axios.get(`${API_BASE}/api/songs/liked`, authHeaders).then(r => setLikedSongs(r.data));
       }
   }, [activeTab]);
 
@@ -87,79 +74,67 @@ export default function MusicApp({ user, onLogout }) {
              const res = await axios.get(`${API_BASE}/api/songs/search?q=${searchTerm}`, authHeaders);
              setSearchResults(res.data);
            } catch(e) { console.error(e); }
-        } else {
-            setSearchResults([]);
-        }
-      }, 500); // 500ms debounce
+        } else { setSearchResults([]); }
+      }, 500); 
       return () => clearTimeout(delay);
   }, [searchTerm]);
 
-  // --- 4. STATS & EVOLUTION LOGIC ---
-  const recordListen = async (durationSeconds, songGenre) => {
-    if (!user || !durationSeconds) return;
-    const minutes = Math.ceil(durationSeconds / 60);
-    const genrePayload = songGenre || "Unknown";
-    console.log(`Evolving Planet: +${minutes} mins of ${genrePayload}`);
-
-    try {
-      await axios.post(`${API_BASE}/api/users/${user.id}/add-minutes`, { 
-        minutes: minutes,
-        genre: genrePayload 
-      });
-      // Update local user stats if needed
-      user.totalMinutesListened = (user.totalMinutesListened || 0) + minutes;
-    } catch (e) { console.error("Stats error", e); }
-  };
-
-  // --- PLAYER HANDLERS ---
-  const currentSong = queue[currentIndex] || null;
+  // --- 4. PLAYER HELPERS ---
+  // Helper to find song object from ID across all lists (since queue is just IDs)
+  function getSongById(id) {
+      const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs];
+      return all.find(s => s.id === id) || { id, title: 'Unknown', artistName: 'Unknown', coverUrl: null };
+  }
+  const currentSong = queue[currentIndex] ? getSongById(queue[currentIndex]) : null;
 
   const playSong = (song, contextList) => {
      if(!song) return;
-     // If we click a song, play it and queue its neighbors from the same list
-     let newQueue = contextList && contextList.length > 0 ? contextList : [song];
+     // If clicking a song, make a queue from that list
+     let newQueue = contextList && contextList.length > 0 ? contextList.map(s=>s.id) : [song.id];
+     
+     // Remove duplicates if needed, but for now simple mapping
      setQueue(newQueue);
-     const idx = newQueue.findIndex(s => s.id === song.id);
-     setCurrentIndex(idx >= 0 ? idx : 0);
+     setCurrentIndex(newQueue.indexOf(song.id));
      setPlaying(true);
   };
 
   const toggleLike = async (songId) => {
-      // Optimistic UI update (update all lists)
+      // Optimistic update
       const update = (list) => list.map(s => s.id === songId ? {...s, liked: !s.liked} : s);
-      setHomeFeed(update);
-      setDiscoveryFeed(update);
-      setSearchResults(update);
-      setLikedSongs(update); 
-
-      try {
-          await axios.post(`${API_BASE}/api/likes/${songId}`, {}, authHeaders);
-      } catch(e) { console.error("Like failed", e); }
+      setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update);
+      try { await axios.post(`${API_BASE}/api/likes/${songId}`, {}, authHeaders); } catch(e) {}
   };
 
-  // --- RENDERERS ---
+  const recordListen = async (duration, genre) => {
+      try {
+          const mins = Math.ceil((duration || 180) / 60);
+          await axios.post(`${API_BASE}/api/users/${user.id}/add-minutes`, { minutes: mins, genre: genre || "Unknown" });
+          // Update local user object if you want immediate planet reflex
+          user.totalMinutesListened += mins; 
+      } catch(e) {}
+  };
 
   return (
-    <div className="app-shell">
+    <div className="glass-shell">
       
-      {/* 1. VIEWPORT (Scrollable Content) */}
-      <div className="main-content">
+      {/* 1. SCROLLABLE VIEWPORT */}
+      <div className="glass-viewport">
          
          {/* --- HOME TAB --- */}
          {activeTab === 'home' && (
-           <div className="tab-view home-view">
-              <header className="app-header">
-                 <img src="/my-brand.png" alt="Logo" className="header-logo"/>
-                 <div>
+           <div className="tab-pane home-animate">
+              <header className="glass-header">
+                 <img src="/my-brand.png" alt="Logo" height="32"/>
+                 <div className="header-text">
                     <h1>Hi, {user.username}</h1>
-                    <p>Welcome back to space.</p>
+                    <p>Welcome to your galaxy.</p>
                  </div>
               </header>
 
-              {/* USP SLIDER */}
-              <div className="horizontal-scroll usp-scroll">
+              {/* USP SLIDER (Horizontal Scroll) */}
+              <div className="usp-slider">
                   {USP_FEATURES.map((feat, i) => (
-                      <div key={i} className="usp-card" style={{background: feat.bg}}>
+                      <div key={i} className="glass-card usp-card" style={{background: feat.accent}}>
                           <div className="usp-icon">{feat.icon}</div>
                           <h3>{feat.title}</h3>
                           <p>{feat.subtitle}</p>
@@ -167,96 +142,88 @@ export default function MusicApp({ user, onLogout }) {
                   ))}
               </div>
 
-              <section>
-                  <div className="section-title">Fresh Arrivals</div>
-                  <div className="horizontal-scroll song-scroll">
-                      {homeFeed.map(s => (
-                          <div key={s.id} className="scroll-card" onClick={() => playSong(s, homeFeed)}>
-                              <img src={s.coverUrl || PERSON_PLACEHOLDER} alt={s.title} onError={e=>e.target.src=PERSON_PLACEHOLDER} />
-                              <p className="card-title">{s.title}</p>
-                              <p className="card-artist">{s.artistName}</p>
-                          </div>
-                      ))}
-                  </div>
-              </section>
+              <h2 className="section-title">Fresh Arrivals</h2>
+              <div className="horizontal-scroll">
+                  {homeFeed.map(s => (
+                      <div key={s.id} className="glass-card song-card" onClick={() => playSong(s, homeFeed)}>
+                          <img src={s.coverUrl || PERSON_PLACEHOLDER} onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
+                          <p className="song-title">{s.title}</p>
+                          <p className="song-artist">{s.artistName}</p>
+                      </div>
+                  ))}
+              </div>
 
-              <section>
-                  <div className="section-title">Discovery</div>
-                  <div className="horizontal-scroll song-scroll">
-                      {discoveryFeed.map(s => (
-                          <div key={s.id} className="scroll-card" onClick={() => playSong(s, discoveryFeed)}>
-                              <img src={s.coverUrl || PERSON_PLACEHOLDER} alt={s.title} onError={e=>e.target.src=PERSON_PLACEHOLDER} />
-                              <p className="card-title">{s.title}</p>
-                              <p className="card-artist">{s.artistName}</p>
-                          </div>
-                      ))}
-                  </div>
-              </section>
-              <div className="spacer-bottom"></div>
+              <h2 className="section-title">Discovery</h2>
+              <div className="horizontal-scroll">
+                  {discoveryFeed.map(s => (
+                      <div key={s.id} className="glass-card song-card" onClick={() => playSong(s, discoveryFeed)}>
+                          <img src={s.coverUrl || PERSON_PLACEHOLDER} onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
+                          <p className="song-title">{s.title}</p>
+                          <p className="song-artist">{s.artistName}</p>
+                      </div>
+                  ))}
+              </div>
+              <div className="spacer"></div>
            </div>
          )}
 
          {/* --- SEARCH TAB --- */}
          {activeTab === 'search' && (
-            <div className="tab-view search-view">
-                <input 
-                  className="mobile-search-input" 
-                  placeholder="Songs, Artists..." 
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  autoFocus
-                />
-                <div className="search-results-list">
+            <div className="tab-pane">
+                <div className="search-wrapper">
+                    <Search size={20} className="search-icon"/>
+                    <input 
+                      className="glass-input" 
+                      placeholder="Search songs, artists..." 
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      autoFocus
+                    />
+                </div>
+                <div className="list-vertical">
                     {searchResults.map(s => (
-                        <div key={s.id} className="list-item" onClick={() => playSong(s, searchResults)}>
-                            <img src={s.coverUrl || PERSON_PLACEHOLDER} className="list-thumb" onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
-                            <div className="list-info">
-                                <div className="list-title">{s.title}</div>
-                                <div className="list-artist">{s.artistName}</div>
+                        <div key={s.id} className="glass-row" onClick={() => playSong(s, searchResults)}>
+                            <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb"/>
+                            <div className="row-info">
+                                <div className="row-title">{s.title}</div>
+                                <div className="row-artist">{s.artistName}</div>
                             </div>
                             <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(s.id)}}>
-                                <Heart size={20} fill={s.liked ? "#ff00cc" : "none"} color={s.liked ? "#ff00cc" : "#666"}/>
+                                <Heart size={20} fill={s.liked ? "#ff00cc" : "none"} color={s.liked ? "#ff00cc" : "rgba(255,255,255,0.5)"}/>
                             </button>
                         </div>
                     ))}
-                    {!searchTerm && <div className="empty-state" style={{textAlign:'center', color:'#666', marginTop:20}}>Start typing to search...</div>}
                 </div>
-                <div className="spacer-bottom"></div>
+                <div className="spacer"></div>
             </div>
          )}
 
          {/* --- LIBRARY TAB --- */}
          {activeTab === 'library' && (
-             <div className="tab-view library-view">
-                 <h2>Your Library</h2>
+             <div className="tab-pane">
+                 <h2 className="page-title">Your Library</h2>
                  
-                 {/* Liked Songs Box */}
-                 <div className="library-card liked-card" onClick={() => {
-                     if(likedSongs.length > 0) playSong(likedSongs[0], likedSongs);
-                     else alert("No liked songs yet!");
-                 }}>
-                     <div className="lib-icon"><Heart size={28} fill="white"/></div>
-                     <div className="lib-text">
+                 <div className="glass-card liked-box" onClick={() => likedSongs.length && playSong(likedSongs[0], likedSongs)}>
+                     <div className="liked-icon"><Heart size={28} fill="white"/></div>
+                     <div className="liked-text">
                          <h3>Liked Songs</h3>
                          <p>{likedSongs.length} tracks</p>
                      </div>
-                     <Play size={24} fill="black" className="play-circle"/>
+                     <Play size={24} fill="black" className="play-white"/>
                  </div>
 
-                 {/* Upload */}
-                 <div className="section-title" style={{marginTop: 30}}>Upload Music</div>
-                 <UploadCard onUploaded={() => { /* Optional refresh */ }} />
-                 
-                 <div className="spacer-bottom"></div>
+                 <h3 className="section-title">Upload Music</h3>
+                 <UploadCard onUploaded={() => {}} />
+                 <div className="spacer"></div>
              </div>
          )}
 
          {/* --- PLANET TAB --- */}
          {activeTab === 'planet' && (
-             <div className="tab-view planet-view">
+             <div className="tab-pane">
                  <PlanetCard user={user} onClose={()=>{}} />
-                 <button className="logout-button" onClick={onLogout}>Log Out</button>
-                 <div className="spacer-bottom"></div>
+                 <button className="glass-btn logout-btn" onClick={onLogout}>Sign Out</button>
+                 <div className="spacer"></div>
              </div>
          )}
       </div>
@@ -264,89 +231,120 @@ export default function MusicApp({ user, onLogout }) {
       {/* 2. PLAYER OVERLAY */}
       {currentSong && (
           <>
-            {/* A. Full Screen Modal */}
-            <div className={`fullscreen-player ${isFullScreenPlayer ? 'open' : ''}`}>
-                <div className="fs-header">
+            {/* A. FULL SCREEN MODAL (With Lyrics & Queue inside) */}
+            <div className={`glass-modal ${isFullScreenPlayer ? 'open' : ''}`}>
+                <div className="modal-header">
                     <button onClick={() => setIsFullScreenPlayer(false)} className="icon-btn"><ChevronDown size={32}/></button>
                     <span>Now Playing</span>
-                    <div style={{width:32}}></div>
+                    <button className="icon-btn"><MoreHorizontal size={24}/></button>
                 </div>
                 
-                <div className="fs-art-container">
-                    <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="fs-art" onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
-                </div>
+                {/* Scrollable Body inside Modal */}
+                <div className="modal-scroll-body">
+                    {/* Cover Art with GLOW */}
+                    <div className="art-glow-container">
+                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" />
+                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" />
+                    </div>
 
-                <div className="fs-meta">
-                    <h2>{currentSong.title}</h2>
-                    <p>{currentSong.artistName}</p>
-                </div>
+                    <div className="modal-meta">
+                        <h1>{currentSong.title}</h1>
+                        <p>{currentSong.artistName}</p>
+                    </div>
 
-                {/* Reuse existing Player Logic */}
-                <Player 
-                    song={currentSong}
-                    playing={playing}
-                    onToggle={() => setPlaying(!playing)}
-                    onNext={() => {
-                         const nextIdx = (currentIndex + 1) % queue.length;
-                         setCurrentIndex(nextIdx);
-                    }}
-                    onPrev={() => {
-                         const prevIdx = (currentIndex - 1 + queue.length) % queue.length;
-                         setCurrentIndex(prevIdx);
-                    }}
-                    onToggleLike={() => toggleLike(currentSong.id)}
-                    
-                    // --- EVOLUTION HOOK ---
-                    onEnded={() => {
-                        recordListen(currentSong.durationSeconds || 180, currentSong.genre);
-                        // Auto play next
-                        const nextIdx = (currentIndex + 1) % queue.length;
-                        setCurrentIndex(nextIdx);
-                    }}
-                    
-                    hideCover={true} 
-                    hideMeta={true}
-                />
-            </div>
+                    {/* Controls */}
+                    <div className="modal-controls-wrapper">
+                        <Player 
+                            song={currentSong}
+                            playing={playing}
+                            onToggle={() => setPlaying(!playing)}
+                            onNext={() => setCurrentIndex((currentIndex + 1) % queue.length)}
+                            onPrev={() => setCurrentIndex((currentIndex - 1 + queue.length) % queue.length)}
+                            onToggleLike={() => toggleLike(currentSong.id)}
+                            onEnded={() => {
+                                recordListen(currentSong.durationSeconds, currentSong.genre);
+                                setCurrentIndex((currentIndex + 1) % queue.length);
+                            }}
+                            hideCover={true} hideMeta={true}
+                            onProgress={(c, t) => setSongProgress(t ? (c/t)*100 : 0)}
+                        />
+                    </div>
 
-            {/* B. Mini Player Dock */}
-            {!isFullScreenPlayer && (
-                <div className="mini-player" onClick={() => setIsFullScreenPlayer(true)}>
-                    <div className="mini-info">
-                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="mini-thumb" onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
-                        <div>
-                            <div className="mini-title">{currentSong.title}</div>
-                            <div className="mini-artist">{currentSong.artistName}</div>
+                    {/* Lyrics Section */}
+                    <div className="modal-section">
+                        <h3>Lyrics</h3>
+                        <div className="glass-inset">
+                             <LyricsPanel song={currentSong} />
                         </div>
                     </div>
-                    <div className="mini-controls">
+
+                    {/* Queue Section */}
+                    <div className="modal-section">
+                        <div className="section-header">
+                            <h3>Up Next</h3>
+                            <ListMusic size={18} color="#aaa"/>
+                        </div>
+                        <div className="list-vertical">
+                            {queue.slice(currentIndex + 1, currentIndex + 10).map((id, i) => {
+                                const s = getSongById(id);
+                                return (
+                                    <div key={i} className="glass-row compact">
+                                        <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb small"/>
+                                        <div className="row-info">
+                                            <div className="row-title">{s.title}</div>
+                                            <div className="row-artist">{s.artistName}</div>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                            {queue.length - currentIndex > 10 && <div className="more-queue">...and more</div>}
+                        </div>
+                    </div>
+                    <div className="spacer"></div>
+                </div>
+            </div>
+
+            {/* B. MINI PLAYER DOCK (Floating Glass) */}
+            {!isFullScreenPlayer && (
+                <div className="glass-dock" onClick={() => setIsFullScreenPlayer(true)}>
+                    <div className="dock-left">
+                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb spin-slow"/>
+                        <div className="dock-info">
+                            <div className="dock-title">{currentSong.title}</div>
+                            <div className="dock-artist">{currentSong.artistName}</div>
+                        </div>
+                    </div>
+                    <div className="dock-right">
                         <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(currentSong.id)}}>
                             <Heart size={20} fill={currentSong.liked ? "#ff00cc" : "none"} color={currentSong.liked ? "#ff00cc" : "white"}/>
                         </button>
-                        <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); setPlaying(!playing)}}>
-                            {playing ? <Pause size={24} fill="white"/> : <Play size={24} fill="white"/>}
+                        <button className="icon-btn dock-play" onClick={(e)=>{e.stopPropagation(); setPlaying(!playing)}}>
+                            {playing ? <Pause size={20} fill="black"/> : <Play size={20} fill="black" style={{marginLeft:2}}/>}
                         </button>
                     </div>
-                    <div className="mini-progress"></div>
+                    {/* ANIMATED PROGRESS BAR LINE */}
+                    <div className="dock-progress">
+                        <div className="dock-progress-fill" style={{width: `${songProgress}%`}}></div>
+                    </div>
                 </div>
             )}
           </>
       )}
 
-      {/* 3. BOTTOM NAVIGATION */}
-      <nav className="bottom-nav">
-          <div className={`nav-item ${activeTab==='home'?'active':''}`} onClick={()=>setActiveTab('home')}>
-              <Home size={24} /> <span>Home</span>
-          </div>
-          <div className={`nav-item ${activeTab==='search'?'active':''}`} onClick={()=>setActiveTab('search')}>
-              <Search size={24} /> <span>Search</span>
-          </div>
-          <div className={`nav-item ${activeTab==='library'?'active':''}`} onClick={()=>setActiveTab('library')}>
-              <Library size={24} /> <span>Library</span>
-          </div>
-          <div className={`nav-item ${activeTab==='planet'?'active':''}`} onClick={()=>setActiveTab('planet')}>
-              <User size={24} /> <span>Planet</span>
-          </div>
+      {/* 3. BOTTOM NAVIGATION (Glass Dock) */}
+      <nav className="glass-nav">
+          <button className={activeTab === 'home' ? 'active' : ''} onClick={() => setActiveTab('home')}>
+              <Home size={24}/><span>Home</span>
+          </button>
+          <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
+              <Search size={24}/><span>Search</span>
+          </button>
+          <button className={activeTab === 'library' ? 'active' : ''} onClick={() => setActiveTab('library')}>
+              <Library size={24}/><span>Library</span>
+          </button>
+          <button className={activeTab === 'planet' ? 'active' : ''} onClick={() => setActiveTab('planet')}>
+              <User size={24}/><span>Planet</span>
+          </button>
       </nav>
 
     </div>
