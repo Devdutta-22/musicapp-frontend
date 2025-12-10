@@ -97,9 +97,9 @@ export default function Player({
       
       {/* 1. TOP HEADER (Minimize & Menu) */}
       <div className="player-header-row">
-          <button className="icon-btn" onClick={onMinimize}>
+          {/* <button className="icon-btn" onClick={onMinimize}>
               <ChevronDown size={28} color="white"/>
-          </button>
+          </button> */}
           
           <div className="relative-menu-container">
               <button 
