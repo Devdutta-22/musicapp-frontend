@@ -1,4 +1,3 @@
-// src/components/Player.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
@@ -22,7 +21,7 @@ export default function Player({
   onProgress, 
   sleepTime,       
   onSetSleepTimer,
-  onMinimize // New prop to handle closing the player
+  onMinimize // Handles closing the full-screen player
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
