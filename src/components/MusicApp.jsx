@@ -6,7 +6,7 @@ import LyricsPanel from './LyricsPanel';
 import PlanetCard from './PlanetCard'; 
 import '../App.css';
 import { 
-  Home, Search, Library, User, PlusCircle, // New Upload Icon
+  Home, Search, Library, User, PlusCircle, 
   Play, Pause, Heart, ChevronDown, 
   Sparkles, Zap, Mic2, ListMusic, MoreHorizontal 
 } from "lucide-react"; 
@@ -194,7 +194,7 @@ export default function MusicApp({ user, onLogout }) {
             </div>
          )}
 
-         {/* --- UPLOAD TAB (NEW) --- */}
+         {/* --- UPLOAD TAB --- */}
          {activeTab === 'upload' && (
              <div className="tab-pane">
                  <h2 className="page-title">Upload Music</h2>
@@ -204,11 +204,10 @@ export default function MusicApp({ user, onLogout }) {
              </div>
          )}
 
-         {/* --- LIBRARY TAB (LIST VIEW) --- */}
+         {/* --- LIBRARY TAB --- */}
          {activeTab === 'library' && (
              <div className="tab-pane">
                  <h2 className="page-title">Your Library</h2>
-                 
                  {likedSongs.length === 0 ? (
                      <div style={{textAlign:'center', marginTop: 50, color: '#666'}}>
                          <Heart size={48} style={{marginBottom:10, opacity:0.5}}/>
@@ -314,7 +313,7 @@ export default function MusicApp({ user, onLogout }) {
                 </div>
             </div>
 
-{/* B. SEMI-CIRCLE MINI PLAYER (The Arc Reactor) */}
+            {/* B. THE ARC REACTOR MINI PLAYER (SEMI-CIRCLE) */}
             {!isFullScreenPlayer && (
                 <div className="arc-player-container" onClick={() => setIsFullScreenPlayer(true)}>
                     
@@ -338,7 +337,7 @@ export default function MusicApp({ user, onLogout }) {
                                 stroke="var(--neon-pink)" 
                                 strokeWidth="6" 
                                 strokeLinecap="round"
-                                strokeDasharray="283" /* Length of the arc approx */
+                                strokeDasharray="283" 
                                 strokeDashoffset={283 - (283 * songProgress / 100)}
                                 className="arc-progress-fill"
                             />
@@ -376,7 +375,6 @@ export default function MusicApp({ user, onLogout }) {
           <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
               <Search size={24}/><span>Search</span>
           </button>
-          {/* UPLOAD BUTTON IN MIDDLE */}
           <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => setActiveTab('upload')}>
               <PlusCircle size={32} color={activeTab === 'upload' ? '#9146ff' : '#ccc'} /><span>Upload</span>
           </button>
