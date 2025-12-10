@@ -53,7 +53,7 @@ body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 160px; /* Space for Mini Player + Nav */
+  padding-bottom: 200px; /* Space for Mini Player + Nav */
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
@@ -356,3 +356,125 @@ body {
 }
 
 .more-queue { text-align: center; color: #666; font-size: 12px; padding: 10px; }
+/* =========================================
+   THE ARC REACTOR (Semi-Circle Mini Player)
+   ========================================= */
+
+/* The Wrapper - Centers everything at the bottom */
+.arc-player-container {
+  position: fixed;
+  bottom: 0; 
+  left: 50%;
+  transform: translateX(-50%);
+  width: 340px; /* Width of the semi-circle */
+  height: 140px; /* Height of the semi-circle */
+  z-index: 150; /* Above navbar */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  pointer-events: none; /* Let clicks pass through empty space */
+  padding-bottom: 90px; /* Push it up so it sits nicely */
+}
+
+/* The Frosted Glass Shape */
+.arc-glass {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* The Semi-Circle Shape */
+  border-top-left-radius: 170px;
+  border-top-right-radius: 170px;
+  background: rgba(20, 20, 25, 0.75); /* Dark Glass */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+  pointer-events: auto; /* Re-enable clicks on the player */
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* The SVG Progress Bar Container */
+.arc-progress-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.arc-progress-fill {
+  transition: stroke-dashoffset 0.5s linear;
+  filter: drop-shadow(0 0 5px var(--neon-pink));
+}
+
+/* Grid for placing Buttons & Art */
+.arc-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 90%; /* Occupy bottom area */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px; /* Space between buttons and art */
+  padding-bottom: 20px;
+}
+
+/* The Central Album Art */
+.arc-album {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.1);
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
+  background: #000;
+  margin-bottom: 10px; /* Push slightly up into the arc */
+}
+
+.arc-album img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The Buttons (Like & Play) */
+.arc-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -10px; /* Align slightly lower than the art */
+}
+
+.arc-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+}
+
+/* Adjust Bottom Nav to not overlap badly */
+.glass-nav {
+  z-index: 100; /* Player sits ABOVE nav */
+}
+
+/* Mobile Tweak: Ensure it fits small screens */
+@media (max-width: 380px) {
+  .arc-player-container { width: 300px; height: 130px; }
+  .arc-album { width: 80px; height: 80px; }
+  .arc-btn { width: 42px; height: 42px; }
+}
