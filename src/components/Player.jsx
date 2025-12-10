@@ -98,9 +98,16 @@ export default function Player({
       
       {/* 1. TOP HEADER (Minimize & Menu) */}
       <div className="player-header-row">
-          <button className="icon-btn" onClick={onMinimize}>
-             <ChevronDown size={28} color="white" />
-          </button>
+          <button 
+            className="icon-btn" 
+            onClick={onToggleLike}
+         >
+            <Heart 
+                size={24} 
+                fill={song?.liked ? "#ff00cc" : "none"} 
+                color={song?.liked ? "#ff00cc" : "rgba(255,255,255,0.7)"} 
+            />
+         </button>
           
           <div className="relative-menu-container">
               <button 
@@ -153,16 +160,7 @@ export default function Player({
       <div className="controls-row">
          
          {/* Heart Icon (Moved to Front) */}
-         <button 
-            className="icon-btn" 
-            onClick={onToggleLike}
-         >
-            <Heart 
-                size={24} 
-                fill={song?.liked ? "#ff00cc" : "none"} 
-                color={song?.liked ? "#ff00cc" : "rgba(255,255,255,0.7)"} 
-            />
-         </button>
+         
 
          {/* Standard Controls */}
          <button className={`icon-btn ${shuffle ? 'active-dot' : ''}`} onClick={onToggleShuffle}>
