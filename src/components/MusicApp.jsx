@@ -539,6 +539,7 @@ export default function MusicApp({ user, onLogout }) {
                             sleepTime={sleepTime}
                             onSetSleepTimer={(min) => setSleepTime(min)}
                             onProgress={(c, t) => setSongProgress(t ? (c/t)*100 : 0)}
+                            
                         />
                     </div>
 
