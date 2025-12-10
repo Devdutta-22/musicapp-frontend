@@ -1,122 +1,358 @@
 /* ============================================================================
-   ASTRO MUSIC - GLASS DOCK THEME
+   ASTRO MUSIC - PREMIUM GLASS THEME (Mobile First)
+   Final Cleaned Version
    ============================================================================ */
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; scrollbar-width: none; }
-*::-webkit-scrollbar { display: none; }
+/* 1. UNIVERSAL RESET & VARIABLES */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-width: none; /* Hide standard scrollbars for cleaner look */
+}
+
+/* Chrome/Safari Scrollbar Hide */
+*::-webkit-scrollbar {
+  display: none;
+}
 
 :root {
   --neon: #9146ff;
   --neon-pink: #ff00cc;
+  --neon-blue: #00ffff;
   --glass-bg: rgba(22, 22, 30, 0.65);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: blur(20px);
+  --text-main: #ffffff;
+  --text-muted: #aaaaaa;
 }
 
 body {
   background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #06060b 100%);
-  color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; width: 100vw;
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden; /* App handles scrolling internally */
+  height: 100vh;
+  width: 100vw;
 }
 
-.glass-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; }
-.glass-viewport { flex: 1; overflow-y: auto; padding-bottom: 160px; /* Space for Mini Player + Nav */ }
-.tab-pane { padding: 20px; animation: fadeIn 0.4s ease-out; min-height: 100%; }
-.spacer { height: 120px; }
+/* ============================================================================
+   2. APP SHELL & LAYOUT
+   ============================================================================ */
+.glass-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
+  width: 100%;
+  overflow: hidden;
+}
 
-/* HEADERS */
-.glass-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-top: 10px; }
+.glass-viewport {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 160px; /* Space for Mini Player + Nav */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-pane {
+  padding: 20px;
+  animation: fadeIn 0.4s ease-out;
+  min-height: 100%;
+}
+
+.spacer {
+  height: 120px;
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* ============================================================================
+   3. SHARED COMPONENT STYLES
+   ============================================================================ */
+
+/* Headers */
+.glass-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-top: 10px;
+}
 .header-text h1 { margin: 0; font-size: 22px; font-weight: 700; text-shadow: 0 0 20px rgba(145, 70, 255, 0.4); }
-.header-text p { margin: 0; font-size: 12px; color: #aaa; }
-.section-title { font-size: 17px; font-weight: 700; margin: 30px 0 15px 0; }
-.page-title { font-size: 28px; font-weight: 800; margin-bottom: 20px; }
+.header-text p { margin: 0; font-size: 12px; color: var(--text-muted); letter-spacing: 0.5px; }
 
-/* CARDS & LISTS */
+/* Section Titles */
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: white;
+  margin: 30px 0 15px 0;
+  padding-left: 4px;
+}
+
+/* Glass Cards (The core look) */
 .glass-card {
-  background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border); border-radius: 20px; padding: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2); transition: transform 0.2s;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .glass-card:active { transform: scale(0.97); }
 
-.usp-slider { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 20px; }
-.usp-card { min-width: 220px; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
-
-.horizontal-scroll { display: flex; gap: 16px; overflow-x: auto; padding: 4px 4px 20px 4px; }
-.song-card { min-width: 140px; width: 140px; background: transparent; border: none; padding: 0; }
-.song-card img { width: 100%; aspect-ratio: 1; border-radius: 16px; margin-bottom: 10px; object-fit: cover; }
-.song-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin:0;}
-.song-artist { font-size: 12px; color: #aaa; margin:0;}
-
-.list-vertical { display: flex; flex-direction: column; gap: 8px; }
-.glass-row {
-  display: flex; align-items: center; gap: 14px; padding: 12px; 
-  background: rgba(255,255,255,0.03); border-radius: 14px;
+/* Buttons */
+.icon-btn {
+  background: none; border: none; cursor: pointer; color: #ccc;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px; transition: color 0.2s;
 }
-.row-thumb { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; }
-.row-thumb.small { width: 40px; height: 40px; }
-.row-info { flex: 1; min-width: 0; }
-.row-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-artist { font-size: 13px; color: #aaa; }
+.icon-btn:active { color: white; transform: scale(0.9); }
 
-/* SEARCH */
+.glass-btn {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; color: white; font-weight: 600;
+  margin-top: 20px; cursor: pointer;
+}
+
+/* ============================================================================
+   4. HOME TAB SPECIFICS
+   ============================================================================ */
+
+/* USP Slider (Horizontal Box Scroll) */
+.usp-slider {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 4px 20px 4px;
+  scroll-snap-type: x mandatory;
+}
+.usp-card {
+  min-width: 220px;
+  padding: 20px;
+  display: flex; flex-direction: column; justify-content: center;
+  scroll-snap-align: start;
+}
+.usp-card h3 { font-size: 16px; margin: 10px 0 4px; }
+.usp-card p { font-size: 12px; opacity: 0.8; margin: 0; line-height: 1.4; }
+
+/* Song Horizontal Lists */
+.horizontal-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 4px 20px 4px;
+}
+.song-card {
+  min-width: 140px; width: 140px;
+  background: transparent; border: none; padding: 0; box-shadow: none;
+}
+.song-card img {
+  width: 100%; aspect-ratio: 1; border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  margin-bottom: 10px; object-fit: cover;
+}
+.song-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin:0;}
+.song-artist { font-size: 12px; color: var(--text-muted); margin:0;}
+
+/* ============================================================================
+   5. SEARCH & LISTS
+   ============================================================================ */
 .search-wrapper { position: relative; margin-bottom: 24px; }
 .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #aaa; }
 .glass-input {
-  width: 100%; padding: 14px 14px 14px 48px; background: rgba(255,255,255,0.08);
-  border: 1px solid var(--glass-border); border-radius: 16px; color: white; font-size: 16px; outline: none;
+  width: 100%; padding: 14px 14px 14px 48px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px; color: white; font-size: 16px;
+  outline: none; transition: background 0.2s;
+}
+.glass-input:focus { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+
+/* List Items */
+.list-vertical { display: flex; flex-direction: column; gap: 8px; }
+.glass-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px; 
+  background: rgba(255,255,255,0.03);
+  border-radius: 14px;
+  transition: background 0.2s;
+}
+.glass-row:active { background: rgba(255,255,255,0.08); }
+.glass-row.compact { padding: 8px; background: transparent; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+.row-thumb { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; }
+.row-thumb.small { width: 40px; height: 40px; border-radius: 8px; }
+.row-info { flex: 1; min-width: 0; }
+.row-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-artist { font-size: 13px; color: var(--text-muted); }
+
+/* ============================================================================
+   6. LIBRARY STYLES
+   ============================================================================ */
+.page-title { font-size: 28px; font-weight: 800; margin-bottom: 20px; letter-spacing: -0.5px; }
+
+.liked-box {
+  background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+  display: flex; align-items: center; gap: 16px; padding: 20px;
+  cursor: pointer; margin-bottom: 30px;
+}
+.liked-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 12px; }
+.liked-text h3 { margin: 0; font-size: 18px; }
+.liked-text p { margin: 4px 0 0; font-size: 13px; opacity: 0.8; }
+.play-white { background: white; border-radius: 50%; padding: 8px; margin-left: auto; width: 44px; height: 44px; }
+
+/* ============================================================================
+   7. UPLOAD & LYRICS (Legacy Support)
+   ============================================================================ */
+/* Adapted UploadCard to fit Glass Theme */
+.upload-card {
+  background: rgba(255,255,255,0.03); 
+  border: 1px dashed rgba(255,255,255,0.2); 
+  padding: 20px; border-radius: 16px;
+}
+.upload-input, .file-input {
+  width: 100%; padding: 12px; margin-bottom: 12px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px; color: white;
+}
+.upload-btn {
+  width: 100%; padding: 12px;
+  background: var(--neon); color: white; font-weight: bold;
+  border: none; border-radius: 8px; text-transform: uppercase;
 }
 
-/* BUTTONS */
-.icon-btn { background: none; border: none; cursor: pointer; color: #ccc; display: flex; align-items: center; justify-content: center; padding: 8px; }
-.glass-btn { width: 100%; padding: 16px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); border-radius: 12px; color: white; font-weight: 600; margin-top: 20px; }
+/* Adapted LyricsPanel */
+.lyrics-box-container {
+  max-height: 250px; overflow-y: auto;
+  padding: 10px; color: #ddd; line-height: 1.6; font-size: 16px; text-align: center;
+}
 
-/* =========================================
-   GLASS MINI PLAYER DOCK
-   ========================================= */
+/* ============================================================================
+   8. MINI PLAYER DOCK
+   ============================================================================ */
 .glass-dock {
-  position: fixed; bottom: 85px; left: 10px; right: 10px; height: 64px;
-  background: rgba(25, 25, 35, 0.9); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255,255,255,0.15); border-radius: 16px;
-  display: flex; align-items: center; padding: 0 12px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 100; overflow: hidden;
+  position: fixed;
+  bottom: 85px; /* Sits above the Bottom Nav */
+  left: 10px; right: 10px;
+  height: 64px;
+  background: rgba(25, 25, 35, 0.9);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  display: flex; align-items: center;
+  padding: 0 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  z-index: 100;
+  overflow: hidden; /* Clips the progress bar */
 }
 
+/* Static Thumb (Removed Spin) */
 .dock-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; margin-right: 12px; }
+
 .dock-info { flex: 1; min-width: 0; padding-right: 10px; }
-.dock-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dock-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; }
 .dock-artist { font-size: 12px; color: #bbb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.dock-right { display: flex; gap: 14px; align-items: center; margin-left: auto; }
+/* Right Side - Pushed to corner with margin-left: auto */
+.dock-right { 
+  display: flex; gap: 14px; align-items: center; 
+  margin-left: auto; /* Pushes buttons to the far right */
+}
 .dock-play { background: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
 
-.dock-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); }
-.dock-progress-fill { height: 100%; background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); transition: width 0.1s linear; }
+/* The Animated Progress Line */
+.dock-progress {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1);
+}
+.dock-progress-fill {
+  height: 100%; background: var(--neon-pink);
+  box-shadow: 0 0 10px var(--neon-pink);
+  transition: width 0.2s linear;
+}
 
-/* NAV */
+/* ============================================================================
+   9. BOTTOM NAVIGATION
+   ============================================================================ */
 .glass-nav {
   position: fixed; bottom: 0; left: 0; width: 100%; height: 80px;
-  background: linear-gradient(to top, rgba(0,0,0,1) 20%, rgba(10,10,15,0.9) 100%);
-  backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-  display: flex; justify-content: space-around; align-items: center; padding-bottom: 20px;
-  border-top: 1px solid rgba(255,255,255,0.05); z-index: 90;
+  background: linear-gradient(to top, rgba(0,0,0,1) 20%, rgba(10,10,15,0.85) 100%);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  display: flex; justify-content: space-around; align-items: center;
+  padding-bottom: 20px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  z-index: 90;
 }
-.glass-nav button { background: none; border: none; color: #666; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; padding: 10px; }
-.glass-nav button.active { color: white; text-shadow: 0 0 12px var(--neon); }
+.glass-nav button {
+  background: none; border: none; color: #666;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; padding: 10px;
+  transition: color 0.2s;
+}
+.glass-nav button.active {
+  color: white; text-shadow: 0 0 12px var(--neon);
+}
 .glass-nav button.active svg { stroke: var(--neon); }
 
-/* FULL SCREEN MODAL */
-.glass-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050508; z-index: 200; transform: translateY(100%); transition: transform 0.3s; display: flex; flex-direction: column; }
+/* ============================================================================
+   10. FULL SCREEN PLAYER MODAL
+   ============================================================================ */
+.glass-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: #050508; z-index: 200;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: flex; flex-direction: column;
+}
 .glass-modal.open { transform: translateY(0); }
+
 .modal-header { padding: 40px 20px 20px; display: flex; justify-content: space-between; align-items: center; }
 .modal-scroll-body { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 100px; }
-.art-glow-container { position: relative; width: 280px; height: 280px; margin: 20px auto 50px; }
-.art-glow-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 40px; filter: blur(50px); opacity: 0.5; z-index: 0; }
-.art-front { position: relative; width: 100%; height: 100%; border-radius: 24px; object-fit: cover; z-index: 2; border: 1px solid rgba(255,255,255,0.1); }
-.modal-meta { text-align: center; margin-bottom: 40px; }
-.modal-meta h1 { font-size: 26px; margin: 0 0 8px; }
-.modal-meta p { color: var(--neon); font-size: 16px; margin: 0; }
-.modal-section { margin-top: 40px; }
-.glass-inset { background: rgba(255,255,255,0.03); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes spin { 100% { transform: rotate(360deg); } }
+/* The Premium Glow Effect */
+.art-glow-container {
+  position: relative; width: 280px; height: 280px; margin: 20px auto 50px;
+}
+.art-glow-bg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  border-radius: 40px;
+  filter: blur(50px) saturate(200%);
+  opacity: 0.5; transform: scale(0.9); z-index: 0;
+}
+.art-front {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 24px; object-fit: cover; z-index: 2;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-meta { text-align: center; margin-bottom: 40px; }
+.modal-meta h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: -0.5px; }
+.modal-meta p { color: var(--neon); font-size: 16px; margin: 0; }
+
+.modal-controls-wrapper { margin-bottom: 40px; }
+
+/* Section styling within Modal */
+.modal-section { margin-top: 40px; }
+.modal-section h3 { margin-bottom: 15px; font-size: 18px; font-weight: 700; color: #ddd; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+
+.glass-inset {
+  background: rgba(255,255,255,0.03);
+  border-radius: 16px; padding: 20px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.more-queue { text-align: center; color: #666; font-size: 12px; padding: 10px; }
