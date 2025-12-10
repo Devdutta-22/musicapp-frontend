@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
-  Shuffle, Repeat, Repeat1, Heart, Timer 
+  Shuffle, Repeat, Repeat1, Heart, 
+  ChevronDown, MoreHorizontal, Timer
 } from "lucide-react";
 import '../App.css';
 
@@ -17,17 +18,17 @@ export default function Player({
   onToggleRepeat,
   shuffle = false,
   onToggleShuffle,
-  hideCover = false,
-  hideMeta = false,
   onProgress, 
   sleepTime,       
-  onSetSleepTimer, 
+  onSetSleepTimer,
+  onMinimize // Handles closing the full-screen player
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showMenu, setShowMenu] = useState(false); // State for Three Dot Menu
 
   // Sync ref for progress callback
   const onProgressRef = useRef(onProgress);
@@ -38,6 +39,7 @@ export default function Player({
     if (audioRef.current) {
         setDuration(audioRef.current.duration);
     }
+    updateMediaSessionPosition();
   };
 
   const handleTimeUpdate = () => {
@@ -47,6 +49,8 @@ export default function Player({
       setTime(c);
       if (onProgressRef.current) onProgressRef.current(c, d);
       updateRangeBackground(c, d);
+      // Sync Media Session occasionally to prevent drift
+      if (Math.floor(c) !== Math.floor(time)) updateMediaSessionPosition();
     }
   };
 
@@ -64,6 +68,22 @@ export default function Player({
     if (audioRef.current) {
         audioRef.current.currentTime = newTime;
     }
+    updateMediaSessionPosition();
+  };
+
+  // Sync Media Session (Control Center on Phone)
+  const updateMediaSessionPosition = () => {
+    if ('mediaSession' in navigator && audioRef.current) {
+      const audio = audioRef.current;
+      if (!isFinite(audio.duration) || !isFinite(audio.currentTime)) return;
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: audio.currentTime,
+        });
+      } catch (e) { console.error(e); }
+    }
   };
 
   const formatTime = (s) => {
@@ -76,7 +96,36 @@ export default function Player({
   return (
     <div className="player-container">
       
-      {/* 1. PROGRESS BAR AREA */}
+      {/* 1. TOP HEADER (Minimize & Menu) */}
+      <div className="player-header-row">
+          <button className="icon-btn" onClick={onMinimize}>
+             <ChevronDown size={28} color="white" />
+          </button>
+          
+          <div className="relative-menu-container">
+              <button 
+                className={`icon-btn ${sleepTime ? 'active-dot' : ''}`} 
+                onClick={() => setShowMenu(!showMenu)}
+              >
+                  <MoreHorizontal size={24} color="white"/>
+              </button>
+
+              {/* THREE DOT MENU DROPDOWN */}
+              {showMenu && (
+                  <div className="glass-dropdown-menu">
+                      <div className="menu-header">
+                          <Timer size={14} /> <span>Sleep Timer</span>
+                      </div>
+                      <button className={`menu-option ${sleepTime === 15 ? 'active' : ''}`} onClick={() => { onSetSleepTimer(15); setShowMenu(false); }}>15 Minutes</button>
+                      <button className={`menu-option ${sleepTime === 30 ? 'active' : ''}`} onClick={() => { onSetSleepTimer(30); setShowMenu(false); }}>30 Minutes</button>
+                      <button className={`menu-option ${sleepTime === 60 ? 'active' : ''}`} onClick={() => { onSetSleepTimer(60); setShowMenu(false); }}>1 Hour</button>
+                      <button className="menu-option danger" onClick={() => { onSetSleepTimer(null); setShowMenu(false); }}>Turn Off</button>
+                  </div>
+              )}
+          </div>
+      </div>
+
+      {/* 2. PROGRESS BAR AREA */}
       <div className="progress-section">
           {/* Bar on Top */}
           <input 
@@ -100,7 +149,7 @@ export default function Player({
           </div>
       </div>
 
-      {/* 2. CONTROLS AREA */}
+      {/* 3. CONTROLS AREA */}
       <div className="controls-row">
          
          {/* Heart Icon (Moved to Front) */}
