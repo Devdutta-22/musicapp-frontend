@@ -1,107 +1,104 @@
-/* ============================================================================
-   ASTRONOTE - DREAMY GALAXY THEME 🌌
-   Overrides for the "Purple Space" Aesthetic
-   ============================================================================ */
+/* src/DreamyGalaxy.css */
 
 :root {
-  /* Core Colors */
-  --deep-space: #090014;
-  --nebula-purple: #240046;
-  --neon-purple: #b026ff;
-  --starlight-cyan: #00ffff;
+  /* 🎨 Palette extracted from your images */
+  --bg-deep: #0f0c29;       /* The dark night sky base */
+  --cloud-pink: #d86dfc;    /* The bright pink clouds from Image 2 */
+  --cloud-blue: #5eb3fd;    /* The cyan/blue glow from Image 1 */
+  --water-purple: #302b63;  /* The deep reflective purple */
   
-  /* Glass Override: A purple-tinted frosted glass */
-  --glass-bg: rgba(40, 10, 80, 0.45); 
-  --glass-border: rgba(180, 100, 255, 0.15);
-  --glass-blur: blur(24px);
-  
-  /* Text */
-  --text-main: #ffffff;
-  --text-muted: #dcbdfc; /* Soft lavender for secondary text */
+  /* 🔮 Glassmorphism overrides */
+  --glass-bg: rgba(20, 10, 40, 0.4); 
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(20px);
+  --neon-text: #fff;
 }
 
-/* 1. THE DREAMY BACKGROUND */
+/* 1. THE PAINTED SKY BACKGROUND */
 body {
-  background-color: var(--deep-space);
+  background-color: var(--bg-deep);
+  /* This creates the "Cloud" effect using overlapping radial gradients */
   background-image: 
-    /* Soft nebula glow top-left */
-    radial-gradient(circle at 0% 0%, rgba(120, 0, 255, 0.3) 0%, transparent 50%),
-    /* Cyan glow bottom-right for contrast */
-    radial-gradient(circle at 100% 100%, rgba(0, 255, 255, 0.1) 0%, transparent 40%),
-    /* Deep purple base */
-    linear-gradient(180deg, #1a0b2e 0%, #000000 100%);
+    /* Glowing Pink Cloud (Top Right) */
+    radial-gradient(circle at 80% 10%, rgba(216, 109, 252, 0.25) 0%, transparent 50%),
+    /* Deep Blue Nebula (Top Left) */
+    radial-gradient(circle at 10% 20%, rgba(94, 179, 253, 0.2) 0%, transparent 40%),
+    /* Central Purple Haze */
+    radial-gradient(circle at 50% 50%, rgba(108, 34, 189, 0.3) 0%, transparent 60%),
+    /* The Horizon Reflection (Bottom) */
+    linear-gradient(0deg, #1a0b2e 0%, var(--bg-deep) 100%);
+  
   background-attachment: fixed;
-  background-size: cover;
+  color: white;
+  min-height: 100vh;
 }
 
-/* 2. STARS EFFECT (Optional: Adds subtle twinkling dots) */
+/* 2. GENERATED STARS (The "Not Plain" Factor) */
+/* We use a CSS trick to draw stars using box-shadows to avoid loading images */
 body::before {
-  content: "";
+  content: " ";
   position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-image: 
-    radial-gradient(white 1px, transparent 1.5px),
-    radial-gradient(white 1px, transparent 1.5px);
-  background-size: 50px 50px, 100px 100px;
-  background-position: 0 0, 25px 25px;
-  opacity: 0.15;
-  pointer-events: none;
+  top: 0; left: 0; width: 1px; height: 1px;
+  background: transparent;
   z-index: -1;
+  /* These coordinates create the stars */
+  box-shadow: 
+    10vw 10vh #fff, 20vw 80vh #fff, 35vw 40vh #fff, 
+    50vw 10vh #fff, 60vw 90vh #fff, 80vw 20vh #fff,
+    90vw 50vh #fff, 15vw 60vh 2px #d86dfc, /* A pink star */
+    40vw 30vh 1px #fff, 70vw 70vh 1px #fff,
+    25vw 25vh 2px #5eb3fd, /* A blue star */
+    85vw 85vh 1px #fff;
+  opacity: 0.6;
+  animation: twinkle 10s infinite alternate;
 }
 
-/* 3. COMPONENT OVERRIDES */
-
-/* Nav Bar: Deep Purple Glass */
-.glass-nav {
-  background: rgba(20, 5, 35, 0.85);
-  border-top: 1px solid rgba(180, 100, 255, 0.2);
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+/* Add a second layer of smaller stars for depth */
+body::after {
+  content: " ";
+  position: fixed;
+  top: 0; left: 0; width: 2px; height: 2px;
+  background: transparent;
+  z-index: -1;
+  box-shadow: 
+    5vw 50vh 1px rgba(255,255,255,0.5), 30vw 10vh 1px rgba(255,255,255,0.5), 
+    55vw 80vh 1px rgba(255,255,255,0.5), 95vw 30vh 1px rgba(255,255,255,0.5);
 }
 
+@keyframes twinkle {
+  0% { opacity: 0.4; transform: translateY(0); }
+  100% { opacity: 0.8; transform: translateY(-10px); }
+}
+
+/* 3. CRYSTAL GLASS CARDS */
+/* Making the cards feel like floating ice/crystal */
+.glass-card, .glass-nav, .glass-dock, .glass-modal {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01)) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 4. PINK & BLUE ACCENTS (From images) */
+.active-dot::after { background: var(--cloud-pink) !important; }
+.dock-progress-fill { 
+  background: linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink)) !important;
+  box-shadow: 0 0 15px var(--cloud-pink);
+}
+
+/* Nav Icons Glow */
 .glass-nav button.active {
-  color: var(--neon-purple);
-  text-shadow: 0 0 15px rgba(176, 38, 255, 0.6);
+  color: white !important;
+  text-shadow: 0 0 10px var(--cloud-pink), 0 0 20px var(--cloud-blue);
 }
-
 .glass-nav button.active svg {
-  stroke: var(--neon-purple);
-  filter: drop-shadow(0 0 5px var(--neon-purple));
+  stroke: var(--cloud-pink);
+  filter: drop-shadow(0 0 5px var(--cloud-pink));
 }
 
-/* Mini Player Dock */
-.glass-dock {
-  background: rgba(30, 10, 50, 0.8);
-  border: 1px solid rgba(180, 100, 255, 0.25);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-}
-
-/* Progress Bar: Neon Purple Gradient */
-.dock-progress-fill, 
-.seek-slider::-webkit-slider-thumb {
-  background: linear-gradient(90deg, #ff00cc, #b026ff);
-  box-shadow: 0 0 15px rgba(176, 38, 255, 0.8);
-}
-
-/* Card Titles */
-.song-title, .row-title {
-  color: #fff;
-  text-shadow: 0 0 10px rgba(176, 38, 255, 0.3);
-}
-
-/* Buttons */
-.play-btn-large, .play-white {
-  background: white;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-  color: var(--deep-space); /* Icon color inside */
-}
-
-/* Inputs (Search, etc) */
-.glass-input {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(180, 100, 255, 0.2);
-}
-.glass-input:focus {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: var(--neon-purple);
-  box-shadow: 0 0 15px rgba(176, 38, 255, 0.2);
+/* Play Button Glow */
+.play-btn-large {
+  background: rgba(255,255,255,0.9) !important;
+  box-shadow: 0 0 30px rgba(216, 109, 252, 0.4) !important; /* Pink glow around play */
 }
