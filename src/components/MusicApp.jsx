@@ -500,14 +500,13 @@ export default function MusicApp({ user, onLogout }) {
       {currentSong && (
           <>
             <div className={`glass-modal ${isFullScreenPlayer ? 'open' : ''}`}>
-                <div className="modal-header">
-                    <button onClick={() => setIsFullScreenPlayer(false)} className="icon-btn"><ChevronDown size={32}/></button>
-                    <span>Now Playing</span>
-                    {/* Add to Queue etc. from top menu if needed, or just keep cleaner */}
-                    <button className="icon-btn" onClick={() => setOpenMenuId(openMenuId === 'player' ? null : 'player')}><MoreHorizontal size={24}/></button>
-                </div>
+ 
                 
                 <div className="modal-scroll-body">
+                    <div className="modal-header">
+                       <button onClick={() => setIsFullScreenPlayer(false)} className="icon-btn"><ChevronDown size={32}/></button>
+                       {/* <button className="icon-btn" onClick={() => setOpenMenuId(openMenuId === 'player' ? null : 'player')}><MoreHorizontal size={24}/></button> */}
+                    </div>
                     <div className="art-glow-container">
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" />
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" />
