@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import './DreamyGalaxy.css'; // <--- ADD THIS LINE HERE
+import './DreamyGalaxy.css'; // <--- ADD THIS LINE to load the new galaxy theme
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
