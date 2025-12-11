@@ -60,19 +60,23 @@ body::before {
   box-shadow: 0 8px 32px 0 rgba(10, 5, 20, 0.5) !important;
 }
 
-/* --- THE MINI PLAYER FIX --- */
-/* Slightly darker, more opaque, with a distinct Indigo tint */
+/* --- THE MINI PLAYER (More Transparent & Blue Progress) --- */
 .glass-dock {
-  /* Darker indigo base to pop against the background */
-  background: linear-gradient(90deg, rgba(15, 12, 41, 0.95), rgba(48, 43, 99, 0.9)) !important;
-  backdrop-filter: blur(30px) !important;
-  /* Glowing Top Border */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-top: 1px solid rgba(94, 179, 253, 0.4) !important; /* Cyan hint on top */
-  box-shadow: 0 -5px 20px rgba(0,0,0,0.6) !important;
+  /* Reduced opacity (0.8 instead of 0.95) for better glass effect */
+  background: linear-gradient(90deg, rgba(15, 12, 41, 0.8), rgba(48, 43, 99, 0.75)) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-top: 1px solid rgba(94, 179, 253, 0.3) !important; 
+  box-shadow: 0 -5px 20px rgba(0,0,0,0.5) !important;
 }
 
-/* 4. SEARCH INPUT GLOW (Blue/Cyan Restoration) */
+/* MINI PLAYER PROGRESS LINE -> BLUE */
+.dock-progress-fill { 
+  background: var(--cloud-blue) !important;
+  box-shadow: 0 0 10px var(--cloud-blue) !important;
+}
+
+/* 4. SEARCH INPUT GLOW */
 .glass-input, .upload-input, .file-input, select {
   background: rgba(20, 10, 40, 0.6) !important;
   border: 1px solid rgba(140, 100, 255, 0.3) !important;
@@ -82,7 +86,6 @@ body::before {
 
 .glass-input:focus {
   background: rgba(10, 5, 20, 0.8) !important;
-  /* The Blue Glow You Liked */
   border-color: var(--cloud-blue) !important;
   box-shadow: 0 0 20px rgba(94, 179, 253, 0.4), inset 0 0 10px rgba(94, 179, 253, 0.1) !important;
 }
@@ -99,12 +102,6 @@ body::before {
 
 .active-dot::after { background: var(--cloud-pink) !important; }
 
-/* Progress Bar - Pink/Blue Gradient */
-.dock-progress-fill { 
-  background: linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink)) !important;
-  box-shadow: 0 0 15px var(--cloud-pink);
-}
-
 /* Nav Icons */
 .glass-nav button.active {
   color: white !important;
@@ -114,83 +111,69 @@ body::before {
   stroke: #fff;
   filter: drop-shadow(0 0 8px var(--cloud-pink));
 }
-/* ... (Keep your existing CSS above) ... */
 
 /* =========================================
-   ☄️ COMET SEEK SLIDER (UPDATED)
+   ☄️ COMET SEEK SLIDER (FIXED ALIGNMENT)
    ========================================= */
 
-/* The Track (Space Dust) */
 .seek-slider {
   -webkit-appearance: none;
   width: 100%;
-  height: 6px; /* Thickness of the trail */
-  background: rgba(255, 255, 255, 0.1); /* Empty track */
+  height: 6px; 
+  background: rgba(255, 255, 255, 0.1); 
   border-radius: 10px;
   outline: none;
   cursor: pointer;
   position: relative;
   overflow: visible; 
   
-  /* The Comet Trail Gradient */
+  /* Trail Gradient */
   background-image: linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink));
   background-repeat: no-repeat;
-  background-size: 0% 100%; /* Updated by React */
+  background-size: 0% 100%; 
   transition: height 0.2s ease;
 }
 
 .seek-slider:hover {
-  height: 8px; /* Track expands slightly on hover */
+  height: 8px;
 }
 
-/* ----------------------------------------------------
-   THE COMET HEAD (THUMB)
-   ---------------------------------------------------- */
+/* --- THE COMET HEAD --- */
 .seek-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 20px; 
   width: 20px;
   
-  /* 1. CENTERING FIX */
-  /* (Track Height 6px - Thumb Height 20px) / 2 = -7px */
+  /* PERFECT CENTER FIX: (6px track - 20px thumb) / 2 = -7px */
   margin-top: -7px; 
   
-  /* 2. COMET CORE */
   background: #ffffff;
-  border-radius: 50%; /* Starts as a perfect circle */
+  border-radius: 50%; 
   border: 2px solid rgba(255, 255, 255, 0.9);
   
-  /* 3. THE GLOWING AURA */
   box-shadow: 
     0 0 10px 2px var(--cloud-blue), 
     0 0 20px 5px var(--cloud-pink),
     0 0 35px 10px rgba(216, 109, 252, 0.5);
     
   cursor: grab;
-  /* Smooth transition for the shape morph */
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transform-origin: center;
 }
 
-/* ----------------------------------------------------
-   INTERACTION: POINTY TAIL EFFECT
-   ---------------------------------------------------- */
+/* --- INTERACTION: POINTY TAIL (Points LEFT) --- */
 .seek-slider:hover::-webkit-slider-thumb,
 .seek-slider:active::-webkit-slider-thumb {
   cursor: grabbing;
   background: #fff;
   
-  /* MORPH SHAPE:
-     1. Scale up 
-     2. Rotate -45deg so the "corner" points Left (backwards)
+  /* 1. Scale up for impact
+     2. Rotate 45deg clockwise
+     3. border-radius sets sharp corner at Top-Left (which rotates to Left)
   */
-  transform: scale(1.3) rotate(-45deg);
+  transform: scale(1.3) rotate(45deg);
+  border-radius: 0 50% 50% 50%; /* Top-Left is the sharp corner */
   
-  /* This creates a "Teardrop" shape with the sharp point at bottom-left
-     (which becomes Left after rotation) */
-  border-radius: 50% 50% 50% 0; 
-  
-  /* Intensify the glow while sliding */
   box-shadow: 
     0 0 15px 5px var(--cloud-blue), 
     0 0 30px 10px var(--cloud-pink),
@@ -210,6 +193,6 @@ body::before {
 }
 
 .seek-slider:active::-moz-range-thumb {
-  transform: scale(1.3) rotate(-45deg);
-  border-radius: 50% 50% 50% 0;
+  transform: scale(1.3) rotate(45deg);
+  border-radius: 0 50% 50% 50%;
 }
