@@ -114,3 +114,73 @@ body::before {
   stroke: #fff;
   filter: drop-shadow(0 0 8px var(--cloud-pink));
 }
+/* =========================================
+   ☄️ COMET SEEK SLIDER
+   ========================================= */
+
+/* The Track (Space Dust) */
+.seek-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px; /* Thickness of the trail */
+  background: rgba(255, 255, 255, 0.1); /* The empty track color */
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  overflow: visible; /* Allows the glow to spill out */
+  
+  /* The Comet Trail: Gradient from Blue (Start) to Pink (Comet Head) */
+  background-image: linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink));
+  background-repeat: no-repeat;
+  /* React updates this '0% 100%' value dynamically */
+  background-size: 0% 100%; 
+  transition: height 0.2s ease;
+}
+
+/* Hover Effect: The trail gets slightly thicker */
+.seek-slider:hover {
+  height: 8px;
+}
+
+/* The Comet Head (Thumb) - Webkit (Chrome, Safari, Edge) */
+.seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 20px; 
+  width: 20px;
+  border-radius: 50%;
+  background: #ffffff; /* Bright white core */
+  
+  /* The Comet Glow (Coma) */
+  box-shadow: 
+    0 0 10px 2px var(--cloud-blue), 
+    0 0 20px 6px var(--cloud-pink),
+    0 0 30px 10px rgba(216, 109, 252, 0.4);
+    
+  margin-top: -6px; /* Centers the thumb on the track (height differences) */
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid rgba(255, 255, 255, 0.8); /* Crisp edge */
+}
+
+/* Interaction: Comet expands when grabbed */
+.seek-slider::-webkit-slider-thumb:hover,
+.seek-slider:active::-webkit-slider-thumb {
+  transform: scale(1.3);
+  background: #fff;
+  box-shadow: 
+    0 0 15px 5px var(--cloud-blue), 
+    0 0 30px 10px var(--cloud-pink),
+    0 0 50px 15px rgba(94, 179, 253, 0.6);
+}
+
+/* Firefox Support */
+.seek-slider::-moz-range-thumb {
+  height: 20px; 
+  width: 20px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 15px var(--cloud-pink);
+  cursor: pointer;
+}
