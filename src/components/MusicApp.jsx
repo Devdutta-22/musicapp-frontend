@@ -11,7 +11,7 @@ import {
   Play, Pause, Heart, ChevronDown, 
   Sparkles, Zap, Mic2, ListMusic, MoreHorizontal, 
   ListPlus, PlayCircle, ArrowRightCircle,
-  Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, RotateCcw
+  Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope ,Sparkles ,RotateCcw
 } from "lucide-react"; 
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -640,7 +640,7 @@ export default function MusicApp({ user, onLogout }) {
               <Home size={24}/><span>Home</span>
           </button>
           <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
-              <Search size={24}/><span>Search</span>
+              <Telescope size={24}/><span>Search</span>
           </button>
           <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => setActiveTab('upload')}>
               <PlusCircle size={32} color={activeTab === 'upload' ? '#9146ff' : '#ccc'} /><span>Upload</span>
@@ -649,7 +649,7 @@ export default function MusicApp({ user, onLogout }) {
               <Library size={24}/><span>Library</span>
           </button>
           <button className={activeTab === 'planet' ? 'active' : ''} onClick={() => setActiveTab('planet')}>
-              <User size={24}/><span>Planet</span>
+              <Sparkles size={24}/><span>Planet</span>
           </button>
       </nav>
 
