@@ -112,8 +112,12 @@ body::before {
   filter: drop-shadow(0 0 8px var(--cloud-pink));
 }
 
+/* src/DreamyGalaxy.css */
+
+/* ... (Keep your upper CSS unchanged) ... */
+
 /* =========================================
-   ☄️ COMET SEEK SLIDER (FIXED ALIGNMENT)
+   ☄️ COMET SEEK SLIDER (GLOWING ORB)
    ========================================= */
 
 .seek-slider {
@@ -138,49 +142,44 @@ body::before {
   height: 8px;
 }
 
-/* ... (Keep the track styles above unchanged) ... */
-
-/* --- THE COMET HEAD --- */
+/* --- THE COMET HEAD (Default: Soft Glow) --- */
 .seek-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 20px; 
   width: 20px;
   
-  /* PERFECT CENTER FIX: (6px track - 20px thumb) / 2 = -7px */
+  /* Perfect Center */
   margin-top: -7px; 
   
   background: #ffffff;
   border-radius: 50%; 
   border: 2px solid rgba(255, 255, 255, 0.9);
   
+  /* DEFAULT GLOW: Visible but softer intensity */
   box-shadow: 
-    0 0 10px 2px var(--cloud-blue), 
-    0 0 20px 5px var(--cloud-pink),
-    0 0 35px 10px rgba(216, 109, 252, 0.5);
+    0 0 5px 1px var(--cloud-blue), 
+    0 0 12px 3px var(--cloud-pink),
+    0 0 20px 5px rgba(216, 109, 252, 0.3); 
     
   cursor: grab;
-  /* Removed rotation transition, just scale */
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
   transform-origin: center;
 }
 
-/* --- INTERACTION: PULSING ORB (No Tail) --- */
+/* --- INTERACTION: INTENSE GLOW (When Holding) --- */
 .seek-slider:hover::-webkit-slider-thumb,
 .seek-slider:active::-webkit-slider-thumb {
   cursor: grabbing;
   background: #fff;
   
-  /* CHANGE: Just scale up, removed rotate(45deg) */
+  /* Scale up slightly */
   transform: scale(1.3);
   
-  /* CHANGE: Keep it a perfect circle */
-  border-radius: 50%; 
-  
-  /* Intensified Glow */
+  /* HIGH INTENSITY GLOW: Expands and brightens */
   box-shadow: 
-    0 0 15px 5px var(--cloud-blue), 
-    0 0 30px 10px var(--cloud-pink),
-    0 0 60px 20px rgba(94, 179, 253, 0.7);
+    0 0 15px 4px var(--cloud-blue), 
+    0 0 30px 8px var(--cloud-pink),
+    0 0 50px 15px rgba(94, 179, 253, 0.6); 
 }
 
 /* Firefox Support */
@@ -190,11 +189,17 @@ body::before {
   border: none;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 0 15px var(--cloud-pink);
+  /* Default Soft Glow */
+  box-shadow: 0 0 12px 3px var(--cloud-pink);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
+.seek-slider:active::-moz-range-thumb {
+  transform: scale(1.3);
+  /* Active Intense Glow */
+  box-shadow: 0 0 30px 8px var(--cloud-pink);
+}
 .seek-slider:active::-moz-range-thumb {
   transform: scale(1.3); /* Just scale, no rotation */
   border-radius: 50%;
