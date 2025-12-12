@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
   Shuffle, Repeat, Repeat1, Heart, 
-  ChevronDown, MoreHorizontal, Timer
+  ChevronDown, MoreHorizontal, Timer,Moon
 } from "lucide-react";
 import '../App.css';
 
@@ -131,7 +131,7 @@ export default function Player({
                 className={`icon-btn ${sleepTime ? 'active-dot' : ''}`} 
                 onClick={() => setShowMenu(!showMenu)}
               >
-                  <MoreHorizontal size={24} color="white"/>
+                  <Moon size={24} color="white"/>
               </button>
 
               {/* THREE DOT MENU DROPDOWN */}
@@ -181,7 +181,7 @@ export default function Player({
 
          {/* Standard Controls */}
          <button className={`icon-btn ${shuffle ? 'active-dot' : ''}`} onClick={onToggleShuffle}>
-            <Shuffle size={20} color={shuffle ? "#00ff88" : "white"} />
+            <Shuffle size={20} color={shuffle ? "#7c2cf2" : "white"} />
          </button>
 
          <button className="icon-btn" onClick={onPrev}>
@@ -198,7 +198,7 @@ export default function Player({
          </button>
 
          <button className={`icon-btn ${repeatMode !== 'off' ? 'active-dot' : ''}`} onClick={onToggleRepeat}>
-             {repeatMode === 'one' ? <Repeat1 size={20} color="#00ff88"/> : <Repeat size={20} color={repeatMode === 'all' ? "#00ff88" : "white"}/>}
+             {repeatMode === 'one' ? <Repeat1 size={20} color="#7c2cf2"/> : <Repeat size={20} color={repeatMode === 'all' ? "#00ff88" : "white"}/>}
          </button>
 
       </div>
