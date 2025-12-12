@@ -63,6 +63,66 @@ export default function MusicApp({ user, onLogout }) {
   const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, ""); 
   const authHeaders = { headers: { "X-User-Id": user?.id || 0 } };
 
+  // --- 🚀 NEW: APP-LIKE NAVIGATION LOGIC --- //
+
+  // 1. Handle Browser "Back" Button
+  useEffect(() => {
+    // Set initial history state if empty
+    if (!window.history.state) {
+      window.history.replaceState({ tab: 'home', player: false }, '');
+    }
+
+    const handlePopState = (event) => {
+      const state = event.state || { tab: 'home', player: false };
+      
+      // Update UI based on history state
+      setActiveTab(state.tab || 'home');
+      setIsFullScreenPlayer(!!state.player);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // 2. Smart Tab Switcher
+  const handleNavClick = (tab) => {
+    if (tab === activeTab) return;
+
+    const newState = { tab, player: false };
+
+    if (tab === 'home') {
+      // Always push when going Home to keep history linear
+      window.history.pushState(newState, '');
+    } else {
+      if (activeTab === 'home') {
+        // Leaving Home -> Push (Home is parent)
+        window.history.pushState(newState, '');
+      } else {
+        // Switching between side tabs (e.g. Search -> Library) -> Replace
+        // This ensures "Back" goes to Home, not the previous side tab
+        window.history.replaceState(newState, '');
+      }
+    }
+    setActiveTab(tab);
+    setIsFullScreenPlayer(false);
+  };
+
+  // 3. Player Opener
+  const openPlayer = () => {
+    if (isFullScreenPlayer) return;
+    // Push state so "Back" closes the player
+    window.history.pushState({ tab: activeTab, player: true }, '');
+    setIsFullScreenPlayer(true);
+  };
+
+  // 4. Player Closer (Minimize)
+  const closePlayer = () => {
+    // Trigger browser back to close, keeping history in sync
+    window.history.back();
+  };
+
+  // ------------------------------------------ //
+
   // --- INITIAL LOAD ---
   useEffect(() => {
     loadFeeds();
@@ -490,7 +550,7 @@ export default function MusicApp({ user, onLogout }) {
 
          {activeTab === 'planet' && (
              <div className="tab-pane">
-                 <PlanetCard user={user} onClose={() => setActiveTab('home')} />
+                 <PlanetCard user={user} onClose={() => handleNavClick('home')} />
                  <button className="glass-btn logout-btn" onClick={onLogout}>Sign Out</button>
                  <div className="spacer"></div>
              </div>
@@ -504,7 +564,8 @@ export default function MusicApp({ user, onLogout }) {
                 
                 <div className="modal-scroll-body">
                     <div className="modal-header">
-                       <button onClick={() => setIsFullScreenPlayer(false)} className="icon-btn"><ChevronDown size={32}/></button>
+                       {/* UPDATED: Close Player calls closePlayer to sync history */}
+                       <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32}/></button>
                        {/* <button className="icon-btn" onClick={() => setOpenMenuId(openMenuId === 'player' ? null : 'player')}><MoreHorizontal size={24}/></button> */}
                     </div>
                     <div className="art-glow-container">
@@ -607,7 +668,8 @@ export default function MusicApp({ user, onLogout }) {
             </div>
 
             {!isFullScreenPlayer && (
-                <div className="glass-dock" onClick={() => setIsFullScreenPlayer(true)}>
+                // UPDATED: Clicking dock calls openPlayer to push history state
+                <div className="glass-dock" onClick={openPlayer}>
                     <div className="dock-left">
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/> 
                         <div className="dock-info">
@@ -633,20 +695,21 @@ export default function MusicApp({ user, onLogout }) {
           </>
       )}
 
+      {/* UPDATED: Nav uses handleNavClick instead of setActiveTab */}
       <nav className="glass-nav">
-          <button className={activeTab === 'home' ? 'active' : ''} onClick={() => setActiveTab('home')}>
+          <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
               <Home size={24}/><span>Home</span>
           </button>
-          <button className={activeTab === 'search' ? 'active' : ''} onClick={() => setActiveTab('search')}>
+          <button className={activeTab === 'search' ? 'active' : ''} onClick={() => handleNavClick('search')}>
               <Telescope size={24}/><span>Search</span>
           </button>
-          <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => setActiveTab('upload')}>
+          <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => handleNavClick('upload')}>
               <PlusCircle size={32} color={activeTab === 'upload' ? '#9146ff' : '#ccc'} /><span>Upload</span>
           </button>
-          <button className={activeTab === 'library' ? 'active' : ''} onClick={() => setActiveTab('library')}>
+          <button className={activeTab === 'library' ? 'active' : ''} onClick={() => handleNavClick('library')}>
               <Library size={24}/><span>Library</span>
           </button>
-          <button className={activeTab === 'planet' ? 'active' : ''} onClick={() => setActiveTab('planet')}>
+          <button className={activeTab === 'planet' ? 'active' : ''} onClick={() => handleNavClick('planet')}>
               <Sparkles size={24}/><span>Planet</span>
           </button>
       </nav>
