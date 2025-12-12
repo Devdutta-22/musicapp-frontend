@@ -65,18 +65,21 @@ export default function MusicApp({ user, onLogout }) {
 
   // --- 🚀 NEW: APP-LIKE NAVIGATION LOGIC --- //
 
-  // 1. Handle Browser "Back" Button
   useEffect(() => {
-    // Set initial history state if empty
+    // 1. Initial Load: Replace any existing state with 'home' root state
+    // This ensures we start at the bottom of the stack.
     if (!window.history.state) {
-      window.history.replaceState({ tab: 'home', player: false }, '');
+       window.history.replaceState({ tab: 'home', player: false }, '');
+    } else if (window.history.state.tab) {
+       // Restore state if reloading page
+       setActiveTab(window.history.state.tab);
+       setIsFullScreenPlayer(!!window.history.state.player);
     }
 
+    // 2. Handle Browser/Phone Back Button
     const handlePopState = (event) => {
       const state = event.state || { tab: 'home', player: false };
-      
-      // Update UI based on history state
-      setActiveTab(state.tab || 'home');
+      setActiveTab(state.tab);
       setIsFullScreenPlayer(!!state.player);
     };
 
@@ -84,43 +87,43 @@ export default function MusicApp({ user, onLogout }) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // 2. Smart Tab Switcher
+  // 3. Smart Tab Switcher
   const handleNavClick = (tab) => {
     if (tab === activeTab) return;
 
-    const newState = { tab, player: false };
-
     if (tab === 'home') {
-      // Always push when going Home to keep history linear
-      window.history.pushState(newState, '');
+      // If going Home, go BACK in history (to the root).
+      // If we are already near root, this cleans up the stack so the NEXT back press minimizes the app.
+      window.history.back();
     } else {
+      const newState = { tab, player: false };
+      
+      // If we are currently at Home, PUSH the new tab (Home -> Tab)
       if (activeTab === 'home') {
-        // Leaving Home -> Push (Home is parent)
-        window.history.pushState(newState, '');
+         window.history.pushState(newState, '');
       } else {
-        // Switching between side tabs (e.g. Search -> Library) -> Replace
-        // This ensures "Back" goes to Home, not the previous side tab
-        window.history.replaceState(newState, '');
+         // If we are at another tab (e.g. Library), REPLACE it (Home -> NewTab)
+         // This prevents a long history chain. Pressing Back will always go Home.
+         window.history.replaceState(newState, '');
       }
+      setActiveTab(tab);
+      setIsFullScreenPlayer(false);
     }
-    setActiveTab(tab);
-    setIsFullScreenPlayer(false);
   };
 
-  // 3. Player Opener
+  // 4. Player Controls (Synced with History)
   const openPlayer = () => {
     if (isFullScreenPlayer) return;
-    // Push state so "Back" closes the player
+    // Push state so "Back" closes player
     window.history.pushState({ tab: activeTab, player: true }, '');
     setIsFullScreenPlayer(true);
   };
 
-  // 4. Player Closer (Minimize)
   const closePlayer = () => {
     // Trigger browser back to close, keeping history in sync
     window.history.back();
   };
-
+  
   // ------------------------------------------ //
 
   // --- INITIAL LOAD ---
@@ -564,7 +567,7 @@ export default function MusicApp({ user, onLogout }) {
                 
                 <div className="modal-scroll-body">
                     <div className="modal-header">
-                       {/* UPDATED: Close Player calls closePlayer to sync history */}
+                       {/* Calls closePlayer to trigger browser back, syncing history */}
                        <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32}/></button>
                        {/* <button className="icon-btn" onClick={() => setOpenMenuId(openMenuId === 'player' ? null : 'player')}><MoreHorizontal size={24}/></button> */}
                     </div>
@@ -668,7 +671,7 @@ export default function MusicApp({ user, onLogout }) {
             </div>
 
             {!isFullScreenPlayer && (
-                // UPDATED: Clicking dock calls openPlayer to push history state
+                // Calls openPlayer to push history state
                 <div className="glass-dock" onClick={openPlayer}>
                     <div className="dock-left">
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/> 
@@ -695,7 +698,7 @@ export default function MusicApp({ user, onLogout }) {
           </>
       )}
 
-      {/* UPDATED: Nav uses handleNavClick instead of setActiveTab */}
+      {/* Nav uses updated handleNavClick */}
       <nav className="glass-nav">
           <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
               <Home size={24}/><span>Home</span>
