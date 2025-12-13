@@ -21,6 +21,7 @@ const USP_FEATURES = [
     { title: "Lossless Audio", subtitle: "Crystal clear sound.", icon: <Mic2 size={24} color="#00ff88" />, accent: "linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 0, 0, 0))" },
 ];
 
+// --- ARTISTIC LINK CARD ---
 const ArtisticLinkCard = ({ title, subtitle, image, onClick }) => (
   <div className="artistic-box" onClick={onClick}>
     <div className="artistic-bg" style={{ backgroundImage: `url(${image})` }}></div>
@@ -45,6 +46,7 @@ export default function MusicApp({ user, onLogout }) {
   // --- DATA STATE ---
   const [homeFeed, setHomeFeed] = useState([]);      
   const [discoveryFeed, setDiscoveryFeed] = useState([]); 
+  const [allSongs, setAllSongs] = useState([]); // <--- NEW: Stores full DB list
   const [searchResults, setSearchResults] = useState([]);
   const [likedSongs, setLikedSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]); 
@@ -65,6 +67,7 @@ export default function MusicApp({ user, onLogout }) {
   const [loading, setLoading] = useState(false);
   const sleepIntervalRef = useRef(null);
 
+  // Close menus when clicking anywhere else
   useEffect(() => {
     const closeMenu = () => setOpenMenuId(null);
     window.addEventListener('click', closeMenu);
@@ -75,6 +78,7 @@ export default function MusicApp({ user, onLogout }) {
   const authHeaders = { headers: { "X-User-Id": user?.id || 0 } };
 
   // --- NAVIGATION LOGIC --- //
+
   useEffect(() => {
     if (!window.history.state) {
        window.history.replaceState({ tab: 'home', player: false }, '');
@@ -95,6 +99,7 @@ export default function MusicApp({ user, onLogout }) {
 
   const handleNavClick = (tab) => {
     if (tab === activeTab) return;
+
     if (tab === 'home') {
       window.history.back();
     } else {
@@ -136,6 +141,23 @@ export default function MusicApp({ user, onLogout }) {
       setLoading(false);
   }
 
+  // --- NEW: Fetch All Songs for the "All Songs" Tab ---
+  useEffect(() => {
+      if (activeTab === 'all-songs') {
+          fetchAllSongs();
+      }
+  }, [activeTab]);
+
+  async function fetchAllSongs() {
+      try {
+          // This calls GET /api/songs. Ensure your backend has this endpoint!
+          const res = await axios.get(`${API_BASE}/api/songs`, authHeaders);
+          setAllSongs(res.data);
+      } catch(e) { 
+          console.error("Error fetching all songs:", e);
+      }
+  }
+
   async function fetchLibraryData() {
       try {
           const liked = await axios.get(`${API_BASE}/api/songs/liked`, authHeaders);
@@ -161,7 +183,8 @@ export default function MusicApp({ user, onLogout }) {
 
   // --- HELPER: GET SONG ---
   function getSongById(id) {
-      const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs];
+      // Look in ALL lists to find the song info
+      const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs, ...allSongs];
       return all.find(s => s.id === id) || { id, title: 'Unknown', artistName: 'Unknown', coverUrl: null };
   }
   const currentSong = queue[currentIndex] ? getSongById(queue[currentIndex]) : null;
@@ -214,19 +237,24 @@ export default function MusicApp({ user, onLogout }) {
 
   const toggleLike = async (songId) => {
       const update = (list) => list.map(s => s.id === songId ? {...s, liked: !s.liked} : s);
-      setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update);
+      setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update); setAllSongs(update);
       try { await axios.post(`${API_BASE}/api/likes/${songId}`, {}, authHeaders); fetchLibraryData(); } catch(e) {}
   };
 
+  // --- QUEUE ACTIONS ---
+  
   const playNext = (song) => {
       if (queue.length === 0) { playSong(song); return; }
+      
       const newQueue = [...queue];
       const insertIndex = currentIndex + 1;
+      
       const existingIdx = newQueue.indexOf(song.id);
       if (existingIdx > -1 && existingIdx !== currentIndex) {
           newQueue.splice(existingIdx, 1);
           if (existingIdx < insertIndex) insertIndex--;
       }
+      
       newQueue.splice(insertIndex, 0, song.id);
       setQueue(newQueue);
   };
@@ -262,9 +290,11 @@ export default function MusicApp({ user, onLogout }) {
         const q = [...prev];
         const [item] = q.splice(oldIndex, 1);
         q.splice(newIndex, 0, item);
+        
         if (currentIndex === oldIndex) setCurrentIndex(newIndex);
         else if (currentIndex >= newIndex && currentIndex < oldIndex) setCurrentIndex(c => c + 1);
         else if (currentIndex <= newIndex && currentIndex > oldIndex) setCurrentIndex(c => c - 1);
+        
         return q;
     });
   };
@@ -278,6 +308,7 @@ export default function MusicApp({ user, onLogout }) {
     });
   };
 
+  // --- PLAYER CONTROL LOGIC ---
   const handleNextSong = () => {
       const nextIdx = currentIndex + 1;
       if (nextIdx < queue.length) {
@@ -311,6 +342,7 @@ export default function MusicApp({ user, onLogout }) {
 
   useEffect(() => {
     if (!currentSong || !('mediaSession' in navigator)) return;
+    
     navigator.mediaSession.metadata = new MediaMetadata({
       title: currentSong.title,
       artist: currentSong.artistName,
@@ -319,6 +351,7 @@ export default function MusicApp({ user, onLogout }) {
         { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }
       ]
     });
+
     navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
     navigator.mediaSession.setActionHandler('pause', () => setPlaying(false));
     navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
@@ -340,6 +373,8 @@ export default function MusicApp({ user, onLogout }) {
     return () => clearTimeout(sleepIntervalRef.current);
   }, [sleepTime]);
 
+
+  // --- SHARED SONG ROW COMPONENT ---
   const SongRow = ({ s, list, onClick }) => (
     <div className="glass-row" onClick={onClick ? onClick : () => playSong(s, list)}>
         <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb" onError={e=>e.target.src=PERSON_PLACEHOLDER}/>
@@ -352,6 +387,8 @@ export default function MusicApp({ user, onLogout }) {
             <button className="icon-btn" onClick={(e)=>{e.stopPropagation(); toggleLike(s.id)}}>
                 <Heart size={20} fill={s.liked ? "#ff00cc" : "none"} color={s.liked ? "#ff00cc" : "rgba(255,255,255,0.5)"}/>
             </button>
+
+            {/* THREE DOT MENU */}
             <div className="context-menu-container">
                 <button 
                     className="icon-btn" 
@@ -362,6 +399,7 @@ export default function MusicApp({ user, onLogout }) {
                 >
                     <MoreHorizontal size={20} color="rgba(255,255,255,0.7)" />
                 </button>
+
                 {openMenuId === s.id && (
                     <div className="context-menu" onClick={e => e.stopPropagation()}>
                         <button className="menu-item" onClick={() => { playNow(s); setOpenMenuId(null); }}>
@@ -380,19 +418,10 @@ export default function MusicApp({ user, onLogout }) {
     </div>
   );
 
-  // --- MERGE SONGS FOR "ALL SONGS" VIEW ---
-  // Create a unique list of all songs loaded so far
-  const allKnownSongs = [...homeFeed, ...discoveryFeed].reduce((acc, current) => {
-    const x = acc.find(item => item.id === current.id);
-    if (!x) return acc.concat([current]);
-    else return acc;
-  }, []);
-
   return (
     <div className="glass-shell">
       <div className="glass-viewport">
          
-         {/* --- HOME TAB --- */}
          {activeTab === 'home' && (
            <div className="tab-pane home-animate">
               <header className="glass-header">
@@ -413,12 +442,13 @@ export default function MusicApp({ user, onLogout }) {
                   ))}
               </div>
 
-              {/* ARTISTIC LINK BOX -> LINKS TO 'all-songs' */}
+              {/* --- ARTISTIC LINK BOX --- */}
               <div style={{ padding: '0 20px', marginTop: '20px' }}>
                   <ArtisticLinkCard 
                       title="All Songs"
-                      subtitle="Browse the full collection."
-                      image="/planets/my-art.jpg" 
+                      subtitle="Browse the full database."
+                      // CHANGE THIS path below to match your uploaded image name!
+                      image="/planets/nebula.png" 
                       onClick={() => handleNavClick('all-songs')} 
                   />
               </div>
@@ -457,18 +487,24 @@ export default function MusicApp({ user, onLogout }) {
                     </button>
                     <div className="header-text">
                         <h1>All Songs</h1>
-                        <p>{allKnownSongs.length} Tracks Available</p>
+                        <p>{allSongs.length} Tracks Available</p>
                     </div>
                 </div>
                 
                 <div className="list-vertical">
-                    {allKnownSongs.map(s => (
-                        <SongRow 
-                           key={s.id} 
-                           s={s} 
-                           list={allKnownSongs} 
-                        />
-                    ))}
+                    {allSongs.length === 0 ? (
+                        <div style={{textAlign:'center', padding:40, color:'#888'}}>
+                            Loading songs...
+                        </div>
+                    ) : (
+                        allSongs.map(s => (
+                            <SongRow 
+                               key={s.id} 
+                               s={s} 
+                               list={allSongs} 
+                            />
+                        ))
+                    )}
                 </div>
                 <div className="spacer"></div>
             </div>
@@ -573,7 +609,9 @@ export default function MusicApp({ user, onLogout }) {
                 
                 <div className="modal-scroll-body">
                     <div className="modal-header">
+                       {/* Calls closePlayer to trigger browser back, syncing history */}
                        <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32}/></button>
+                       {/* <button className="icon-btn" onClick={() => setOpenMenuId(openMenuId === 'player' ? null : 'player')}><MoreHorizontal size={24}/></button> */}
                     </div>
                     <div className="art-glow-container">
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" />
@@ -622,6 +660,7 @@ export default function MusicApp({ user, onLogout }) {
                                 <ListMusic size={20} color="#aaa"/>
                                 <h3>Up Next</h3>
                             </div>
+                            {/* QUEUE CONTROLS: CLEAR & RESTORE */}
                             <div style={{display:'flex', gap:10}}>
                                 <button className="icon-btn" onClick={clearQueue} title="Clear Queue (Keep Current)">
                                     <Trash2 size={18} color="#ffffff"/>
@@ -634,9 +673,12 @@ export default function MusicApp({ user, onLogout }) {
 
                         <div className="list-vertical">
                             {queue.map((id, i) => {
+                                // Only show surrounding songs to improve performance if queue is huge
                                 if (i < currentIndex - 2 || i > currentIndex + 20) return null;
+                                
                                 const s = getSongById(id);
                                 const isCurrent = i === currentIndex;
+                                
                                 return (
                                     <div key={`${id}-${i}`} className={`glass-row compact ${isCurrent ? 'active-row' : ''}`}>
                                         <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb small"/>
@@ -644,6 +686,7 @@ export default function MusicApp({ user, onLogout }) {
                                             <div className="row-title" style={{color: isCurrent ? 'var(--neon)' : 'white'}}>{s.title}</div>
                                             <div className="row-artist">{s.artistName}</div>
                                         </div>
+                                        {/* QUEUE ITEM ACTIONS */}
                                         <div className="row-actions">
                                             {!isCurrent && (
                                                 <button className="icon-btn" onClick={() => { setCurrentIndex(i); setPlaying(true); }}>
@@ -670,6 +713,7 @@ export default function MusicApp({ user, onLogout }) {
             </div>
 
             {!isFullScreenPlayer && (
+                // Calls openPlayer to push history state
                 <div className="glass-dock" onClick={openPlayer}>
                     <div className="dock-left">
                         <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb"/> 
@@ -696,6 +740,7 @@ export default function MusicApp({ user, onLogout }) {
           </>
       )}
 
+      {/* Nav uses updated handleNavClick */}
       <nav className="glass-nav">
           <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
               <Home size={24}/><span>Home</span>
