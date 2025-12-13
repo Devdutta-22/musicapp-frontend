@@ -418,7 +418,7 @@ export default function MusicApp({ user, onLogout }) {
                   <ArtisticLinkCard 
                       title="All Songs"
                       subtitle="Browse the full collection."
-                      image="/planets/nebula.png" 
+                      image="/planets/my-art.jpg" 
                       onClick={() => handleNavClick('all-songs')} 
                   />
               </div>
