@@ -75,48 +75,66 @@ body::after {
   100% { opacity: 0.9; transform: scale(1.1); }
 }
 
-/* 🌠 3. SHOOTING STARS EFFECT */
-/* We attach this to the .glass-shell container to create a shooting star layer */
+/* 🌠 3. SHOOTING STARS - OPTIMIZED (Less Frequent, More Spread) */
+
+/* Star 1: Top Left to Bottom Right */
 .glass-shell::before {
   content: "";
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 0;
+  left: 20%; /* Starts more to the left */
   width: 4px;
   height: 4px;
   background: linear-gradient(-45deg, #5eb3fd, rgba(0, 0, 255, 0));
   border-radius: 999px;
   filter: drop-shadow(0 0 6px #69c0ff);
-  animation: tail 3000ms ease-in-out infinite, shooting 3000ms ease-in-out infinite;
-  opacity: 0; /* Hidden by default until animation triggers */
-  z-index: -1; /* Behind content */
+  /* Duration 15s (Very slow cycle), Delay 2s */
+  animation: tail 15s ease-in-out infinite 2s, shooting 15s ease-in-out infinite 2s;
+  opacity: 0; 
+  z-index: -1;
 }
 
-/* Create a second shooting star with different timing */
+/* Star 2: Top Right (Purple) */
 .glass-shell::after {
   content: "";
   position: absolute;
-  top: 20%;
+  top: 10%;
   left: 80%;
   width: 3px;
   height: 3px;
   background: linear-gradient(-45deg, #d86dfc, rgba(0, 0, 255, 0));
   border-radius: 999px;
   filter: drop-shadow(0 0 6px #d86dfc);
-  animation: tail 4500ms ease-in-out infinite 1s, shooting 4500ms ease-in-out infinite 1s;
+  /* Duration 23s (Prime number avoids syncing), Delay 8s */
+  animation: tail 23s ease-in-out infinite 8s, shooting 23s ease-in-out infinite 8s;
   opacity: 0;
   z-index: -1;
 }
 
+/* Star 3: NEW - attached to Body to cover different area (Middle Left) */
+body::before {
+  /* Note: This inherits the twinkling stars box-shadow from previous section. 
+     We are adding the shooting star properties to it effectively via animation 
+     hack or we can just add a specific div in React. 
+     
+     Actually, pure CSS on existing elements is limited. 
+     Let's stick to modifying the Animation Keyframes to be "Longer" 
+     so they spend 90% of the time invisible. 
+  */
+}
+
+/* Updated Keyframes for "Long Wait, Fast Shoot" */
 @keyframes tail {
   0% { width: 0; }
-  30% { width: 100px; }
-  100% { width: 0; }
+  5% { width: 100px; } /* Only visible for first 5% of time */
+  10% { width: 0; }
+  100% { width: 0; }   /* Invisible for the rest 90% */
 }
 
 @keyframes shooting {
   0% { transform: translateX(0) translateY(0) rotate(45deg); opacity: 1; }
-  100% { transform: translateX(300px) translateY(300px) rotate(45deg); opacity: 0; }
+  10% { transform: translateX(400px) translateY(400px) rotate(45deg); opacity: 0; }
+  100% { transform: translateX(0) translateY(0) rotate(45deg); opacity: 0; } /* Reset */
 }
 
 /* 4. GLASS UI COMPONENTS */
