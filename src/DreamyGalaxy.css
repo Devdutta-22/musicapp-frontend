@@ -26,29 +26,60 @@ body {
   background-attachment: fixed;
   color: white;
   min-height: 100vh;
+  position: relative; /* Needed for pseudo-elements */
 }
 
-/* 2. STARS */
+/* 2. STARS - LAYER 1 (Larger, Slower Blinking) */
 body::before {
+  content: " ";
+  position: fixed;
+  top: 0; left: 0; width: 2px; height: 2px;
+  background: transparent;
+  z-index: -1;
+  box-shadow: 
+    /* Original Cluster */
+    10vw 10vh #fff, 20vw 80vh #fff, 35vw 40vh #fff, 
+    50vw 10vh #fff, 60vw 90vh #fff, 80vw 20vh #fff,
+    90vw 50vh #fff, 15vw 60vh 2px #d86dfc,
+    40vw 30vh 1px #fff, 70vw 70vh 1px #fff,
+    25vw 25vh 2px #5eb3fd, 85vw 85vh 1px #fff,
+    /* Additional Stars */
+    5vw 5vh #fff, 95vw 95vh #fff, 45vw 15vh #fff,
+    22vw 45vh 1px #fff, 78vw 35vh #fff, 12vw 90vh #fff,
+    65vw 65vh 1px #fff, 33vw 12vh #d86dfc, 55vw 55vh #5eb3fd;
+  opacity: 0.7; 
+  animation: twinkle 6s infinite alternate ease-in-out;
+}
+
+/* 2b. STARS - LAYER 2 (Tiny, Dense, Fast Blinking) */
+body::after {
   content: " ";
   position: fixed;
   top: 0; left: 0; width: 1px; height: 1px;
   background: transparent;
   z-index: -1;
   box-shadow: 
-    10vw 10vh #fff, 20vw 80vh #fff, 35vw 40vh #fff, 
-    50vw 10vh #fff, 60vw 90vh #fff, 80vw 20vh #fff,
-    90vw 50vh #fff, 15vw 60vh 2px #d86dfc,
-    40vw 30vh 1px #fff, 70vw 70vh 1px #fff,
-    25vw 25vh 2px #5eb3fd, 
-    85vw 85vh 1px #fff;
-  opacity: 0.7; 
-  animation: twinkle 8s infinite alternate;
+    /* Top Section */
+    2vw 2vh #fff, 8vw 15vh #fff, 14vw 4vh #fff, 25vw 8vh #fff,
+    30vw 22vh #fff, 38vw 5vh #fff, 44vw 18vh #fff, 52vw 9vh #fff,
+    60vw 3vh #fff, 68vw 19vh #fff, 75vw 6vh #fff, 82vw 24vh #fff,
+    90vw 2vh #fff, 96vw 12vh #fff, 
+    /* Middle Section */
+    4vw 35vh #fff, 12vw 45vh #fff, 18vw 32vh #fff, 26vw 48vh #fff,
+    34vw 38vh #fff, 42vw 52vh #fff, 50vw 40vh #fff, 58vw 46vh #fff,
+    64vw 35vh #fff, 72vw 55vh #fff, 80vw 42vh #fff, 88vw 50vh #fff,
+    /* Bottom Section */
+    3vw 75vh #fff, 10vw 92vh #fff, 16vw 82vh #fff, 24vw 68vh #fff,
+    32vw 88vh #fff, 40vw 72vh #fff, 48vw 95vh #fff, 56vw 80vh #fff,
+    62vw 90vh #fff, 70vw 78vh #fff, 78vw 96vh #fff, 86vw 84vh #fff,
+    94vw 70vh #fff, 98vw 98vh #fff;
+  opacity: 0.5;
+  animation: twinkle 3s infinite alternate-reverse ease-in-out;
 }
 
 @keyframes twinkle {
-  0% { opacity: 0.4; transform: translateY(0); }
-  100% { opacity: 0.8; transform: translateY(-5px); }
+  0% { opacity: 0.3; transform: scale(0.8); }
+  100% { opacity: 0.9; transform: scale(1.1); }
 }
 
 /* 3. STANDARD GLASS CARDS */
@@ -111,10 +142,6 @@ body::before {
   stroke: #fff;
   filter: drop-shadow(0 0 8px var(--cloud-pink));
 }
-
-/* src/DreamyGalaxy.css */
-
-/* ... (Keep your upper CSS unchanged) ... */
 
 /* =========================================
    ☄️ COMET SEEK SLIDER (GLOWING ORB)
@@ -199,8 +226,4 @@ body::before {
   transform: scale(1.3);
   /* Active Intense Glow */
   box-shadow: 0 0 30px 8px var(--cloud-pink);
-}
-.seek-slider:active::-moz-range-thumb {
-  transform: scale(1.3); /* Just scale, no rotation */
-  border-radius: 50%;
 }
