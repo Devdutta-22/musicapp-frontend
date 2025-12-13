@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
   Shuffle, Repeat, Repeat1, Heart, 
-  ChevronDown, MoreHorizontal, Timer,Moon
+  ChevronDown, MoreHorizontal, Timer, Moon
 } from "lucide-react";
 import '../App.css';
 
@@ -21,20 +21,19 @@ export default function Player({
   onProgress, 
   sleepTime,       
   onSetSleepTimer,
-  onMinimize // Handles closing the full-screen player
+  onMinimize 
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [showMenu, setShowMenu] = useState(false); // State for Three Dot Menu
+  const [showMenu, setShowMenu] = useState(false); 
 
-  // Sync ref for progress callback
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
 
-  // --- FIX: Handle Play/Pause when 'playing' prop changes ---
+  // Handle Play/Pause when 'playing' prop changes
   useEffect(() => {
     if (audioRef.current) {
       if (playing) {
@@ -49,9 +48,7 @@ export default function Player({
       }
     }
   }, [playing]);
-  // -----------------------------------------------------------
 
-  // Audio Event Handlers
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
         setDuration(audioRef.current.duration);
@@ -66,7 +63,6 @@ export default function Player({
       setTime(c);
       if (onProgressRef.current) onProgressRef.current(c, d);
       updateRangeBackground(c, d);
-      // Sync Media Session occasionally to prevent drift
       if (Math.floor(c) !== Math.floor(time)) updateMediaSessionPosition();
     }
   };
@@ -88,7 +84,6 @@ export default function Player({
     updateMediaSessionPosition();
   };
 
-  // Sync Media Session (Control Center on Phone)
   const updateMediaSessionPosition = () => {
     if ('mediaSession' in navigator && audioRef.current) {
       const audio = audioRef.current;
@@ -110,15 +105,24 @@ export default function Player({
     return `${min}:${sec < 10 ? '0' + sec : sec}`;
   };
 
+  // --- FIX: Custom Handler for Song End ---
+  const handleAudioEnded = () => {
+    if (repeatMode === 'one' && audioRef.current) {
+      // If Repeat One is active, reset time and play again immediately
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+    } else {
+      // Otherwise, tell the parent app to go to next song or stop
+      onEnded(); 
+    }
+  };
+
   return (
     <div className="player-container">
       
-      {/* 1. TOP HEADER (Minimize & Menu) */}
+      {/* 1. TOP HEADER */}
       <div className="player-header-row">
-          <button 
-            className="icon-btn" 
-            onClick={onToggleLike}
-         >
+          <button className="icon-btn" onClick={onToggleLike}>
             <Heart 
                 size={24} 
                 fill={song?.liked ? "#ff00cc" : "none"} 
@@ -134,7 +138,6 @@ export default function Player({
                   <Moon size={24} color="white"/>
               </button>
 
-              {/* THREE DOT MENU DROPDOWN */}
               {showMenu && (
                   <div className="glass-dropdown-menu">
                       <div className="menu-header">
@@ -151,7 +154,6 @@ export default function Player({
 
       {/* 2. PROGRESS BAR AREA */}
       <div className="progress-section">
-          {/* Bar on Top */}
           <input 
             type="range" 
             min="0" 
@@ -165,8 +167,6 @@ export default function Player({
             onTouchStart={() => setIsDragging(true)}
             onTouchEnd={() => setIsDragging(false)}
           />
-          
-          {/* Time Below Bar */}
           <div className="time-row">
              <span>{formatTime(time)}</span>
              <span>{formatTime(duration)}</span>
@@ -175,11 +175,6 @@ export default function Player({
 
       {/* 3. CONTROLS AREA */}
       <div className="controls-row">
-         
-         {/* Heart Icon (Moved to Front) */}
-         
-
-         {/* Standard Controls */}
          <button className={`icon-btn ${shuffle ? 'active-dot' : ''}`} onClick={onToggleShuffle}>
             <Shuffle size={20} color={shuffle ? "#7c2cf2" : "white"} />
          </button>
@@ -188,7 +183,6 @@ export default function Player({
             <SkipBack size={28} fill="white" />
          </button>
 
-         {/* Play Button (Fixed Oval Issue) */}
          <button className="play-btn-large" onClick={onToggle}>
             {playing ? <Pause size={32} fill="black"/> : <Play size={32} fill="black" style={{marginLeft:4}}/>}
          </button>
@@ -200,17 +194,16 @@ export default function Player({
          <button className={`icon-btn ${repeatMode !== 'off' ? 'active-dot' : ''}`} onClick={onToggleRepeat}>
              {repeatMode === 'one' ? <Repeat1 size={20} color="#7c2cf2"/> : <Repeat size={20} color={repeatMode === 'all' ? "#00ff88" : "white"}/>}
          </button>
-
       </div>
 
-      {/* Hidden Audio Element */}
+      {/* Hidden Audio Element with FIX applied */}
       <audio
         ref={audioRef}
         src={song?.streamUrl} 
         autoPlay={playing}
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
-        onEnded={onEnded} 
+        onEnded={handleAudioEnded} // CHANGED: Points to new handler
       />
     </div>
   );
