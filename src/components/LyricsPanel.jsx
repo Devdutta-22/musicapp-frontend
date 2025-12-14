@@ -114,7 +114,7 @@ export default function LyricsPanel({ song, onExpand, onCollapse, isFullMode = f
       <div className="lyrics-panel-header" style={isFullMode ? { justifyContent: 'center', marginBottom: 30 } : {}}>
         <div style={{ minWidth: 0, textAlign: isFullMode ? 'center' : 'left' }}>
           <h3 style={{ margin: 0, fontSize: isFullMode ? '2.5rem' : 18 }}>{song.title}</h3>
-          <div style={{ color: isFullMode ? '#5eb3fd' : 'var(--text-secondary)', fontSize: isFullMode ? '1.1rem' : 13 }}>{song.artistName}</div>
+          <div style={{ color: isFullMode ? '#5eb3fd' : 'var(--text-secondary)', fontSize: isFullMode ? '0.8rem' : 13 }}>{song.artistName}</div>
         </div>
 
         {/* Buttons (Only show expand/edit in normal mode to keep full mode clean) */}
