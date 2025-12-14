@@ -1,16 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Edit2, Save, Trash2, X, Maximize2, Minimize2 } from "lucide-react";
 
-export default function LyricsPanel({ song }) {
+export default function LyricsPanel({ song, onExpand, onCollapse, isFullMode = false }) {
   const [loading, setLoading] = useState(false);
   const [lyrics, setLyrics] = useState('');
   const [editing, setEditing] = useState(false);
   const [meta, setMeta] = useState(null);
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  
-  // --- NEW: Expand State ---
-  const [isExpanded, setIsExpanded] = useState(false);
   
   const menuRef = useRef(null);
 
@@ -111,125 +108,65 @@ export default function LyricsPanel({ song }) {
 
   if (!song) return <div className="lyrics-empty">Select a song to see lyrics</div>;
 
-  // --- FULL SCREEN VIEW ---
-  if (isExpanded) {
-    return (
-      <div className="lyrics-expanded-overlay">
-        <div className="lyrics-expanded-header">
-            <div style={{ textAlign: 'center', width: '100%' }}>
-                <h2 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', textShadow: '0 0 15px rgba(216, 109, 252, 0.6)' }}>{song.title}</h2>
-                <span style={{ fontSize: '1.4rem', color: '#5eb3fd', letterSpacing: '1px' }}>{song.artistName}</span>
-            </div>
-            <button 
-                className="icon-btn close-expand" 
-                onClick={() => setIsExpanded(false)}
-                title="Exit Full Screen"
-            >
-                <Minimize2 size={28} color="white" />
-            </button>
-        </div>
-        <div className="lyrics-expanded-content">
-            {lyrics || "No lyrics found in deep space."}
-        </div>
-      </div>
-    );
-  }
-
-  // --- NORMAL VIEW ---
   return (
-    <div className="lyrics-panel" role="region" aria-label="Lyrics panel">
-      <div className="lyrics-panel-header">
-        <div style={{ minWidth: 0 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>{song.title}</h3>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{song.artistName}</div>
+    <div className={`lyrics-panel ${isFullMode ? 'full-mode' : ''}`} role="region" aria-label="Lyrics panel">
+      {/* Header */}
+      <div className="lyrics-panel-header" style={isFullMode ? { justifyContent: 'center', marginBottom: 30 } : {}}>
+        <div style={{ minWidth: 0, textAlign: isFullMode ? 'center' : 'left' }}>
+          <h3 style={{ margin: 0, fontSize: isFullMode ? '2.5rem' : 18 }}>{song.title}</h3>
+          <div style={{ color: isFullMode ? '#5eb3fd' : 'var(--text-secondary)', fontSize: isFullMode ? '1.4rem' : 13 }}>{song.artistName}</div>
         </div>
 
-        <div style={{ display:'flex', gap: 5 }}>
-            {/* EXPAND BUTTON */}
-            <button 
-                className="icon-btn"
-                onClick={() => setIsExpanded(true)}
-                title="Full Screen Mode"
-            >
-                <Maximize2 size={18} />
-            </button>
-
-            {/* EDIT MENU */}
-            <div ref={menuRef} style={{ position: 'relative' }}>
-            <button
-                className={`icon-btn ${menuOpen ? 'active' : ''}`}
-                onClick={() => setMenuOpen(v => !v)}
-                title="Lyrics actions"
-            >
-                <Edit2 size={18} />
-            </button>
-
-            {menuOpen && (
-                <div
-                className="lyrics-actions-menu"
-                style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 'calc(100% + 8px)',
-                    background: 'var(--bg-secondary)',
-                    border: '1px solid rgba(255,255,255,0.03)',
-                    borderRadius: 8,
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
-                    padding: 8,
-                    zIndex: 60,
-                    minWidth: 160,
-                }}
+        {/* Buttons (Only show expand/edit in normal mode to keep full mode clean) */}
+        {!isFullMode && (
+            <div style={{ display:'flex', gap: 5 }}>
+                <button 
+                    className="icon-btn"
+                    onClick={onExpand}
+                    title="Full Screen Mode"
                 >
-                <button
-                    className="small-btn"
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
-                    onClick={() => { setEditing(e => !e); setMenuOpen(false); }}
-                >
-                    {editing ? <><X size={16}/> Stop Editing</> : <><Edit2 size={16}/> Edit Lyrics</>}
+                    <Maximize2 size={18} />
                 </button>
 
-                <button
-                    className="small-btn"
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
-                    onClick={saveLyrics}
-                    disabled={!editing || loading}
-                >
-                    <Save size={16}/> Save
-                </button>
-
-                <button
-                    className="small-btn danger"
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', color: '#ff4d7a' }}
-                    onClick={clearLyrics}
-                    disabled={loading}
-                >
-                    <Trash2 size={16}/> Clear
-                </button>
+                <div ref={menuRef} style={{ position: 'relative' }}>
+                    <button
+                        className={`icon-btn ${menuOpen ? 'active' : ''}`}
+                        onClick={() => setMenuOpen(v => !v)}
+                        title="Lyrics actions"
+                    >
+                        <Edit2 size={18} />
+                    </button>
+                    {/* Menu logic same as before... */}
+                    {menuOpen && (
+                        <div className="lyrics-actions-menu" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 60, background:'#222', border:'1px solid #444', padding:5, borderRadius:5, minWidth:140 }}>
+                             <button className="small-btn" onClick={() => { setEditing(!editing); setMenuOpen(false); }}>
+                                {editing ? 'Stop Editing' : 'Edit'}
+                             </button>
+                             <button className="small-btn" onClick={saveLyrics} disabled={!editing}>Save</button>
+                             <button className="small-btn danger" onClick={clearLyrics}>Clear</button>
+                        </div>
+                    )}
                 </div>
-            )}
             </div>
-        </div>
+        )}
+        
+        {/* In Full Mode, we typically rely on the parent X button, but we can add Minimize here too if desired */}
       </div>
 
       {loading && <div className="lyrics-loading">Loading…</div>}
-      {error && <div className="lyrics-error" role="alert">{error}</div>}
-
-      <div className="lyrics-body">
+      
+      <div className="lyrics-body" style={isFullMode ? { fontSize: '1.8rem', lineHeight: 2.2, textAlign: 'center', textShadow: '0 4px 10px rgba(0,0,0,0.8)' } : {}}>
         {editing ? (
           <textarea
             className="lyrics-textarea"
             value={lyrics}
             onChange={(e) => setLyrics(e.target.value)}
-            placeholder="Paste or type lyrics here..."
+            placeholder="Type lyrics..."
             rows={12}
           />
         ) : (
           <pre className="lyrics-pre">{lyrics || 'No lyrics found.'}</pre>
         )}
-      </div>
-
-      <div className="lyrics-meta">
-        {meta ? <small>Updated: {meta.updatedAt ? new Date(meta.updatedAt).toLocaleDateString() : '—'}</small> : null}
       </div>
     </div>
   );
