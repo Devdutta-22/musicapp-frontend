@@ -11,7 +11,7 @@ import {
     Play, Pause, Heart, ChevronDown, Zap, Mic2, ListMusic, MoreHorizontal,
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, RotateCcw, ArrowLeft, Rocket, Orbit,
-    X // <--- 1. Added X icon for clearing search
+    X 
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -39,12 +39,15 @@ export default function MusicApp({ user, onLogout }) {
     // --- VIEW STATE ---
     const [activeTab, setActiveTab] = useState('home');
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
+    
+    // --- NEW: Lyrics Full Screen State ---
+    const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
 
     // Library State
     const [libraryTab, setLibraryTab] = useState('liked');
     const [openMenuId, setOpenMenuId] = useState(null);
 
-    // --- NEW: Playlist Selector State ---
+    // Playlist Selector State
     const [showPlaylistSelector, setShowPlaylistSelector] = useState(null);
 
     // --- DATA STATE ---
@@ -55,7 +58,7 @@ export default function MusicApp({ user, onLogout }) {
     const [likedSongs, setLikedSongs] = useState([]);
     const [playlists, setPlaylists] = useState([]);
 
-    // --- 2. NEW: SONG CACHE (Fixes the disappearing song issue) ---
+    // --- SONG CACHE ---
     const [songCache, setSongCache] = useState({});
 
     // --- PLAYER STATE ---
@@ -129,13 +132,16 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const closePlayer = () => {
+        // If Lyrics are expanded, close them first
+        if (isLyricsExpanded) {
+            setIsLyricsExpanded(false);
+            return;
+        }
         window.history.back();
     };
 
     // --- INITIAL LOAD ---
-    useEffect(() => {
-        loadFeeds();
-    }, []);
+    useEffect(() => { loadFeeds(); }, []);
 
     async function loadFeeds() {
         setLoading(true);
@@ -149,19 +155,13 @@ export default function MusicApp({ user, onLogout }) {
         setLoading(false);
     }
 
-    useEffect(() => {
-        if (activeTab === 'all-songs') {
-            fetchAllSongs();
-        }
-    }, [activeTab]);
+    useEffect(() => { if (activeTab === 'all-songs') fetchAllSongs(); }, [activeTab]);
 
     async function fetchAllSongs() {
         try {
             const res = await axios.get(`${API_BASE}/api/songs`, authHeaders);
             setAllSongs(res.data);
-        } catch (e) {
-            console.error("Error fetching all songs:", e);
-        }
+        } catch (e) { console.error("Error fetching all songs:", e); }
     }
 
     async function fetchLibraryData() {
@@ -187,24 +187,18 @@ export default function MusicApp({ user, onLogout }) {
         return () => clearTimeout(delay);
     }, [searchTerm]);
 
-    // --- 3. UPDATED: GET SONG FROM CACHE IF LIST IS EMPTY ---
+    // --- GET SONG ---
     function getSongById(id) {
-        // First, check if we have it in our cache (persists even if search clears)
         if (songCache[id]) return songCache[id];
-
-        // Otherwise try to find it in current lists
         const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs, ...allSongs];
         return all.find(s => s.id === id) || { id, title: 'Unknown', artistName: 'Unknown', coverUrl: null };
     }
     const currentSong = queue[currentIndex] ? getSongById(queue[currentIndex]) : null;
 
-    // --- 4. UPDATED: PLAY LOGIC SAVES TO CACHE ---
+    // --- PLAY LOGIC ---
     const playSong = (song, contextList) => {
         if (!song) return;
-
-        // Save to cache so it doesn't disappear when contextList changes
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-
         let newQueue = contextList && contextList.length > 0 ? contextList.map(s => s.id) : [song.id];
         if (shuffle) newQueue = shuffleArray(newQueue);
         setQueue(newQueue);
@@ -213,13 +207,8 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const playNow = (song) => {
-        // Save to cache
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-
-        if (queue.length === 0) {
-            playSong(song);
-            return;
-        }
+        if (queue.length === 0) { playSong(song); return; }
         const newQueue = [...queue];
         const insertIndex = currentIndex + 1;
         newQueue.splice(insertIndex, 0, song.id);
@@ -266,9 +255,7 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const playNext = (song) => {
-        // Save to cache
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-
         if (queue.length === 0) { playSong(song); return; }
         const newQueue = [...queue];
         const insertIndex = currentIndex + 1;
@@ -282,9 +269,7 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const addToQueue = (song) => {
-        // Save to cache
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-
         if (queue.length === 0) { playSong(song); return; }
         if (!queue.includes(song.id)) {
             setQueue([...queue, song.id]);
@@ -529,7 +514,6 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
-                {/* --- 5. UPDATED: SEARCH BOX WITH CLEAR BUTTON --- */}
                 {activeTab === 'search' && (
                     <div className="tab-pane">
                         <div className="search-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
@@ -639,20 +623,37 @@ export default function MusicApp({ user, onLogout }) {
 
             {currentSong && (
                 <>
-                    <div className={`glass-modal ${isFullScreenPlayer ? 'open' : ''}`}>
+                    {/* MODAL: Changes Transparency if Lyrics Expanded */}
+                    <div 
+                        className={`glass-modal ${isFullScreenPlayer ? 'open' : ''}`}
+                        style={isLyricsExpanded ? { background: 'transparent', backdropFilter: 'none', border: 'none', boxShadow: 'none' } : {}}
+                    >
                         <div className="modal-scroll-body">
-                            <div className="modal-header">
-                                <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32} /></button>
+                            
+                            {/* --- 1. NORMAL MODE: Show All Player UI --- */}
+                            <div style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
+                                <div className="modal-header">
+                                    <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32} /></button>
+                                </div>
+                                <div className="art-glow-container">
+                                    <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" />
+                                    <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" />
+                                </div>
+                                <div className="modal-meta">
+                                    <h1>{currentSong.title}</h1>
+                                    <p>{currentSong.artistName}</p>
+                                </div>
                             </div>
-                            <div className="art-glow-container">
-                                <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" />
-                                <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" />
-                            </div>
-                            <div className="modal-meta">
-                                <h1>{currentSong.title}</h1>
-                                <p>{currentSong.artistName}</p>
-                            </div>
-                            <div className="modal-controls-wrapper">
+
+                            {/* --- PLAYER CONTROLS: Always Mounted, Hidden if Expanded --- */}
+                            <div className="modal-controls-wrapper" 
+                                 style={{ 
+                                     opacity: isLyricsExpanded ? 0 : 1, 
+                                     pointerEvents: isLyricsExpanded ? 'none' : 'auto', 
+                                     height: isLyricsExpanded ? 0 : 'auto', 
+                                     overflow: 'hidden' 
+                                 }}
+                            >
                                 <Player
                                     song={currentSong}
                                     playing={playing}
@@ -674,13 +675,20 @@ export default function MusicApp({ user, onLogout }) {
                                     onProgress={(c, t) => setSongProgress(t ? (c / t) * 100 : 0)}
                                 />
                             </div>
-                            <div className="modal-section">
-                                <h3>Lyrics</h3>
-                                <div className="glass-inset">
-                                    <LyricsPanel song={currentSong} />
+
+                            {/* --- LYRICS SECTION: Adapts to Full Screen --- */}
+                            <div className="modal-section" style={isLyricsExpanded ? { position:'fixed', top:0, left:0, width:'100%', height:'100%', zIndex:2000 } : {}}>
+                                <div className={isLyricsExpanded ? '' : 'glass-inset'}>
+                                    <LyricsPanel 
+                                        song={currentSong} 
+                                        isExpanded={isLyricsExpanded} 
+                                        setExpanded={setIsLyricsExpanded}
+                                    />
                                 </div>
                             </div>
-                            <div className="modal-section">
+
+                            {/* --- UP NEXT QUEUE: Hide if Expanded --- */}
+                            <div className="modal-section" style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
                                 <div className="section-header">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <ListMusic size={20} color="#aaa" />
