@@ -22,6 +22,7 @@ const USP_FEATURES = [
     { title: "Lossless Audio", subtitle: "Crystal clear sound.", icon: <Mic2 size={24} color="#00ff88" />, accent: "linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 0, 0, 0))" },
 ];
 
+// --- ARTISTIC LINK CARD ---
 const ArtisticLinkCard = ({ title, subtitle, image, onClick }) => (
     <div className="artistic-box" onClick={onClick}>
         <div className="artistic-bg" style={{ backgroundImage: `url(${image})` }}></div>
@@ -432,9 +433,7 @@ export default function MusicApp({ user, onLogout }) {
 
     return (
         <div className="glass-shell">
-            {/* --- CHANGE #1: HIDE THE MAIN APP CONTENT --- 
-               When lyrics are expanded, we hide the viewport so the body's space background is seen.
-            */}
+            {/* 1. Hide the entire viewport (home, lists, etc) when lyrics are expanded */}
             <div className="glass-viewport" style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
                 {activeTab === 'home' && (
                     <div className="tab-pane home-animate">
@@ -625,14 +624,15 @@ export default function MusicApp({ user, onLogout }) {
 
             {currentSong && (
                 <>
-                    {/* MODAL: Becomes Transparent when Lyrics Expanded */}
+                    {/* CHANGE #2: Add 'transparent-mode' class to glass-modal
+                       This class will be targeted in CSS to force transparency
+                    */}
                     <div 
-                        className={`glass-modal ${isFullScreenPlayer ? 'open' : ''}`}
-                        style={isLyricsExpanded ? { background: 'transparent', backdropFilter: 'none', border: 'none', boxShadow: 'none' } : {}}
+                        className={`glass-modal ${isFullScreenPlayer ? 'open' : ''} ${isLyricsExpanded ? 'transparent-mode' : ''}`}
                     >
                         <div className="modal-scroll-body">
                             
-                            {/* --- 2. HIDE HEADER/ART IN EXPANDED MODE --- */}
+                            {/* --- 3. Hide Normal Player UI (Header/Art/Meta) --- */}
                             <div style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
                                 <div className="modal-header">
                                     <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32} /></button>
@@ -647,7 +647,7 @@ export default function MusicApp({ user, onLogout }) {
                                 </div>
                             </div>
 
-                            {/* --- 3. HIDE CONTROLS (But keep logic running) --- */}
+                            {/* --- 4. Hide Controls (Opacity 0 so logic keeps running) --- */}
                             <div className="modal-controls-wrapper" 
                                  style={{ 
                                      opacity: isLyricsExpanded ? 0 : 1, 
@@ -678,7 +678,7 @@ export default function MusicApp({ user, onLogout }) {
                                 />
                             </div>
 
-                            {/* --- 4. LYRICS CONTAINER (Positioned Absolutely in Full Mode) --- */}
+                            {/* --- 5. LYRICS SECTION (Full Screen Overlay) --- */}
                             <div className="modal-section" style={isLyricsExpanded ? { position:'fixed', top:0, left:0, width:'100%', height:'100%', zIndex:2000, overflowY:'auto' } : {}}>
                                 <div className={isLyricsExpanded ? '' : 'glass-inset'}>
                                     <LyricsPanel 
@@ -686,7 +686,6 @@ export default function MusicApp({ user, onLogout }) {
                                         onExpand={() => setIsLyricsExpanded(true)} 
                                         isFullMode={isLyricsExpanded}
                                     />
-                                    {/* Close Button specific to Lyrics Mode */}
                                     {isLyricsExpanded && (
                                         <button 
                                             className="icon-btn"
@@ -699,7 +698,7 @@ export default function MusicApp({ user, onLogout }) {
                                 </div>
                             </div>
 
-                            {/* --- 5. HIDE QUEUE IN EXPANDED MODE --- */}
+                            {/* --- 6. Hide Queue --- */}
                             <div className="modal-section" style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
                                 <div className="section-header">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -777,7 +776,7 @@ export default function MusicApp({ user, onLogout }) {
                 </>
             )}
 
-            {/* --- 6. HIDE NAVBAR IN EXPANDED MODE --- */}
+            {/* --- 7. Hide Nav Bar --- */}
             <nav className="glass-nav" style={{ display: isLyricsExpanded ? 'none' : 'flex' }}>
                 <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
                     <Home size={24} /><span>Home</span>
