@@ -89,7 +89,7 @@ body::after {
   border-radius: 999px;
   filter: drop-shadow(0 0 6px #69c0ff);
   /* Duration 15s (Very slow cycle), Delay 2s */
-  animation: tail 15s ease-in-out infinite 2s, shooting 15s ease-in-out infinite 2s;
+  animation: tail 6s ease-in-out infinite 2s, shooting 6s ease-in-out infinite 2s;
   opacity: 0; 
   z-index: -1;
 }
@@ -106,7 +106,7 @@ body::after {
   border-radius: 999px;
   filter: drop-shadow(0 0 6px #d86dfc);
   /* Duration 23s (Prime number avoids syncing), Delay 8s */
-  animation: tail 23s ease-in-out infinite 8s, shooting 23s ease-in-out infinite 8s;
+  animation: tail 9s ease-in-out infinite 3s, shooting 9s ease-in-out infinite 3s;
   opacity: 0;
   z-index: -1;
 }
