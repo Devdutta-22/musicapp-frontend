@@ -212,7 +212,13 @@ body::after {
 .seek-slider:active::-moz-range-thumb {
   transform: scale(1.3); box-shadow: 0 0 30px 8px var(--cloud-pink);
 }
-
+/* --- FORCE TRANSPARENCY WHEN LYRICS ARE EXPANDED --- */
+.glass-modal.transparent-mode {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  backdrop-filter: none !important;
+}
 /* REMOVED: The conflicting "FULL SCREEN LYRICS" blocks that created fake backgrounds.
    Now, because MusicApp.jsx hides the other UI elements and sets transparency,
    the original space background from "body" will show through perfectly.
