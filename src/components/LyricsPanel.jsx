@@ -1,6 +1,5 @@
-// src/components/LyricsPanel.jsx
 import React, { useEffect, useState, useRef } from 'react';
-import { Edit2, Save, Trash2, X } from "lucide-react";
+import { Edit2, Save, Trash2, X, Maximize2, Minimize2 } from "lucide-react";
 
 export default function LyricsPanel({ song }) {
   const [loading, setLoading] = useState(false);
@@ -9,6 +8,10 @@ export default function LyricsPanel({ song }) {
   const [meta, setMeta] = useState(null);
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  
+  // --- NEW: Expand State ---
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   const menuRef = useRef(null);
 
   // 🛑 PASTE YOUR RENDER BACKEND URL HERE
@@ -109,6 +112,27 @@ export default function LyricsPanel({ song }) {
 
   if (!song) return <div className="lyrics-empty">Select a song to see lyrics</div>;
 
+  // --- FULL SCREEN VIEW ---
+  if (isExpanded) {
+    return (
+      <div className="lyrics-expanded-overlay">
+        <div className="lyrics-expanded-header">
+            <div>
+                <h2>{song.title}</h2>
+                <span className="expanded-artist">{song.artistName}</span>
+            </div>
+            <button className="icon-btn close-expand" onClick={() => setIsExpanded(false)}>
+                <Minimize2 size={24} color="white" />
+            </button>
+        </div>
+        <div className="lyrics-expanded-content">
+            {lyrics || "No lyrics found."}
+        </div>
+      </div>
+    );
+  }
+
+  // --- NORMAL VIEW ---
   return (
     <div className="lyrics-panel" role="region" aria-label="Lyrics panel">
       <div className="lyrics-panel-header">
@@ -117,61 +141,73 @@ export default function LyricsPanel({ song }) {
           <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{song.artistName}</div>
         </div>
 
-        <div ref={menuRef} style={{ position: 'relative' }}>
-          <button
-            className={`icon-btn ${menuOpen ? 'active' : ''}`}
-            onClick={() => setMenuOpen(v => !v)}
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-            title="Lyrics actions"
-          >
-            <Edit2 size={18} />
-          </button>
-
-          {menuOpen && (
-            <div
-              role="menu"
-              className="lyrics-actions-menu"
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(100% + 8px)',
-                background: 'var(--bg-secondary)',
-                border: '1px solid rgba(255,255,255,0.03)',
-                borderRadius: 8,
-                boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
-                padding: 8,
-                zIndex: 60,
-                minWidth: 160,
-              }}
+        <div style={{ display:'flex', gap: 5 }}>
+            {/* EXPAND BUTTON */}
+            <button 
+                className="icon-btn"
+                onClick={() => setIsExpanded(true)}
+                title="Expand Lyrics"
             >
-              <button
-                className="small-btn"
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
-                onClick={() => { setEditing(e => !e); setMenuOpen(false); }}
-              >
-                {editing ? <><X size={16}/> Stop Editing</> : <><Edit2 size={16}/> Edit Lyrics</>}
-              </button>
+                <Maximize2 size={18} />
+            </button>
 
-              <button
-                className="small-btn"
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
-                onClick={saveLyrics}
-                disabled={!editing || loading}
-              >
-                <Save size={16}/> Save
-              </button>
+            {/* EDIT MENU */}
+            <div ref={menuRef} style={{ position: 'relative' }}>
+            <button
+                className={`icon-btn ${menuOpen ? 'active' : ''}`}
+                onClick={() => setMenuOpen(v => !v)}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                title="Lyrics actions"
+            >
+                <Edit2 size={18} />
+            </button>
 
-              <button
-                className="small-btn danger"
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', color: '#ff4d7a' }}
-                onClick={clearLyrics}
-                disabled={loading}
-              >
-                <Trash2 size={16}/> Clear
-              </button>
+            {menuOpen && (
+                <div
+                role="menu"
+                className="lyrics-actions-menu"
+                style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: 'calc(100% + 8px)',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid rgba(255,255,255,0.03)',
+                    borderRadius: 8,
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.6)',
+                    padding: 8,
+                    zIndex: 60,
+                    minWidth: 160,
+                }}
+                >
+                <button
+                    className="small-btn"
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
+                    onClick={() => { setEditing(e => !e); setMenuOpen(false); }}
+                >
+                    {editing ? <><X size={16}/> Stop Editing</> : <><Edit2 size={16}/> Edit Lyrics</>}
+                </button>
+
+                <button
+                    className="small-btn"
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', marginBottom: 6 }}
+                    onClick={saveLyrics}
+                    disabled={!editing || loading}
+                >
+                    <Save size={16}/> Save
+                </button>
+
+                <button
+                    className="small-btn danger"
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', color: '#ff4d7a' }}
+                    onClick={clearLyrics}
+                    disabled={loading}
+                >
+                    <Trash2 size={16}/> Clear
+                </button>
+                </div>
+            )}
             </div>
-          )}
         </div>
       </div>
 
