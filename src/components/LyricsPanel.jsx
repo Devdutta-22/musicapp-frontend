@@ -8,35 +8,59 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   
   const scrollRef = useRef(null);
   const menuRef = useRef(null);
-  const API_BASE = "https://musicapp-o3ow.onrender.com"; 
+  const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
 
-  // 1. Fetch Lyrics
+  // 1. Fetch Lyrics (With Race Condition Fix)
   useEffect(() => {
     if (!song) return;
+
+    let isMounted = true; // Flag to track if this song is still active
+
+    // Reset everything immediately when song changes
+    setLyrics('');
+    setSyncedLines([]);
+    setEditing(false); // Close edit mode
+    setLoading(true);
+
     async function load() {
-      setLoading(true);
+      let foundLyrics = '';
+
+      // A. Try to use lyrics from the song object first
+      if (song.lyrics) {
+        foundLyrics = song.lyrics;
+      }
+
+      // B. Fetch from API
       try {
         const resp = await fetch(`${API_BASE}/api/lyrics?songId=${encodeURIComponent(song.id)}`);
-        const json = await resp.json();
-        const rawLyrics = (json.entry && json.entry.lyrics) ? json.entry.lyrics : '';
-        setLyrics(rawLyrics);
-        parseLyrics(rawLyrics);
+        if (resp.ok) {
+            const json = await resp.json();
+            if (json.lyrics) foundLyrics = json.lyrics;
+            else if (json.entry && json.entry.lyrics) foundLyrics = json.entry.lyrics;
+        }
       } catch (e) { 
-        console.error(e); 
-        setLyrics(''); 
-        setSyncedLines([]); 
+        // Ignore errors, we'll just show empty
       } finally {
-        setLoading(false);
+        // C. Update State ONLY if this is still the current song
+        if (isMounted) {
+            if (foundLyrics) {
+                setLyrics(foundLyrics);
+                parseLyrics(foundLyrics);
+            }
+            setLoading(false);
+        }
       }
     }
     load();
+
+    // Cleanup function: runs if song changes before fetch finishes
+    return () => { isMounted = false; };
   }, [song]);
 
-  // 2. Parser: Converts "[00:12.50] Hello" -> { time: 12.5, text: "Hello" }
+  // 2. Parser
   const parseLyrics = (text) => {
     if (!text) return;
     const lines = text.split('\n');
@@ -59,13 +83,15 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
     setSyncedLines(parsed);
   };
 
-  // 3. Sync Logic: Find active line based on currentTime
+  // 3. Sync Logic
   useEffect(() => {
     if (syncedLines.length === 0 || editing) return;
     
     const index = syncedLines.findIndex((line, i) => {
+      if (line.time === -1) return false;
       const nextLine = syncedLines[i + 1];
-      return line.time <= currentTime && (!nextLine || nextLine.time > currentTime);
+      const nextTime = (nextLine && nextLine.time > -1) ? nextLine.time : Infinity;
+      return line.time <= currentTime && currentTime < nextTime;
     });
 
     if (index !== -1 && index !== activeLineIndex) {
@@ -77,9 +103,9 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
         }
       }
     }
-  }, [currentTime, syncedLines]);
+  }, [currentTime, syncedLines, editing]);
 
-  // Click outside menu to close
+  // Close menu on outside click
   useEffect(() => {
     function onDocClick(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
@@ -99,7 +125,8 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
         setEditing(false);
         setMenuOpen(false);
         parseLyrics(lyrics); 
-    } catch(e) { setError('Save failed'); }
+        alert("Lyrics saved!");
+    } catch(e) { alert('Save failed'); }
   }
 
   async function clearLyrics() {
@@ -116,7 +143,7 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
 
   const isSynced = syncedLines.some(l => l.time > -1);
 
-  if (!song) return <div className="lyrics-empty">Select a song to see lyrics</div>;
+  if (!song) return <div className="lyrics-empty">Select a song</div>;
 
   return (
     <div className={`lyrics-panel ${isFullMode ? 'full-mode' : ''}`} role="region">
@@ -162,7 +189,6 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
             rows={15}
           />
         ) : isSynced ? (
-          // SYNCED VIEW
           syncedLines.map((line, i) => (
             <div 
                 key={i} 
@@ -181,8 +207,9 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
             </div>
           ))
         ) : (
-          // PLAIN TEXT FALLBACK
-          <pre className="lyrics-pre">{lyrics || 'No lyrics found.'}</pre>
+          <pre className="lyrics-pre">
+            {loading ? "Checking for lyrics..." : (lyrics || "No lyrics found. Click Edit to add.")}
+          </pre>
         )}
       </div>
     </div>
