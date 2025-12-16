@@ -1,33 +1,44 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Edit2, Save, Trash2, X, Maximize2, Minimize2, Mic2 } from "lucide-react";
+import { Edit2, Save, Trash2, X, Maximize2, Minimize2 } from "lucide-react";
 
 export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMode = false }) {
   const [lyrics, setLyrics] = useState('');
-  const [syncedLines, setSyncedLines] = useState([]); // Array of {time, text}
+  const [syncedLines, setSyncedLines] = useState([]); 
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
   const [editing, setEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   
   const scrollRef = useRef(null);
+  const menuRef = useRef(null);
   const API_BASE = "https://musicapp-o3ow.onrender.com"; 
 
   // 1. Fetch Lyrics
   useEffect(() => {
     if (!song) return;
     async function load() {
+      setLoading(true);
       try {
         const resp = await fetch(`${API_BASE}/api/lyrics?songId=${encodeURIComponent(song.id)}`);
         const json = await resp.json();
         const rawLyrics = (json.entry && json.entry.lyrics) ? json.entry.lyrics : '';
         setLyrics(rawLyrics);
         parseLyrics(rawLyrics);
-      } catch (e) { console.error(e); setLyrics(''); setSyncedLines([]); }
+      } catch (e) { 
+        console.error(e); 
+        setLyrics(''); 
+        setSyncedLines([]); 
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [song]);
 
   // 2. Parser: Converts "[00:12.50] Hello" -> { time: 12.5, text: "Hello" }
   const parseLyrics = (text) => {
+    if (!text) return;
     const lines = text.split('\n');
     const parsed = [];
     const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
@@ -42,7 +53,6 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
         const content = line.replace(timeRegex, '').trim();
         if (content) parsed.push({ time, text: content });
       } else if (line.trim()) {
-        // Handle non-synced lines if mixed, or just ignore timestamps
         parsed.push({ time: -1, text: line.trim() });
       }
     }
@@ -53,7 +63,6 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
   useEffect(() => {
     if (syncedLines.length === 0 || editing) return;
     
-    // Find the last line where line.time <= currentTime
     const index = syncedLines.findIndex((line, i) => {
       const nextLine = syncedLines[i + 1];
       return line.time <= currentTime && (!nextLine || nextLine.time > currentTime);
@@ -61,7 +70,6 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
 
     if (index !== -1 && index !== activeLineIndex) {
       setActiveLineIndex(index);
-      // Auto-scroll logic
       if (scrollRef.current) {
         const activeEl = scrollRef.current.children[index];
         if (activeEl) {
@@ -71,8 +79,17 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
     }
   }, [currentTime, syncedLines]);
 
+  // Click outside menu to close
+  useEffect(() => {
+    function onDocClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    }
+    window.addEventListener('click', onDocClick);
+    return () => window.removeEventListener('click', onDocClick);
+  }, []);
+
   async function saveLyrics() {
-    // ... (Keep existing save logic) ...
+    if (!song) return;
     try {
         await fetch(`${API_BASE}/api/lyrics`, {
             method: 'POST',
@@ -80,22 +97,35 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
             body: JSON.stringify({ songId: String(song.id), lyrics, source: 'manual' })
         });
         setEditing(false);
-        parseLyrics(lyrics); // Re-parse after save
-    } catch(e) {}
+        setMenuOpen(false);
+        parseLyrics(lyrics); 
+    } catch(e) { setError('Save failed'); }
   }
 
-  // ... (Keep clearLyrics logic) ...
+  async function clearLyrics() {
+    if (!song) return;
+    if (!window.confirm('Delete lyrics?')) return;
+    try {
+      await fetch(`${API_BASE}/api/lyrics?songId=${encodeURIComponent(song.id)}`, { method: 'DELETE' });
+      setLyrics('');
+      setSyncedLines([]);
+      setEditing(false);
+      setMenuOpen(false);
+    } catch (err) {}
+  }
 
   const isSynced = syncedLines.some(l => l.time > -1);
+
+  if (!song) return <div className="lyrics-empty">Select a song to see lyrics</div>;
 
   return (
     <div className={`lyrics-panel ${isFullMode ? 'full-mode' : ''}`} role="region">
       {/* Header */}
       <div className="lyrics-panel-header" style={isFullMode ? { justifyContent: 'center', marginBottom: 30 } : {}}>
         <div style={{ minWidth: 0, textAlign: isFullMode ? 'center' : 'left' }}>
-          <h3 style={{ margin: 0, fontSize: isFullMode ? '2.5rem' : 18 }}>{song?.title}</h3>
+          <h3 style={{ margin: 0, fontSize: isFullMode ? '2.5rem' : 18 }}>{song.title}</h3>
           <div style={{ color: '#5eb3fd' }}>
-             {song?.artistName} 
+             {song.artistName} 
              {isSynced && <span style={{marginLeft:10, fontSize:10, border:'1px solid #5eb3fd', padding:'2px 6px', borderRadius:4}}>SYNCED</span>}
           </div>
         </div>
@@ -103,7 +133,21 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
         {!isFullMode && (
             <div style={{ display:'flex', gap: 5 }}>
                 <button className="icon-btn" onClick={onExpand}><Maximize2 size={18} /></button>
-                <button className="icon-btn" onClick={() => setEditing(!editing)}><Edit2 size={18} /></button>
+                
+                <div ref={menuRef} style={{ position: 'relative' }}>
+                    <button className={`icon-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(v => !v)}>
+                        <Edit2 size={18} />
+                    </button>
+                    {menuOpen && (
+                        <div className="lyrics-actions-menu" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 60, background:'#222', border:'1px solid #444', padding:5, borderRadius:5, minWidth:140 }}>
+                             <button className="small-btn" onClick={() => { setEditing(!editing); setMenuOpen(false); }}>
+                                {editing ? 'Stop Editing' : 'Edit'}
+                             </button>
+                             <button className="small-btn" onClick={saveLyrics} disabled={!editing}>Save</button>
+                             <button className="small-btn danger" onClick={clearLyrics}>Clear</button>
+                        </div>
+                    )}
+                </div>
             </div>
         )}
       </div>
@@ -128,10 +172,10 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
                     fontSize: i === activeLineIndex ? (isFullMode ? '2.2rem' : '1.2rem') : (isFullMode ? '1.5rem' : '1rem'),
                     color: i === activeLineIndex ? '#fff' : 'rgba(255,255,255,0.4)',
                     textShadow: i === activeLineIndex ? '0 0 15px rgba(255,255,255,0.6)' : 'none',
+                    fontWeight: i === activeLineIndex ? 'bold' : 'normal',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer'
                 }}
-                // Optional: Click line to seek (would require passing seek function)
             >
                 {line.text}
             </div>
@@ -141,8 +185,6 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
           <pre className="lyrics-pre">{lyrics || 'No lyrics found.'}</pre>
         )}
       </div>
-      
-      {editing && <button className="small-btn" style={{marginTop:10}} onClick={saveLyrics}><Save size={14}/> Save Lyrics</button>}
     </div>
   );
 }
