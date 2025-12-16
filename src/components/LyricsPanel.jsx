@@ -158,8 +158,10 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
         </div>
         
         {!isFullMode && (
-            <div style={{ display:'flex', gap: 5 }}>
-                <button className="icon-btn" onClick={onExpand}><Maximize2 size={18} /></button>
+            <div style={{ display:'flex', gap: 10, alignItems: 'center' }}>
+                <button className="icon-btn" onClick={onExpand} title="Full Lyrics">
+                    <Maximize2 size={24} /> {/* CHANGED: Bigger Icon (24px) */}
+                </button>
                 
                 <div ref={menuRef} style={{ position: 'relative' }}>
                     <button className={`icon-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(v => !v)}>
@@ -179,7 +181,21 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
         )}
       </div>
 
-      <div className="lyrics-body" ref={scrollRef} style={isFullMode ? { textAlign: 'center', paddingBottom: '50vh' } : {}}>
+      <div 
+        className="lyrics-body" 
+        ref={scrollRef} 
+        style={
+            isFullMode 
+            ? { textAlign: 'center', paddingBottom: '50vh' } 
+            : { 
+                height: '100px', // CHANGED: Very small height
+                overflowY: 'hidden', // CHANGED: Force user to expand (hide scrollbar)
+                // Add a fade-out gradient to show text continues
+                maskImage: 'linear-gradient(180deg, white 60%, transparent)',
+                WebkitMaskImage: 'linear-gradient(180deg, white 60%, transparent)' 
+              }
+        }
+      >
         {editing ? (
           <textarea
             className="lyrics-textarea"
