@@ -166,7 +166,7 @@ export default function LyricsPanel({ song, currentTime = 0, onExpand, isFullMod
                         <Edit2 size={18} />
                     </button>
                     {menuOpen && (
-                        <div className="lyrics-actions-menu" style={{ position: 'absolute', right: 0, top: '100%', zIndex: 60, background:'#222', border:'1px solid #444', padding:5, borderRadius:5, minWidth:140 }}>
+                        <div className="lyrics-actions-menu" style={{ position: 'absolute', left: 10, top: '100%', zIndex: 60, background:'#222', border:'1px solid #444', padding:5, borderRadius:5, minWidth:140 }}>
                              <button className="small-btn" onClick={() => { setEditing(!editing); setMenuOpen(false); }}>
                                 {editing ? 'Stop Editing' : 'Edit'}
                              </button>
