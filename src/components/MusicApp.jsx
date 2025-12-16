@@ -14,7 +14,7 @@ import {
     Play, Pause, Heart, ChevronDown, Zap, Mic2, ListMusic, MoreHorizontal,
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, RotateCcw, ArrowLeft, Rocket, Orbit,
-    X, Minimize2, MessageCircle, Trophy // Added MessageCircle & Trophy
+    X, Minimize2, MessageCircle, Trophy,Satellite  // Added MessageCircle & Trophy
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -798,14 +798,14 @@ export default function MusicApp({ user, onLogout }) {
                     className="icon-btn"
                     onClick={() => setShowAIChat(true)}
                     style={{
-                        position: 'fixed', bottom: 90, right: 20, 
+                        position: 'fixed', top: 200px, right: 20, 
                         background: 'linear-gradient(45deg, #00ffff, #d86dfc)',
                         boxShadow: '0 0 15px rgba(0,255,255,0.5)',
                         borderRadius: '50%', width: 50, height: 50, zIndex: 100,
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}
                 >
-                    <MessageCircle size={28} color="white"/>
+                    <Satellite  size={28} color="white"/>
                 </button>
             )}
             
