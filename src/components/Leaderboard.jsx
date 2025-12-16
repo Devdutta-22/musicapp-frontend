@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Trophy, Medal, Crown, User } from "lucide-react";
+import { Trophy, Medal, Crown } from "lucide-react";
 
 export default function Leaderboard({ user }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data generator (Replace with fetch('/api/leaderboard') later)
+  // Mock data generator (Replace with real API later)
   useEffect(() => {
-    // Simulating API call
     setTimeout(() => {
       const mockUsers = [
         { id: 99, username: "StarLord", minutes: 4500 },
         { id: 98, username: "Nebula", minutes: 3200 },
         { id: 97, username: "Rocket", minutes: 2800 },
-        { id: user.id, username: user.username, minutes: user.totalMinutesListened || 120 }, // Current User
+        { id: user.id, username: user.username, minutes: user.totalMinutesListened || 120 }, // You
         { id: 96, username: "Groot", minutes: 50 },
       ].sort((a, b) => b.minutes - a.minutes);
       setUsers(mockUsers);
