@@ -1,144 +1,194 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, X, Sparkles } from "lucide-react";
+import { Send, Mic, Sparkles, StopCircle, Volume2, VolumeX } from "lucide-react";
 
-export default function AIChatBot({ onClose }) {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', text: "Hello! I'm your AI Music Guide. 🎵 Ask me anything about music, artists, or songs!" }
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const scrollRef = useRef(null);
-
-  // ✅ Points to your Online Backend
-  const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages]);
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const userMsg = input;
+export default function AIChatBot() {
+    const [messages, setMessages] = useState([
+        { role: 'assistant', text: "I'm listening. What vibe are you looking for?" }
+    ]);
+    const [input, setInput] = useState('');
+    const [status, setStatus] = useState('idle'); // idle, listening, processing, speaking
+    const [voiceEnabled, setVoiceEnabled] = useState(true);
     
-    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-    setInput('');
-    setLoading(true);
+    const scrollRef = useRef(null);
+    const recognitionRef = useRef(null);
 
-    try {
-      const res = await fetch(`${API_BASE}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg })
-      });
+    // API URL
+    const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
 
-      if (!res.ok) throw new Error("Server error");
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', text: "I'm having trouble reaching the server. Please try again later." }]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // --- 1. SETUP SPEECH RECOGNITION ---
+    useEffect(() => {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = false;
+            recognitionRef.current.interimResults = false;
+            recognitionRef.current.lang = 'en-US';
 
-  return (
-    // 🔴 CHANGE: Removed 'glass-modal' class to prevent CSS conflicts
-    // 🟢 ADDED: opacity: 1 and visibility: visible just in case
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      width: '100vw', 
-      height: '100vh', 
-      zIndex: 3000, 
-      
-      display: 'flex', 
-      flexDirection: 'column', 
-      padding: 0,
-      
-      background: 'rgba(15, 12, 41, 0.98)', 
-      backdropFilter: 'blur(10px)',
-      opacity: 1,           // Ensure it's visible
-      visibility: 'visible' // Ensure it's visible
-    }}>
-      
-      {/* Header */}
-      <div className="modal-header" style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div style={{ background: 'linear-gradient(135deg, #00ffff, #d86dfc)', borderRadius:'50%', padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <Bot size={24} color="white"/>
-          </div>
-          <h3 style={{ margin:0, fontSize:18, color:'white' }}>AI Music Assistant</h3>
+            recognitionRef.current.onstart = () => setStatus('listening');
+            
+            recognitionRef.current.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                setInput(transcript);
+                handleSend(transcript); // Auto-send on voice end
+            };
+
+            recognitionRef.current.onerror = () => setStatus('idle');
+            recognitionRef.current.onend = () => {
+                if (status === 'listening') setStatus('idle');
+            };
+        }
+    }, []);
+
+    // Scroll to bottom
+    useEffect(() => {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, [messages]);
+
+    // --- 2. SEND MESSAGE LOGIC ---
+    const handleSend = async (manualText = null) => {
+        const textToSend = manualText || input;
+        if (!textToSend.trim()) return;
+
+        // Add User Message
+        setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
+        setInput('');
+        setStatus('processing');
+
+        try {
+            const res = await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: textToSend })
+            });
+
+            const data = await res.json();
+            const aiReply = data.reply || "I couldn't hear the cosmos clearly.";
+
+            // Add AI Message
+            setMessages(prev => [...prev, { role: 'assistant', text: aiReply }]);
+            
+            // Speak the reply
+            if (voiceEnabled) speak(aiReply);
+            else setStatus('idle');
+
+        } catch (e) {
+            setMessages(prev => [...prev, { role: 'assistant', text: "Connection to the galaxy lost." }]);
+            setStatus('idle');
+        }
+    };
+
+    // --- 3. TEXT TO SPEECH ---
+    const speak = (text) => {
+        if (!window.speechSynthesis) {
+            setStatus('idle');
+            return;
+        }
+        
+        // Cancel any current speech
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.1; // Slightly higher for "AI" feel
+        
+        // Try to find a nice female voice
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes('Google US English')) || voices.find(v => v.lang === 'en-US');
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        utterance.onstart = () => setStatus('speaking');
+        utterance.onend = () => setStatus('idle');
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+    const toggleListening = () => {
+        if (status === 'listening') {
+            recognitionRef.current?.stop();
+        } else {
+            recognitionRef.current?.start();
+        }
+    };
+
+    return (
+        <div className="tab-pane ai-container">
+            {/* --- VISUALIZER SECTION --- */}
+            <div className="siri-orb-container">
+                <div className="orb-ring ring-1"></div>
+                <div className="orb-ring ring-2"></div>
+                <div className="orb-ring ring-3"></div>
+                
+                {/* The Main Orb */}
+                <div className={`siri-orb ${status}`}></div>
+                
+                {/* Status Text overlay */}
+                <div style={{ position: 'absolute', bottom: 40, color: 'rgba(255,255,255,0.6)', fontSize: 14, letterSpacing: 1 }}>
+                    {status === 'idle' && "TAP MIC TO SPEAK"}
+                    {status === 'listening' && "LISTENING..."}
+                    {status === 'processing' && "THINKING..."}
+                    {status === 'speaking' && "SPEAKING..."}
+                </div>
+            </div>
+
+            {/* --- CHAT HISTORY --- */}
+            <div className="ai-chat-feed" ref={scrollRef}>
+                {messages.map((m, i) => (
+                    <div key={i} style={{
+                        alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                        marginBottom: 16,
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: m.role === 'user' ? 'flex-end' : 'flex-start'
+                    }}>
+                        <div style={{
+                            background: m.role === 'user' ? 'rgba(0, 255, 255, 0.15)' : 'transparent',
+                            border: m.role === 'user' ? '1px solid rgba(0, 255, 255, 0.3)' : 'none',
+                            padding: '8px 16px',
+                            borderRadius: 16,
+                            maxWidth: '90%',
+                            color: m.role === 'user' ? '#fff' : '#aaa',
+                            fontSize: m.role === 'user' ? 15 : 18,
+                            textAlign: m.role === 'user' ? 'right' : 'center',
+                            fontWeight: m.role === 'user' ? 400 : 500
+                        }}>
+                            {m.text}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* --- INPUT CONTROLS --- */}
+            <div className="ai-controls">
+                <button className="icon-btn" onClick={() => setVoiceEnabled(!voiceEnabled)}>
+                    {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} color="#666" />}
+                </button>
+
+                <input 
+                    className="glass-input" 
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                    placeholder="Type or speak..."
+                    style={{ borderRadius: 30 }}
+                />
+
+                {input.trim() ? (
+                    <button className="icon-btn" onClick={() => handleSend()}>
+                        <div style={{ background: '#00ffff', borderRadius: '50%', padding: 8 }}>
+                            <Send size={20} color="#000" />
+                        </div>
+                    </button>
+                ) : (
+                    <button className="icon-btn" onClick={toggleListening}>
+                        <div style={{ 
+                            background: status === 'listening' ? '#ff0055' : 'rgba(255,255,255,0.1)', 
+                            borderRadius: '50%', padding: 12,
+                            transition: 'all 0.3s'
+                        }}>
+                            {status === 'listening' ? <StopCircle size={24} color="#fff"/> : <Mic size={24} color="#fff"/>}
+                        </div>
+                    </button>
+                )}
+            </div>
         </div>
-        
-        {/* Close Button */}
-        <button onClick={onClose} className="icon-btn" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', cursor: 'pointer', padding: 10, borderRadius: '50%' }}>
-            <X size={24}/>
-        </button>
-      </div>
-
-      {/* Chat Area */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '20px 5%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{
-            alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-            maxWidth: '80%', 
-            display: 'flex', flexDirection: 'column', gap: 4
-          }}>
-            <div style={{
-                background: m.role === 'user' ? 'linear-gradient(90deg, #5eb3fd, #0077ff)' : 'rgba(255,255,255,0.1)',
-                color: 'white',
-                padding: '14px 20px', borderRadius: 20, fontSize: 16, lineHeight: '1.5',
-                borderBottomRightRadius: m.role === 'user' ? 4 : 20,
-                borderBottomLeftRadius: m.role === 'assistant' ? 4 : 20,
-                boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-            }}>
-              {m.text}
-            </div>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', marginLeft: 5, marginRight: 5 }}>
-                {m.role === 'assistant' ? 'AI Guide' : 'You'}
-            </span>
-          </div>
-        ))}
-        
-        {loading && (
-            <div style={{ alignSelf:'flex-start', background:'rgba(255,255,255,0.05)', padding:'10px 16px', borderRadius:20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Sparkles size={20} className="spin-slow" color="#d86dfc"/>
-                <span style={{ fontSize: 14, color: '#ccc' }}>Thinking...</span>
-            </div>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div style={{ padding: '20px', display: 'flex', gap: 10, borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
-        <input 
-          className="glass-input" 
-          value={input} 
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSend()}
-          placeholder="Ask about music..." 
-          style={{ 
-              flex: 1, padding: '15px 20px', fontSize: 16, borderRadius: 30, 
-              border: '1px solid rgba(255,255,255,0.2)', 
-              background: 'rgba(255,255,255,0.05)', color: 'white', outline: 'none' 
-          }}
-        />
-        <button 
-            onClick={handleSend} 
-            disabled={loading}
-            style={{ 
-                background: input.trim() ? '#5eb3fd' : 'rgba(255,255,255,0.1)', 
-                borderRadius: '50%', width: 54, height: 54, 
-                display:'flex', alignItems:'center', justifyContent:'center',
-                border: 'none', cursor: input.trim() ? 'pointer' : 'default',
-                transition: 'all 0.2s',
-                flexShrink: 0 
-            }}
-        >
-          <Send size={24} color="white" />
-        </button>
-      </div>
-    </div>
-  );
+    );
 }
