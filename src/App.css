@@ -861,104 +861,106 @@ body {
   margin-top: 4px;
 }
 /* ============================================================================
-   13. SIRI-LIKE AI VOICE INTERFACE
+   14. UPDATED AI INTERFACE (Better Spacing)
    ============================================================================ */
+
+/* Main Container: columns, full height */
 .ai-container {
   display: flex;
   flex-direction: column;
   height: 100%;
   position: relative;
   overflow: hidden;
+  background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
 }
 
-/* The Glowing Orb */
+/* 1. TOP: The Chat Feed (Takes most space now) */
+.ai-chat-feed {
+  flex: 1; /* This pushes controls down and orb up/down */
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 20px;
+  z-index: 2; /* Sit above the orb */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+}
+
+/* 2. MIDDLE: The Siri Orb (Background Visual) */
+/* We position it absolute so it doesn't push text around, it sits behind */
 .siri-orb-container {
-  flex: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  min-height: 300px;
+  pointer-events: none; /* Let clicks pass through to chat */
+  z-index: 1;
+  opacity: 0.6; /* Dim it slightly so text reads better */
 }
 
-.siri-orb {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00ffff, #0077ff, #ff00cc);
-  box-shadow: 0 0 60px rgba(0, 255, 255, 0.6);
-  position: relative;
-  z-index: 10;
-  transition: all 0.3s ease;
-}
-
-/* Breathing / Idle Animation */
-.siri-orb.idle {
-  animation: breathe 4s infinite ease-in-out;
-}
-
-/* Listening Animation (Ripple) */
-.siri-orb.listening {
-  transform: scale(1.2);
-  box-shadow: 0 0 100px rgba(255, 0, 204, 0.8);
-  animation: pulse-listen 1.5s infinite;
-}
-
-/* Speaking Animation (Vibration) */
-.siri-orb.speaking {
-  animation: vibrate 0.3s infinite;
-  box-shadow: 0 0 80px rgba(145, 70, 255, 0.9);
-}
-
-/* Rings around the orb */
-.orb-ring {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-}
-.ring-1 { width: 150px; height: 150px; animation: spin 10s linear infinite; }
-.ring-2 { width: 220px; height: 220px; animation: spin-rev 15s linear infinite; border-color: rgba(255, 0, 204, 0.1); }
-.ring-3 { width: 300px; height: 300px; animation: spin 20s linear infinite; }
-
-/* Chat Area within AI Tab */
-.ai-chat-feed {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-}
-
+/* 3. BOTTOM: Input Controls (Compact & Fixed) */
 .ai-controls {
-  padding: 20px;
+  padding: 15px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(0,0,0,0.2);
+  background: rgba(20, 20, 30, 0.95);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  z-index: 10;
+  margin-bottom: 80px; /* Space for the bottom Nav Bar */
 }
 
-/* KEYFRAMES */
-@keyframes breathe {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 1; }
+/* Message Bubbles */
+.ai-msg {
+  padding: 12px 18px;
+  border-radius: 18px;
+  max-width: 85%;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  font-size: 15px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-@keyframes pulse-listen {
-  0% { transform: scale(1.1); box-shadow: 0 0 0 0 rgba(255, 0, 204, 0.4); }
-  70% { transform: scale(1.2); box-shadow: 0 0 0 30px rgba(255, 0, 204, 0); }
-  100% { transform: scale(1.1); box-shadow: 0 0 0 0 rgba(255, 0, 204, 0); }
+.ai-msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #00ffff22, #0077ff44);
+  border: 1px solid #00ffff44;
+  color: #fff;
+  border-bottom-right-radius: 4px;
 }
-@keyframes vibrate {
-  0% { transform: scale(1) translate(0, 0); }
-  20% { transform: scale(1.02) translate(-1px, 1px); }
-  40% { transform: scale(0.98) translate(1px, -1px); }
-  60% { transform: scale(1.02) translate(-1px, -1px); }
-  80% { transform: scale(0.98) translate(1px, 1px); }
-  100% { transform: scale(1) translate(0, 0); }
+.ai-msg.assistant {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #ddd;
+  border-bottom-left-radius: 4px;
 }
-@keyframes spin-rev { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }
+
+/* Stop Button (Appears when speaking) */
+.stop-btn-overlay {
+  position: absolute;
+  bottom: 160px; /* Above the input bar */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 0, 85, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 /* ============================================================================
    14. SCROLLING TEXT (MARQUEE) & DASHBOARD GRID
    ============================================================================ */
