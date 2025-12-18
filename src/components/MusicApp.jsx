@@ -14,7 +14,7 @@ import {
     Play, Pause, Heart, ChevronDown, Zap, Mic2, ListMusic, MoreHorizontal,
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, RotateCcw, ArrowLeft, Rocket, Orbit,
-    X, Minimize2, MessageCircle, Trophy,Satellite  // Added MessageCircle & Trophy
+    X, Minimize2, MessageCircle, Trophy, Bot // Added Bot icon
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -24,6 +24,28 @@ const USP_FEATURES = [
     { title: "Neon Vibes", subtitle: "Experience the glow.", icon: <Zap size={24} color="#ff00cc" />, accent: "linear-gradient(135deg, rgba(255, 0, 204, 0.15), rgba(0, 0, 0, 0))" },
     { title: "Lossless Audio", subtitle: "Crystal clear sound.", icon: <Mic2 size={24} color="#00ff88" />, accent: "linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 0, 0, 0))" },
 ];
+
+// --- NEW PLANET CARD FOR HOME SCREEN ---
+const PlanetHomeCard = ({ onClick, user }) => (
+    <div className="glass-card" onClick={onClick} style={{ 
+        background: 'linear-gradient(135deg, rgba(100, 50, 255, 0.2), rgba(0,0,0,0))', 
+        marginBottom: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 15 
+    }}>
+        <div style={{ 
+            width: 60, height: 60, borderRadius: '50%', 
+            background: 'linear-gradient(45deg, #ff00cc, #3333ff)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center' 
+        }}>
+            <Sparkles size={30} color="white" />
+        </div>
+        <div>
+            <h3 style={{ margin: 0, fontSize: 18, color: 'white' }}>My Cosmic Identity</h3>
+            <p style={{ margin: 0, fontSize: 12, color: '#aaa' }}>
+                Tap to reveal your Planet Card based on {user?.username}'s taste.
+            </p>
+        </div>
+    </div>
+);
 
 // --- ARTISTIC LINK CARD ---
 const ArtisticLinkCard = ({ title, subtitle, image, onClick }) => (
@@ -46,8 +68,7 @@ export default function MusicApp({ user, onLogout }) {
     // --- NEW: Lyrics Full Screen State ---
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
 
-    // --- NEW: AI Chat State ---
-    const [showAIChat, setShowAIChat] = useState(false);
+    // --- REMOVED: showAIChat state (AI is now a main tab) ---
 
     // --- NEW: Song Current Time for Sync ---
     const [songCurrentTime, setSongCurrentTime] = useState(0);
@@ -463,6 +484,12 @@ export default function MusicApp({ user, onLogout }) {
                             ))}
                         </div>
                         <div style={{ padding: '0 20px', marginTop: '20px' }}>
+                            {/* --- NEW: PLANET CARD MOVED HERE --- */}
+                            <PlanetHomeCard 
+                                user={user} 
+                                onClick={() => handleNavClick('planet')} 
+                            />
+                            
                             <ArtisticLinkCard
                                 title="All Songs"
                                 subtitle="Browse the full database."
@@ -569,7 +596,12 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
-                {/* --- NEW LEADERBOARD TAB --- */}
+                {/* --- NEW: AI TAB CONTENT --- */}
+                {activeTab === 'ai' && (
+                    <AIChatBot />
+                )}
+
+                {/* --- LEADERBOARD TAB --- */}
                 {activeTab === 'leaderboard' && (
                     <Leaderboard user={user} />
                 )}
@@ -792,49 +824,39 @@ export default function MusicApp({ user, onLogout }) {
                 </>
             )}
 
-            {/* --- NEW: AI CHAT BUTTON & MODAL --- */}
-            {!isLyricsExpanded && !isFullScreenPlayer && (
-                <button 
-                    className="icon-btn"
-                    onClick={() => setShowAIChat(true)}
-                    style={{
-                        position: 'fixed', top: 200, right: 20, 
-                        background: 'linear-gradient(45deg, #00ffff, #d86dfc)',
-                        boxShadow: '0 0 15px rgba(0,255,255,0.5)',
-                        borderRadius: '50%', width: 50, height: 50, zIndex: 100,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}
-                >
-                    <Satellite  size={28} color="white"/>
-                </button>
-            )}
+            {/* --- REMOVED: Floating Button & AI Modal Logic --- */}
             
-            {showAIChat && <AIChatBot onClose={() => setShowAIChat(false)} />}
-
-            {/* --- 7. Hide Nav Bar --- */}
+            {/* --- 7. UPDATED NAV BAR (Central AI Button) --- */}
             <nav className="glass-nav" style={{ display: isLyricsExpanded ? 'none' : 'flex' }}>
                 <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
                     <Home size={24} /><span>Home</span>
                 </button>
                 <button className={activeTab === 'search' ? 'active' : ''} onClick={() => handleNavClick('search')}>
-                    <Telescope size={24} /><span>Search</span>
-                </button>
-                <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => handleNavClick('upload')}>
-                    <Rocket size={32} color={activeTab === 'upload' ? '#9146ff' : '#ccc'} /><span>Upload</span>
+                    <Search size={24} /><span>Search</span>
                 </button>
                 
-                {/* Updated Nav with Leaderboard */}
+                {/* 🟢 NEW: CENTRAL AI BUTTON */}
+                <button 
+                    className={activeTab === 'ai' ? 'active' : ''} 
+                    onClick={() => handleNavClick('ai')}
+                    style={{ marginTop: -25 }} // Pop it up slightly
+                >
+                    <div style={{ 
+                        background: activeTab === 'ai' ? 'linear-gradient(135deg, #00ffff, #ff00cc)' : 'rgba(255,255,255,0.1)',
+                        padding: 12, borderRadius: '50%', boxShadow: activeTab === 'ai' ? '0 0 20px rgba(0,255,255,0.5)' : 'none'
+                    }}>
+                        <Bot size={28} color={activeTab === 'ai' ? 'white' : '#aaa'} />
+                    </div>
+                    <span style={{ marginTop: 5 }}>AI Guide</span>
+                </button>
+
                 <button className={activeTab === 'leaderboard' ? 'active' : ''} onClick={() => handleNavClick('leaderboard')}>
                     <Trophy size={24}/><span>Rank</span>
                 </button>
-
                 <button className={activeTab === 'library' ? 'active' : ''} onClick={() => handleNavClick('library')}>
-                    <Orbit size={24} /><span>Library</span>
+                    <Library size={24} /><span>Library</span>
                 </button>
-                {/* Replaced Planet with Leaderboard or add as 6th item */}
-                <button className={activeTab === 'planet' ? 'active' : ''} onClick={() => handleNavClick('planet')}>
-                    <Sparkles size={24} /><span>Planet</span>
-                </button>
+                {/* Removed Planet (Moved to Home) */}
             </nav>
         </div>
     );
