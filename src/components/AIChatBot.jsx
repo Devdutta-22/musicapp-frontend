@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, StopCircle, Volume2, VolumeX, Square, Sparkles } from "lucide-react";
+import { Send, Mic, StopCircle, Volume2, VolumeX, Sparkles, Zap, Radio } from "lucide-react";
 
 export default function AIChatBot() {
     const [messages, setMessages] = useState([
-        { role: 'assistant', text: "I'm listening. What vibe are you looking for?" }
+        { role: 'assistant', text: "Systems online. I am listening..." }
     ]);
     const [input, setInput] = useState('');
     const [status, setStatus] = useState('idle'); // idle, listening, processing, speaking
@@ -14,7 +14,15 @@ export default function AIChatBot() {
 
     const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
 
-    // --- 1. VOICE SETUP ---
+    // --- 1. CLEANUP ON UNMOUNT (Fixes Voice Persistence) ---
+    useEffect(() => {
+        // When user leaves this tab, STOP TALKING immediately.
+        return () => {
+            window.speechSynthesis.cancel();
+        };
+    }, []);
+
+    // --- 2. VOICE SETUP ---
     useEffect(() => {
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -36,44 +44,33 @@ export default function AIChatBot() {
         }
     }, []);
 
-    // Auto-scroll to bottom of chat
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages]);
 
-    // --- 2. HELPER: CLEAN TEXT (Removes ** and *) ---
-    const cleanText = (text) => {
-        if (!text) return "";
-        return text.replace(/\*/g, '').trim(); 
-    };
+    // Helper: Remove stars from text
+    const cleanText = (text) => text ? text.replace(/\*/g, '').trim() : "";
 
-    // --- 3. HELPER: FIND NATURAL VOICE ---
+    // Helper: Get best voice
     const getNaturalVoice = () => {
         const voices = window.speechSynthesis.getVoices();
-        // Priority 1: Google US English (Very human-like on Chrome/Android)
-        // Priority 2: Microsoft Zira (Good on Windows)
-        // Priority 3: Any English US voice
         return voices.find(v => v.name.includes("Google US English")) || 
                voices.find(v => v.name.includes("Microsoft Zira")) || 
                voices.find(v => v.lang === "en-US") || 
                voices[0];
     };
 
-    // --- 4. TEXT TO SPEECH ---
     const speak = (text) => {
         if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel(); 
         
-        window.speechSynthesis.cancel(); // Stop previous
-        
-        // Speak the CLEAN version (no stars)
         const clean = cleanText(text);
         const utterance = new SpeechSynthesisUtterance(clean);
-        
         const voice = getNaturalVoice();
         if (voice) utterance.voice = voice;
-
-        utterance.rate = 1.0; // Normal speed
-        utterance.pitch = 1.0; // Normal pitch
+        
+        utterance.rate = 1.05; 
+        utterance.pitch = 1.0;
 
         utterance.onstart = () => setStatus('speaking');
         utterance.onend = () => setStatus('idle');
@@ -83,15 +80,13 @@ export default function AIChatBot() {
 
     const stopSpeaking = () => {
         window.speechSynthesis.cancel();
-        setStatus('idle');
+        setStatus('idle'); // Instant UI update
     };
 
-    // --- 5. SEND LOGIC ---
     const handleSend = async (manualText = null) => {
         const textToSend = manualText || input;
         if (!textToSend.trim()) return;
 
-        // Show User Message immediately
         setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
         setInput('');
         setStatus('processing');
@@ -104,9 +99,7 @@ export default function AIChatBot() {
             });
 
             const data = await res.json();
-            const rawReply = data.reply || "I couldn't hear the cosmos clearly.";
-            
-            // Clean the reply for display
+            const rawReply = data.reply || "Signal lost in deep space.";
             const displayReply = cleanText(rawReply);
 
             setMessages(prev => [...prev, { role: 'assistant', text: displayReply }]);
@@ -115,88 +108,94 @@ export default function AIChatBot() {
             else setStatus('idle');
 
         } catch (e) {
-            setMessages(prev => [...prev, { role: 'assistant', text: "Connection error." }]);
+            setMessages(prev => [...prev, { role: 'assistant', text: "Connection severed." }]);
             setStatus('idle');
         }
     };
 
     const toggleListening = () => {
-        if (!recognitionRef.current) {
-            alert("Voice not supported.");
-            return;
-        }
-        if (status === 'listening') {
-            recognitionRef.current.stop();
-        } else {
-            recognitionRef.current.start();
-        }
+        if (!recognitionRef.current) return alert("Voice not supported.");
+        if (status === 'listening') recognitionRef.current.stop();
+        else recognitionRef.current.start();
     };
 
     return (
         <div className="tab-pane ai-container">
             
-            {/* --- BACKGROUND ORB (Visual Only) --- */}
-            <div className="siri-orb-container">
-                <div className={`siri-orb ${status}`}></div>
+            {/* --- ANIMATED SPACE BACKGROUND --- */}
+            <div className="space-bg">
+                <div className="stars"></div>
+                <div className="stars2"></div>
+                <div className="nebula"></div>
             </div>
 
-            {/* --- MAIN CHAT FEED --- */}
+            {/* --- COSMIC CORE (The Orb) --- */}
+            <div className="cosmic-core-container">
+                <div className={`cosmic-core ${status}`}>
+                    <div className="core-inner"></div>
+                    <div className="core-ring"></div>
+                    <div className="core-particles"></div>
+                </div>
+                <div className="status-text">
+                    {status === 'idle' && "SYSTEM READY"}
+                    {status === 'listening' && "RECEIVING TRANSMISSION..."}
+                    {status === 'processing' && "CALCULATING RESPONSE..."}
+                    {status === 'speaking' && "BROADCASTING..."}
+                </div>
+            </div>
+
+            {/* --- CHAT FEED --- */}
             <div className="ai-chat-feed" ref={scrollRef}>
                 {messages.map((m, i) => (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div key={i} className={`ai-msg-wrapper ${m.role}`}>
                         <div className={`ai-msg ${m.role}`}>
                             {m.text}
                         </div>
                     </div>
                 ))}
                 {status === 'processing' && (
-                    <div className="ai-msg assistant" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <Sparkles size={16} className="spin-slow"/> Thinking...
+                    <div className="ai-msg-wrapper assistant">
+                        <div className="ai-msg assistant loading">
+                            <Sparkles size={14} className="spin-slow"/> <span>Deciphering...</span>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* --- STOP BUTTON (Floating) --- */}
+            {/* --- FLOATING STOP BUTTON --- */}
             {status === 'speaking' && (
-                <button className="stop-btn-overlay" onClick={stopSpeaking}>
-                    <Square size={16} fill="white" /> Stop Speaking
+                <button className="stop-btn-pulse" onClick={stopSpeaking}>
+                    <div className="pulse-ring"></div>
+                    <Radio size={18} /> CUT TRANSMISSION
                 </button>
             )}
 
-            {/* --- BOTTOM CONTROLS --- */}
-            <div className="ai-controls">
+            {/* --- FUTURISTIC CONTROLS --- */}
+            <div className="ai-controls-glass">
                 <button className="icon-btn" onClick={() => {
                     setVoiceEnabled(!voiceEnabled);
                     if (voiceEnabled) stopSpeaking();
                 }}>
-                    {voiceEnabled ? <Volume2 size={20} color="#00ffff" /> : <VolumeX size={20} color="#666" />}
+                    {voiceEnabled ? <Volume2 size={22} color="#00ffff" /> : <VolumeX size={22} color="#555" />}
                 </button>
 
-                <input 
-                    className="glass-input" 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder={status === 'listening' ? "Listening..." : "Ask the AI..."}
-                    style={{ borderRadius: 30, background: 'rgba(255,255,255,0.1)' }}
-                />
+                <div className="input-field-wrapper">
+                    <input 
+                        className="holo-input" 
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder={status === 'listening' ? "Listening..." : "Enter command..."}
+                    />
+                </div>
 
                 {input.trim() ? (
-                    <button className="icon-btn" onClick={() => handleSend()}>
-                        <div style={{ background: '#00ffff', borderRadius: '50%', padding: 10 }}>
-                            <Send size={20} color="#000" />
-                        </div>
+                    <button className="action-btn send" onClick={() => handleSend()}>
+                        <Send size={20} color="#000" />
                     </button>
                 ) : (
-                    <button className="icon-btn" onClick={toggleListening}>
-                        <div style={{ 
-                            background: status === 'listening' ? '#ff0055' : 'rgba(255,255,255,0.1)', 
-                            borderRadius: '50%', padding: 12,
-                            boxShadow: status === 'listening' ? '0 0 15px #ff0055' : 'none',
-                            transition: 'all 0.3s'
-                        }}>
-                            {status === 'listening' ? <StopCircle size={24} color="#fff"/> : <Mic size={24} color="#fff"/>}
-                        </div>
+                    <button className={`action-btn mic ${status === 'listening' ? 'active' : ''}`} onClick={toggleListening}>
+                        {status === 'listening' ? <StopCircle size={24} color="#fff"/> : <Mic size={24} color="#fff"/>}
                     </button>
                 )}
             </div>
