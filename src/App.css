@@ -959,3 +959,72 @@ body {
   100% { transform: scale(1) translate(0, 0); }
 }
 @keyframes spin-rev { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }
+/* ============================================================================
+   14. SCROLLING TEXT (MARQUEE) & DASHBOARD GRID
+   ============================================================================ */
+
+/* Dashboard Grid for Home Screen Top Cards */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2 Cards per row */
+  gap: 12px;
+  padding: 0 16px;
+  margin-top: 20px;
+}
+
+/* Make "All Songs" span full width */
+.dashboard-grid .full-width {
+  grid-column: span 2;
+}
+
+/* Mini Artistic Cards */
+.mini-card {
+  position: relative;
+  height: 100px;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+.mini-card-bg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background-size: cover; background-position: center;
+  transition: transform 0.5s ease;
+}
+.mini-card:hover .mini-card-bg { transform: scale(1.1); }
+.mini-card-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(0deg, rgba(0,0,0,0.8), transparent);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 12px;
+}
+.mini-card-title {
+  color: white; font-weight: 700; font-size: 14px;
+  display: flex; align-items: center; gap: 6px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+/* --- SCROLLING TEXT ANIMATION --- */
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+
+.marquee-text {
+  display: inline-block;
+  padding-left: 0;
+  animation: scroll-left 10s linear infinite;
+}
+
+/* Only animate if the user hovers over the card (Optional - currently set to always run) */
+/* .song-card:hover .marquee-text { animation-play-state: running; } */
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(0); } /* Pause at start */
+  100% { transform: translateX(-100%); }
+}
