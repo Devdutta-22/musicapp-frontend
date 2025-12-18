@@ -407,26 +407,23 @@ export default function MusicApp({ user, onLogout }) {
                             ))}
                         </div>
 
-                        {/* --- TOP DASHBOARD GRID (Planet, Rank, All Songs) --- */}
+                        {/* --- TOP DASHBOARD GRID --- */}
                         <div className="dashboard-grid">
-                            
-                            {/* 1. Planet Card */}
+                            {/* Planet Card */}
                             <div className="mini-card" onClick={() => handleNavClick('planet')}>
                                 <div className="mini-card-bg" style={{ backgroundImage: `url(/planets/nebula.png)` }}></div>
                                 <div className="mini-card-overlay">
                                     <div className="mini-card-title"><Globe size={16}/> Cosmic ID</div>
                                 </div>
                             </div>
-
-                            {/* 2. Leaderboard Card */}
+                            {/* Leaderboard Card */}
                             <div className="mini-card" onClick={() => handleNavClick('leaderboard')}>
                                 <div className="mini-card-bg" style={{ background: 'linear-gradient(45deg, #FFD700, #FFA500)' }}></div>
                                 <div className="mini-card-overlay">
                                     <div className="mini-card-title"><Trophy size={16}/> Rankings</div>
                                 </div>
                             </div>
-
-                            {/* 3. All Songs Card (Full Width) */}
+                            {/* All Songs Card */}
                             <div className="mini-card full-width" onClick={() => handleNavClick('all-songs')}>
                                 <div className="mini-card-bg" style={{ backgroundImage: `url(/planets/my-art.jpg)` }}></div>
                                 <div className="mini-card-overlay">
@@ -448,7 +445,7 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
-                {/* --- OTHER TABS --- */}
+                {/* --- ALL SONGS TAB --- */}
                 {activeTab === 'all-songs' && (
                     <div className="tab-pane">
                         <div className="glass-header">
@@ -462,6 +459,7 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
+                {/* --- SEARCH TAB --- */}
                 {activeTab === 'search' && (
                     <div className="tab-pane">
                         <div className="search-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
@@ -485,7 +483,7 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
-                {/* --- AI TAB --- */}
+                {/* --- AI TAB (Fixed Layout) --- */}
                 {activeTab === 'ai' && <AIChatBot />}
 
                 {/* --- LEADERBOARD TAB --- */}
@@ -529,6 +527,7 @@ export default function MusicApp({ user, onLogout }) {
 
             {currentSong && (
                 <>
+                    {/* Full Screen Player */}
                     <div className={`glass-modal ${isFullScreenPlayer ? 'open' : ''} ${isLyricsExpanded ? 'transparent-mode' : ''}`}>
                         <div className="modal-scroll-body">
                             <div style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
@@ -576,6 +575,7 @@ export default function MusicApp({ user, onLogout }) {
                             <div className="spacer"></div>
                         </div>
                     </div>
+                    {/* Mini Player */}
                     {!isFullScreenPlayer && (
                         <div className="glass-dock" onClick={openPlayer}>
                             <div className="dock-left">
@@ -592,7 +592,7 @@ export default function MusicApp({ user, onLogout }) {
                 </>
             )}
 
-            {/* --- NAVIGATION BAR --- */}
+            {/* --- FIXED NAVIGATION BAR (AI is regular now) --- */}
             <nav className="glass-nav" style={{ display: isLyricsExpanded ? 'none' : 'flex' }}>
                 <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
                     <Home size={24} /><span>Home</span>
@@ -601,22 +601,11 @@ export default function MusicApp({ user, onLogout }) {
                     <Search size={24} /><span>Search</span>
                 </button>
                 
-                {/* AI BUTTON (Center, Pop-up) */}
-                <button 
-                    className={activeTab === 'ai' ? 'active' : ''} 
-                    onClick={() => handleNavClick('ai')}
-                    style={{ marginTop: -25 }} 
-                >
-                    <div style={{ 
-                        background: activeTab === 'ai' ? 'linear-gradient(135deg, #00ffff, #ff00cc)' : 'rgba(255,255,255,0.1)',
-                        padding: 12, borderRadius: '50%', boxShadow: activeTab === 'ai' ? '0 0 20px rgba(0,255,255,0.5)' : 'none'
-                    }}>
-                        <Bot size={28} color={activeTab === 'ai' ? 'white' : '#aaa'} />
-                    </div>
-                    <span style={{ marginTop: 5 }}>AI</span>
+                {/* AI BUTTON: Aligned perfectly inside the bar */}
+                <button className={activeTab === 'ai' ? 'active' : ''} onClick={() => handleNavClick('ai')}>
+                    <Bot size={24} /><span>AI Guide</span>
                 </button>
 
-                {/* UPLOAD BUTTON (Restored) */}
                 <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => handleNavClick('upload')}>
                     <Rocket size={24} /><span>Upload</span>
                 </button>
