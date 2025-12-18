@@ -860,3 +860,102 @@ body {
   color: rgba(255, 255, 255, 0.8);
   margin-top: 4px;
 }
+/* ============================================================================
+   13. SIRI-LIKE AI VOICE INTERFACE
+   ============================================================================ */
+.ai-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* The Glowing Orb */
+.siri-orb-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 300px;
+}
+
+.siri-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00ffff, #0077ff, #ff00cc);
+  box-shadow: 0 0 60px rgba(0, 255, 255, 0.6);
+  position: relative;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+/* Breathing / Idle Animation */
+.siri-orb.idle {
+  animation: breathe 4s infinite ease-in-out;
+}
+
+/* Listening Animation (Ripple) */
+.siri-orb.listening {
+  transform: scale(1.2);
+  box-shadow: 0 0 100px rgba(255, 0, 204, 0.8);
+  animation: pulse-listen 1.5s infinite;
+}
+
+/* Speaking Animation (Vibration) */
+.siri-orb.speaking {
+  animation: vibrate 0.3s infinite;
+  box-shadow: 0 0 80px rgba(145, 70, 255, 0.9);
+}
+
+/* Rings around the orb */
+.orb-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+}
+.ring-1 { width: 150px; height: 150px; animation: spin 10s linear infinite; }
+.ring-2 { width: 220px; height: 220px; animation: spin-rev 15s linear infinite; border-color: rgba(255, 0, 204, 0.1); }
+.ring-3 { width: 300px; height: 300px; animation: spin 20s linear infinite; }
+
+/* Chat Area within AI Tab */
+.ai-chat-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+}
+
+.ai-controls {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.2);
+}
+
+/* KEYFRAMES */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+@keyframes pulse-listen {
+  0% { transform: scale(1.1); box-shadow: 0 0 0 0 rgba(255, 0, 204, 0.4); }
+  70% { transform: scale(1.2); box-shadow: 0 0 0 30px rgba(255, 0, 204, 0); }
+  100% { transform: scale(1.1); box-shadow: 0 0 0 0 rgba(255, 0, 204, 0); }
+}
+@keyframes vibrate {
+  0% { transform: scale(1) translate(0, 0); }
+  20% { transform: scale(1.02) translate(-1px, 1px); }
+  40% { transform: scale(0.98) translate(1px, -1px); }
+  60% { transform: scale(1.02) translate(-1px, -1px); }
+  80% { transform: scale(0.98) translate(1px, 1px); }
+  100% { transform: scale(1) translate(0, 0); }
+}
+@keyframes spin-rev { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }
