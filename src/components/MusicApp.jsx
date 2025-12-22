@@ -24,11 +24,33 @@ const USP_FEATURES = [
     { title: "Lossless Audio", subtitle: "Crystal clear sound.", icon: <Mic2 size={24} color="#00ff88" />, accent: "linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 0, 0, 0))" },
 ];
 
+// --- 1. DEVELOPER CONFIG: HANDPICKED ARTISTS ---
+// Tip: Put images in your 'public' folder (e.g. public/artists/arijit.jpg)
+const FEATURED_ARTISTS = [
+    { name: "Arijit Singh", image: PERSON_PLACEHOLDER }, 
+    { name: "Sonu Nigam", image: PERSON_PLACEHOLDER },
+    { name: "Shreya Ghoshal", image: PERSON_PLACEHOLDER },
+    { name: "The Weeknd", image: PERSON_PLACEHOLDER },
+    { name: "Taylor Swift", image: PERSON_PLACEHOLDER },
+    { name: "A.R. Rahman", image: PERSON_PLACEHOLDER },
+    { name: "Atif Aslam", image: PERSON_PLACEHOLDER },
+    { name: "Justin Bieber", image: PERSON_PLACEHOLDER },
+    { name: "Badshah", image: PERSON_PLACEHOLDER },
+];
+
+// --- 2. DEVELOPER CONFIG: SPECIAL SONG IDs ---
+// REPLACE these numbers with the actual IDs of songs from your database
+const SPECIAL_IDS = [15, 22, 101, 4]; 
+
 export default function MusicApp({ user, onLogout }) {
     // --- VIEW STATE ---
     const [activeTab, setActiveTab] = useState('home');
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
+    
+    // --- NEW: Sub-View State for Artists/Specials ---
+    const [selectedArtist, setSelectedArtist] = useState(null);
+    const [specialView, setSpecialView] = useState(null); // 'christmas' or null
     
     // --- SYNC STATE ---
     const [songCurrentTime, setSongCurrentTime] = useState(0);
@@ -73,8 +95,17 @@ export default function MusicApp({ user, onLogout }) {
 
     const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
     
-    // OPTIMIZATION: Memoize headers to prevent recreation on every render
     const authHeaders = useMemo(() => ({ headers: { "X-User-Id": user?.id || 0 } }), [user?.id]);
+
+    // --- FILTER LOGIC ---
+
+    // Filter "Specials" based on the HARDCODED IDs above
+    const specialSongs = useMemo(() => {
+        if (allSongs.length === 0) return [];
+        // Find songs that match the IDs in SPECIAL_IDS array
+        return allSongs.filter(s => SPECIAL_IDS.includes(s.id));
+    }, [allSongs]);
+
 
     // --- NAVIGATION ---
     useEffect(() => {
@@ -84,20 +115,34 @@ export default function MusicApp({ user, onLogout }) {
             const state = event.state || { tab: 'home', player: false };
             setActiveTab(state.tab);
             setIsFullScreenPlayer(!!state.player);
+            
+            // Reset special views when going back to home
+            if (state.tab === 'home') {
+                setSelectedArtist(null);
+                setSpecialView(null);
+            }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
     const handleNavClick = (tab) => {
-        if (tab === activeTab) return;
-        if (tab === 'home') window.history.back();
-        else {
+        if (tab === activeTab && !selectedArtist && !specialView) return;
+        
+        if (tab === 'home') {
+             window.history.back();
+             setSelectedArtist(null);
+             setSpecialView(null);
+        } else {
             const newState = { tab, player: false };
             if (activeTab === 'home') window.history.pushState(newState, '');
             else window.history.replaceState(newState, '');
             setActiveTab(tab);
             setIsFullScreenPlayer(false);
+            
+            // Clear special views
+            setSelectedArtist(null);
+            setSpecialView(null);
         }
     };
 
@@ -126,11 +171,11 @@ export default function MusicApp({ user, onLogout }) {
             const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
             setDiscoveryFeed(random.data);
             fetchLibraryData();
+            // Fetch all songs silently so we can search/filter immediately
+            fetchAllSongs(); 
         } catch (e) { console.error(e); }
         setLoading(false);
     }
-
-    useEffect(() => { if (activeTab === 'all-songs') fetchAllSongs(); }, [activeTab]);
 
     async function fetchAllSongs() {
         try {
@@ -383,11 +428,10 @@ export default function MusicApp({ user, onLogout }) {
     );
 
     // --- OPTIMIZATION: MEMOIZE MAIN CONTENT ---
-    // This ensures the main view (Home, Library, Search) does NOT re-render
-    // when the Player updates 'songCurrentTime' (which happens 4 times a second).
     const MainViewContent = useMemo(() => {
         return (
             <>
+                {/* --- 1. HOME TAB --- */}
                 {activeTab === 'home' && (
                     <div className="tab-pane home-animate">
                         <header className="glass-header">
@@ -423,6 +467,27 @@ export default function MusicApp({ user, onLogout }) {
                             </div>
                         </div>
 
+                        {/* --- ARTISTS ROW (MANUAL) --- */}
+                        <h2 className="section-title">Top Artists</h2>
+                        <div className="horizontal-scroll">
+                            {FEATURED_ARTISTS.map((artist, i) => (
+                                <div key={i} className="glass-card song-card" onClick={() => { setSelectedArtist(artist); setActiveTab('artist-view'); }}>
+                                    <img src={artist.image} style={{ borderRadius: '50%', aspectRatio: '1/1', objectFit: 'cover', width: '100%', marginBottom: 10 }} alt={artist.name}/>
+                                    <p className="song-title" style={{ textAlign: 'center', fontSize: 13 }}>{artist.name}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* --- SPECIAL BANNER (MANUAL IDs) --- */}
+                        <h2 className="section-title">Specials</h2>
+                        <div className="artistic-box" onClick={() => { setSpecialView('christmas'); setActiveTab('special-view'); }}>
+                            <div className="artistic-bg" style={{ backgroundImage: 'url(/planets/ice-world.png)' }}></div>
+                            <div className="artistic-overlay">
+                                <div className="artistic-title"><Sparkles color="#00ffff"/> Christmas Hits</div>
+                                <div className="artistic-subtitle">Feel the magic of the season</div>
+                            </div>
+                        </div>
+
                         <h2 className="section-title">Cosmic Arrivals</h2>
                         <div className="horizontal-scroll">
                             {homeFeed.map(s => <HomeSongCard key={s.id} s={s} list={homeFeed} />)}
@@ -436,6 +501,55 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
+                {/* --- 2. ARTIST VIEW --- */}
+                {activeTab === 'artist-view' && selectedArtist && (
+                    <div className="tab-pane">
+                        <div className="glass-header">
+                            <button className="icon-btn" onClick={() => handleNavClick('home')}><ArrowLeft size={24} color="white" /></button>
+                            <div className="header-text">
+                                <h1>{selectedArtist.name}</h1>
+                                <p>Artist Discography</p>
+                            </div>
+                        </div>
+                        <div className="list-vertical">
+                            {/* Filter ALL songs to show only this artist's songs (Matching Name) */}
+                            {allSongs.filter(s => s.artistName && s.artistName.toLowerCase().includes(selectedArtist.name.toLowerCase())).map(s => 
+                                <SongRow key={s.id} s={s} list={allSongs.filter(s => s.artistName && s.artistName.toLowerCase().includes(selectedArtist.name.toLowerCase()))} />
+                            )}
+                            {allSongs.filter(s => s.artistName && s.artistName.toLowerCase().includes(selectedArtist.name.toLowerCase())).length === 0 && (
+                                <div style={{textAlign:'center', color:'#888', marginTop: 20}}>No songs found for {selectedArtist.name} yet.</div>
+                            )}
+                        </div>
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {/* --- 3. SPECIAL VIEW (MANUAL IDS) --- */}
+                {activeTab === 'special-view' && specialView === 'christmas' && (
+                    <div className="tab-pane">
+                        <div className="glass-header">
+                            <button className="icon-btn" onClick={() => handleNavClick('home')}><ArrowLeft size={24} color="white" /></button>
+                            <div className="header-text">
+                                <h1>Christmas Specials</h1>
+                                <p>Curated for the Holidays</p>
+                            </div>
+                        </div>
+                        <div className="list-vertical">
+                            {/* Use filtered specialSongs list */}
+                            {specialSongs.length > 0 ? (
+                                specialSongs.map(s => <SongRow key={s.id} s={s} list={specialSongs} />)
+                            ) : (
+                                <div style={{textAlign:'center', padding:20, color:'#aaa', fontSize: 14}}>
+                                    No songs found matching the IDs in <code>SPECIAL_IDS</code>.<br/>
+                                    <span style={{fontSize:12, opacity:0.7}}>Check the ID numbers in MusicApp.jsx</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {/* --- 4. EXISTING VIEWS --- */}
                 {activeTab === 'all-songs' && (
                     <div className="tab-pane">
                         <div className="glass-header">
@@ -509,8 +623,7 @@ export default function MusicApp({ user, onLogout }) {
                 )}
             </>
         );
-        // Dependencies: We include everything EXCEPT songCurrentTime/songProgress
-    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode]);
+    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode, specialSongs, selectedArtist, specialView]);
 
     return (
         <div className="glass-shell">
@@ -533,7 +646,6 @@ export default function MusicApp({ user, onLogout }) {
                             </div>
                             <div className="modal-controls-wrapper" style={{ opacity: isLyricsExpanded ? 0 : 1, pointerEvents: isLyricsExpanded ? 'none' : 'auto', height: isLyricsExpanded ? 0 : 'auto', overflow: 'hidden' }}>
                                 <Player song={currentSong} playing={playing} onToggle={() => setPlaying(!playing)} onNext={handleNextSong} onPrev={handlePrevSong} onToggleLike={() => toggleLike(currentSong.id)} onEnded={() => { recordListen(currentSong.durationSeconds, currentSong.genre); handleNextSong(); }} hideCover={true} hideMeta={true} repeatMode={repeatMode} onToggleRepeat={toggleRepeat} shuffle={shuffle} onToggleShuffle={toggleShuffle} sleepTime={sleepTime} onSetSleepTimer={setSleepTime} 
-                                // Player controls this state, but MainViewContent ignores it now!
                                 onProgress={(c, t) => { setSongProgress(t ? (c / t) * 100 : 0); setSongCurrentTime(c); }} />
                             </div>
                             <div className="modal-section" style={isLyricsExpanded ? { position:'fixed', top:0, left:0, width:'100%', height:'100%', zIndex:2000, overflowY:'auto' } : {}}>
