@@ -26,6 +26,7 @@ const USP_FEATURES = [
 
 // --- 1. DEVELOPER CONFIG: HANDPICKED ARTISTS ---
 const FEATURED_ARTISTS = [
+    { name: "Ariana Grande", image:"/artists/ariana.jpg" },
     { name: "Arijit Singh", image: "/artists/arijit.jpg" }, 
     { name: "Sonu Nigam", image: "/artists/sonu.jpg" },
     { name: "The Weeknd", image: "/artists/weeknd.jpg" },
@@ -33,7 +34,6 @@ const FEATURED_ARTISTS = [
     { name: "A.R. Rahman", image: PERSON_PLACEHOLDER },
     { name: "Atif Aslam", image: PERSON_PLACEHOLDER },
     { name: "Justin Bieber", image: PERSON_PLACEHOLDER },
-    { name: "Badshah", image: PERSON_PLACEHOLDER },
 ];
 
 // --- 2. DEVELOPER CONFIG: SPECIAL SONG IDs ---
