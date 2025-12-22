@@ -25,12 +25,10 @@ const USP_FEATURES = [
 ];
 
 // --- 1. DEVELOPER CONFIG: HANDPICKED ARTISTS ---
-// Tip: Put images in your 'public' folder (e.g. public/artists/arijit.jpg)
 const FEATURED_ARTISTS = [
-    { name: "Arijit Singh", image: PERSON_PLACEHOLDER }, 
-    { name: "Sonu Nigam", image: PERSON_PLACEHOLDER },
-    { name: "Shreya Ghoshal", image: PERSON_PLACEHOLDER },
-    { name: "The Weeknd", image: PERSON_PLACEHOLDER },
+    { name: "Arijit Singh", image: "/artists/arijit.jpg" }, 
+    { name: "Sonu Nigam", image: "/artists/sonu.jpg" },
+    { name: "The Weeknd", image: "/artists/weeknd.jpg" },
     { name: "Taylor Swift", image: PERSON_PLACEHOLDER },
     { name: "A.R. Rahman", image: PERSON_PLACEHOLDER },
     { name: "Atif Aslam", image: PERSON_PLACEHOLDER },
@@ -39,7 +37,7 @@ const FEATURED_ARTISTS = [
 ];
 
 // --- 2. DEVELOPER CONFIG: SPECIAL SONG IDs ---
-// REPLACE these numbers with the actual IDs of songs from your database
+// REPLACE these numbers with the actual IDs from your database
 const SPECIAL_IDS = [15, 22, 101, 4]; 
 
 export default function MusicApp({ user, onLogout }) {
@@ -48,9 +46,9 @@ export default function MusicApp({ user, onLogout }) {
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
     
-    // --- NEW: Sub-View State for Artists/Specials ---
+    // --- NEW: Sub-View State ---
     const [selectedArtist, setSelectedArtist] = useState(null);
-    const [specialView, setSpecialView] = useState(null); // 'christmas' or null
+    const [specialView, setSpecialView] = useState(null); 
     
     // --- SYNC STATE ---
     const [songCurrentTime, setSongCurrentTime] = useState(0);
@@ -68,6 +66,10 @@ export default function MusicApp({ user, onLogout }) {
     const [likedSongs, setLikedSongs] = useState([]);
     const [playlists, setPlaylists] = useState([]);
     const [songCache, setSongCache] = useState({});
+
+    // --- NEW STATE FOR DB RESULTS ---
+    const [artistSongsFromDb, setArtistSongsFromDb] = useState([]);
+    const [isArtistLoading, setIsArtistLoading] = useState(false);
 
     // --- PLAYER ---
     const [queue, setQueue] = useState([]);
@@ -97,14 +99,30 @@ export default function MusicApp({ user, onLogout }) {
     
     const authHeaders = useMemo(() => ({ headers: { "X-User-Id": user?.id || 0 } }), [user?.id]);
 
-    // --- FILTER LOGIC ---
+    // --- LOGIC: FETCH ARTIST SONGS FROM DB ---
+    // This runs whenever 'selectedArtist' changes.
+    useEffect(() => {
+        if (selectedArtist && selectedArtist.name) {
+            setIsArtistLoading(true);
+            setArtistSongsFromDb([]); // Clear previous results immediately
 
-    // Filter "Specials" based on the HARDCODED IDs above
-    const specialSongs = useMemo(() => {
-        if (allSongs.length === 0) return [];
-        // Find songs that match the IDs in SPECIAL_IDS array
-        return allSongs.filter(s => SPECIAL_IDS.includes(s.id));
-    }, [allSongs]);
+            // Call the Search API with the artist's name
+            axios.get(`${API_BASE}/api/songs/search?q=${encodeURIComponent(selectedArtist.name)}`, authHeaders)
+                .then(res => {
+                    setArtistSongsFromDb(res.data);
+                })
+                .catch(err => console.error("Failed to fetch artist songs", err))
+                .finally(() => setIsArtistLoading(false));
+        }
+    }, [selectedArtist, API_BASE, authHeaders]);
+
+    // --- FILTER LOGIC (For Special Banner Only) ---
+    const specialSongsList = useMemo(() => {
+        const pool = [...allSongs, ...homeFeed, ...discoveryFeed];
+        // Remove duplicates
+        const uniquePool = Array.from(new Map(pool.map(item => [item.id, item])).values());
+        return uniquePool.filter(s => SPECIAL_IDS.includes(s.id));
+    }, [allSongs, homeFeed, discoveryFeed]);
 
 
     // --- NAVIGATION ---
@@ -116,7 +134,6 @@ export default function MusicApp({ user, onLogout }) {
             setActiveTab(state.tab);
             setIsFullScreenPlayer(!!state.player);
             
-            // Reset special views when going back to home
             if (state.tab === 'home') {
                 setSelectedArtist(null);
                 setSpecialView(null);
@@ -125,6 +142,13 @@ export default function MusicApp({ user, onLogout }) {
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
+
+    const goHome = () => {
+        setActiveTab('home');
+        setSelectedArtist(null);
+        setSpecialView(null);
+        window.history.replaceState({ tab: 'home' }, '');
+    };
 
     const handleNavClick = (tab) => {
         if (tab === activeTab && !selectedArtist && !specialView) return;
@@ -139,8 +163,6 @@ export default function MusicApp({ user, onLogout }) {
             else window.history.replaceState(newState, '');
             setActiveTab(tab);
             setIsFullScreenPlayer(false);
-            
-            // Clear special views
             setSelectedArtist(null);
             setSpecialView(null);
         }
@@ -171,8 +193,7 @@ export default function MusicApp({ user, onLogout }) {
             const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
             setDiscoveryFeed(random.data);
             fetchLibraryData();
-            // Fetch all songs silently so we can search/filter immediately
-            fetchAllSongs(); 
+            fetchAllSongs(); // Fetch all in background
         } catch (e) { console.error(e); }
         setLoading(false);
     }
@@ -210,7 +231,7 @@ export default function MusicApp({ user, onLogout }) {
 
     function getSongById(id) {
         if (songCache[id]) return songCache[id];
-        const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs, ...allSongs];
+        const all = [...homeFeed, ...discoveryFeed, ...searchResults, ...likedSongs, ...allSongs, ...artistSongsFromDb];
         return all.find(s => s.id === id) || { id, title: 'Unknown', artistName: 'Unknown', coverUrl: null };
     }
     const currentSong = queue[currentIndex] ? getSongById(queue[currentIndex]) : null;
@@ -252,6 +273,9 @@ export default function MusicApp({ user, onLogout }) {
     const toggleLike = async (songId) => {
         const update = (list) => list.map(s => s.id === songId ? { ...s, liked: !s.liked } : s);
         setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update); setAllSongs(update);
+        // Also update artist songs state so the heart updates instantly
+        setArtistSongsFromDb(update);
+        
         try { await axios.post(`${API_BASE}/api/likes/${songId}`, {}, authHeaders); fetchLibraryData(); } catch (e) { }
     };
 
@@ -481,7 +505,7 @@ export default function MusicApp({ user, onLogout }) {
                         {/* --- SPECIAL BANNER (MANUAL IDs) --- */}
                         <h2 className="section-title">Specials</h2>
                         <div className="artistic-box" onClick={() => { setSpecialView('christmas'); setActiveTab('special-view'); }}>
-                            <div className="artistic-bg" style={{ backgroundImage: 'url(/planets/ice-world.png)' }}></div>
+                            <div className="artistic-bg" style={{ backgroundImage: 'url(/banners/christmas-bg.jpg)' }}></div>
                             <div className="artistic-overlay">
                                 <div className="artistic-title"><Sparkles color="#00ffff"/> Christmas Hits</div>
                                 <div className="artistic-subtitle">Feel the magic of the season</div>
@@ -501,47 +525,49 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
-                {/* --- 2. ARTIST VIEW --- */}
+                {/* --- 2. ARTIST VIEW (FETCHED FROM DB) --- */}
                 {activeTab === 'artist-view' && selectedArtist && (
                     <div className="tab-pane">
                         <div className="glass-header">
-                            <button className="icon-btn" onClick={() => handleNavClick('home')}><ArrowLeft size={24} color="white" /></button>
+                            <button className="icon-btn" onClick={goHome}><ArrowLeft size={24} color="white" /></button>
                             <div className="header-text">
                                 <h1>{selectedArtist.name}</h1>
                                 <p>Artist Discography</p>
                             </div>
                         </div>
                         <div className="list-vertical">
-                            {/* Filter ALL songs to show only this artist's songs (Matching Name) */}
-                            {allSongs.filter(s => s.artistName && s.artistName.toLowerCase().includes(selectedArtist.name.toLowerCase())).map(s => 
-                                <SongRow key={s.id} s={s} list={allSongs.filter(s => s.artistName && s.artistName.toLowerCase().includes(selectedArtist.name.toLowerCase()))} />
-                            )}
-                            {allSongs.filter(s => s.artistName && s.artistName.toLowerCase().includes(selectedArtist.name.toLowerCase())).length === 0 && (
-                                <div style={{textAlign:'center', color:'#888', marginTop: 20}}>No songs found for {selectedArtist.name} yet.</div>
+                            {isArtistLoading && <div style={{textAlign:'center', padding:20, color:'#888'}}>Loading tracks...</div>}
+                            
+                            {!isArtistLoading && artistSongsFromDb.length > 0 ? (
+                                artistSongsFromDb.map(s => <SongRow key={s.id} s={s} list={artistSongsFromDb} />)
+                            ) : !isArtistLoading && (
+                                <div style={{textAlign:'center', color:'#888', marginTop: 20}}>
+                                    No songs found matching "{selectedArtist.name}".<br/>
+                                    <span style={{fontSize:12}}>Ensure artist name matches exactly.</span>
+                                </div>
                             )}
                         </div>
                         <div className="spacer"></div>
                     </div>
                 )}
 
-                {/* --- 3. SPECIAL VIEW (MANUAL IDS) --- */}
+                {/* --- 3. SPECIAL VIEW --- */}
                 {activeTab === 'special-view' && specialView === 'christmas' && (
                     <div className="tab-pane">
                         <div className="glass-header">
-                            <button className="icon-btn" onClick={() => handleNavClick('home')}><ArrowLeft size={24} color="white" /></button>
+                            <button className="icon-btn" onClick={goHome}><ArrowLeft size={24} color="white" /></button>
                             <div className="header-text">
                                 <h1>Christmas Specials</h1>
                                 <p>Curated for the Holidays</p>
                             </div>
                         </div>
                         <div className="list-vertical">
-                            {/* Use filtered specialSongs list */}
-                            {specialSongs.length > 0 ? (
-                                specialSongs.map(s => <SongRow key={s.id} s={s} list={specialSongs} />)
+                            {specialSongsList.length > 0 ? (
+                                specialSongsList.map(s => <SongRow key={s.id} s={s} list={specialSongsList} />)
                             ) : (
                                 <div style={{textAlign:'center', padding:20, color:'#aaa', fontSize: 14}}>
-                                    No songs found matching the IDs in <code>SPECIAL_IDS</code>.<br/>
-                                    <span style={{fontSize:12, opacity:0.7}}>Check the ID numbers in MusicApp.jsx</span>
+                                    No songs found matching IDs.<br/>
+                                    <span style={{fontSize:12, opacity:0.7}}>Check SPECIAL_IDS in MusicApp.jsx</span>
                                 </div>
                             )}
                         </div>
@@ -623,7 +649,7 @@ export default function MusicApp({ user, onLogout }) {
                 )}
             </>
         );
-    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode, specialSongs, selectedArtist, specialView]);
+    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode, specialSongsList, artistSongsFromDb, isArtistLoading, selectedArtist, specialView]);
 
     return (
         <div className="glass-shell">
