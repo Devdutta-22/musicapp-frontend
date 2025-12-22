@@ -1095,3 +1095,16 @@ body {
   20% { transform: translateX(0); } /* Pause at start */
   100% { transform: translateX(-100%); }
 }
+/* BUFFERING ANIMATION */
+.seek-slider.buffering-active {
+  background-size: 50% 100% !important; /* Override standard size */
+  background-image: 
+    linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent),
+    linear-gradient(90deg, var(--neon), var(--neon)) !important;
+  animation: buffShimmer 1.5s infinite linear;
+}
+
+@keyframes buffShimmer {
+  0% { background-position: -100% center, 0 0; }
+  100% { background-position: 200% center, 0 0; }
+}
