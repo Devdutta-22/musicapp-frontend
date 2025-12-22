@@ -526,30 +526,48 @@ export default function MusicApp({ user, onLogout }) {
                 )}
 
                 {/* --- 2. ARTIST VIEW (FETCHED FROM DB) --- */}
-                {activeTab === 'artist-view' && selectedArtist && (
-                    <div className="tab-pane">
-                        <div className="glass-header">
-                            <button className="icon-btn" onClick={goHome}><ArrowLeft size={24} color="white" /></button>
-                            <div className="header-text">
-                                <h1>{selectedArtist.name}</h1>
-                                <p>Artist Discography</p>
-                            </div>
-                        </div>
-                        <div className="list-vertical">
-                            {isArtistLoading && <div style={{textAlign:'center', padding:20, color:'#888'}}>Loading tracks...</div>}
-                            
-                            {!isArtistLoading && artistSongsFromDb.length > 0 ? (
-                                artistSongsFromDb.map(s => <SongRow key={s.id} s={s} list={artistSongsFromDb} />)
-                            ) : !isArtistLoading && (
-                                <div style={{textAlign:'center', color:'#888', marginTop: 20}}>
-                                    No songs found matching "{selectedArtist.name}".<br/>
-                                    <span style={{fontSize:12}}>Ensure artist name matches exactly.</span>
+                {/* --- ARTISTS ROW (SQUARE IMAGES / NO FRAMES) --- */}
+                        <h2 className="section-title">Top Artists</h2>
+                        <div className="horizontal-scroll" style={{ paddingBottom: 10 }}>
+                            {FEATURED_ARTISTS.map((artist, i) => (
+                                <div 
+                                    key={i} 
+                                    onClick={() => { setSelectedArtist(artist); setActiveTab('artist-view'); }}
+                                    style={{ 
+                                        flex: '0 0 auto', 
+                                        width: 110,  /* Slightly wider for square cards */
+                                        marginRight: 15, 
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    }}
+                                >
+                                    <img 
+                                        src={artist.image} 
+                                        alt={artist.name}
+                                        style={{ 
+                                            width: '100%', 
+                                            aspectRatio: '1/1', /* Forces a perfect square */
+                                            objectFit: 'cover', 
+                                            borderRadius: '4px', /* Tiny rounded corner for polish, set to 0px for sharp corners */
+                                            marginBottom: 8
+                                        }} 
+                                    />
+                                    <p style={{ 
+                                        fontSize: 13, 
+                                        color: '#eee',
+                                        margin: 0,
+                                        width: '100%',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        fontWeight: '500'
+                                    }}>
+                                        {artist.name}
+                                    </p>
                                 </div>
-                            )}
+                            ))}
                         </div>
-                        <div className="spacer"></div>
-                    </div>
-                )}
 
                 {/* --- 3. SPECIAL VIEW --- */}
                 {activeTab === 'special-view' && specialView === 'christmas' && (
