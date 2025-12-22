@@ -29,7 +29,7 @@ export default function Player({
   const [duration, setDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [buffering, setBuffering] = useState(false); // New Buffering State
+  const [buffering, setBuffering] = useState(false);
 
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
@@ -68,7 +68,6 @@ export default function Player({
     }
   };
 
-  // UPDATED: Uses CSS variable to allow multiple background layers (progress + buffering)
   const updateRangeBackground = (c, d) => {
     if (rangeRef.current) {
         const percent = (c / d) * 100 || 0;
@@ -118,48 +117,82 @@ export default function Player({
 
   return (
     <div className="player-container">
-      {/* INJECTED STYLES for Centering Fix + Buffering Animation 
-          (This ensures it works without editing external CSS files)
+      {/* INJECTED STYLES: 
+          1. Fixes Vertical Alignment (Circle centered on line)
+          2. Adds "Shimmer" Buffering Animation (White beam moving across)
       */}
       <style>{`
-        /* 1. Fix Center Alignment */
         .progress-section {
           display: flex !important;
           flex-direction: column;
           justify-content: center;
           height: auto;
-          min-height: 40px; /* Ensure enough touch space */
+          min-height: 40px; 
         }
         
+        /* Reset defaults to ensure perfect alignment */
         .seek-slider {
-          align-self: center; /* Forces horizontal center if column */
-          margin: 10px 0 !important; /* Balanced margins */
-          
-          /* Prepare for CSS Variable usage */
-          background-image: linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink));
-          background-size: var(--seek-pos, 0%) 100%;
-          background-repeat: no-repeat;
+          -webkit-appearance: none;
+          appearance: none;
+          height: 20px !important; /* MATCH THUMB HEIGHT */
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important; /* We draw track via gradient */
+          border: none !important;
         }
 
-        /* 2. Buffering Animation Class */
-        .seek-slider.buffering-active {
+        /* Background Layer Stack:
+           1. Shimmer (Top) - Only visible when buffering
+           2. Progress (Middle) - The gradient fill
+           3. Base Track (Bottom) - The grey background line
+        */
+        .seek-slider {
           background-image: 
-            linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink)), /* Layer 1: Progress */
-            repeating-linear-gradient(
-              45deg, 
-              rgba(255,255,255,0.1) 0px, 
-              rgba(255,255,255,0.1) 10px, 
-              rgba(255,255,255,0.3) 10px, 
-              rgba(255,255,255,0.3) 20px
-            ); /* Layer 2: Stripes */
+            /* Layer 1: Shimmer (Hidden by default) */
+            linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent),
+            /* Layer 2: Progress Bar */
+            linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink)),
+            /* Layer 3: Base Track */
+            linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15));
+          
+          background-size: 
+            0% 100%,                 /* Shimmer size (0 when not buffering) */
+            var(--seek-pos, 0%) 6px, /* Progress size */
+            100% 6px;                /* Base track size */
             
-          background-size: var(--seek-pos, 0%) 100%, 200% 100%;
-          animation: buffer-move 1s linear infinite;
+          background-repeat: no-repeat;
+          background-position: 
+            -100% center,   /* Shimmer start pos */
+            left center,    /* Progress pos */
+            left center;    /* Base track pos */
         }
 
-        @keyframes buffer-move {
-          0% { background-position: 0 0, 0 0; }
-          100% { background-position: 0 0, -28px 0; }
+        /* FIX THUMB ALIGNMENT: 
+           Since input height (20px) = thumb height (20px), 
+           we remove the negative margin hack. 
+        */
+        .seek-slider::-webkit-slider-thumb {
+          margin-top: 0 !important; 
+        }
+        .seek-slider::-moz-range-thumb {
+          transform: none !important;
+        }
+
+        /* BUFFERING ANIMATION STATE */
+        .seek-slider.buffering-active {
+          /* Animate the Shimmer Layer */
+          animation: shimmer 1.5s infinite linear;
+          
+          /* Make shimmer visible (50% width of bar) */
+          background-size: 
+            50% 6px, 
+            var(--seek-pos, 0%) 6px, 
+            100% 6px;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -100% center, left center, left center; }
+          100% { background-position: 200% center, left center, left center; }
         }
       `}</style>
       
@@ -239,7 +272,6 @@ export default function Player({
          </button>
       </div>
 
-      {/* Hidden Audio Element with Buffering Events */}
       <audio
         ref={audioRef}
         src={song?.streamUrl} 
@@ -247,7 +279,6 @@ export default function Player({
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleAudioEnded}
-        // BUFFFERING LOGIC
         onWaiting={() => setBuffering(true)} 
         onPlaying={() => setBuffering(false)}
         onCanPlay={() => setBuffering(false)}
