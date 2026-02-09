@@ -13,7 +13,7 @@ import {
     Play, Pause, Heart, ChevronDown, Zap, Mic2, ListMusic, MoreHorizontal,
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
-    X, Minimize2, MessageCircle, Trophy, Bot, Globe
+    X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -238,6 +238,29 @@ export default function MusicApp({ user, onLogout }) {
         return all.find(s => s.id === id) || { id, title: 'Unknown', artistName: 'Unknown', coverUrl: null };
     }
     const currentSong = queue[currentIndex] ? getSongById(queue[currentIndex]) : null;
+
+    // --- SHARE LOGIC ---
+    const handleShare = (song) => {
+        const shareUrl = `${window.location.origin}${window.location.pathname}?songId=${song.id}`;
+        if (navigator.share) {
+            navigator.share({ title: song.title, text: `Listen to ${song.title} on Astronote`, url: shareUrl }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(shareUrl);
+            alert("Link copied to clipboard!");
+        }
+    };
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const sharedId = params.get('songId');
+        if (sharedId && allSongs.length > 0) {
+            const song = allSongs.find(s => s.id === parseInt(sharedId));
+            if (song) {
+                playSong(song, [song]);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    }, [allSongs]);
 
     // --- PLAYBACK ---
     const playSong = (song, contextList) => {
@@ -780,7 +803,16 @@ export default function MusicApp({ user, onLogout }) {
                     <div className={`glass-modal ${isFullScreenPlayer ? 'open' : ''} ${isLyricsExpanded ? 'transparent-mode' : ''}`}>
                         <div className="modal-scroll-body">
                             <div style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
-                                <div className="modal-header"><button onClick={closePlayer} className="icon-btn"><ChevronDown size={32} /></button></div>
+                                <div className="modal-header">
+                                    <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32} /></button>
+                                    <button 
+                                        className="icon-btn" 
+                                        onClick={(e) => { e.stopPropagation(); handleShare(currentSong); }}
+                                        style={{ marginLeft: 'auto', marginRight: '10px' }}
+                                    >
+                                        <Share2 size={24} color="white" />
+                                    </button>
+                                </div>
                                 <div className="art-glow-container">
                                     <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" alt="" />
                                     <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" alt="" />
