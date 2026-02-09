@@ -1,27 +1,38 @@
-// src/components/UploadCard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import '../App.css'; 
 
 export default function UploadCard({ onUploaded }) {
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null); // Added for preview
   const [coverImage, setCoverImage] = useState(null);
   const [artistImage, setArtistImage] = useState(null);
   const [title, setTitle] = useState("");
   const [artistName, setArtistName] = useState("");
   const [album, setAlbum] = useState("");
   
-  // 1. GENRE STATE
   const [genre, setGenre] = useState("Pop");
-
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // -------------------------------------------------------------------------
-  // ✅ CORRECTED URL: Points to YOUR specific Render backend
-  // -------------------------------------------------------------------------
   const API_BASE = process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com"; 
-  // -------------------------------------------------------------------------
+
+  // Clean up memory when component closes or file changes
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  // Handle file selection and preview generation
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      const url = URL.createObjectURL(selectedFile);
+      setPreviewUrl(url);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -30,8 +41,6 @@ export default function UploadCard({ onUploaded }) {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("title", title || file.name.replace(/\.[^.]+$/, ""));
-    
-    // 2. SEND GENRE TO BACKEND
     fd.append("genre", genre);
 
     if (artistName) fd.append("artistName", artistName);
@@ -43,7 +52,6 @@ export default function UploadCard({ onUploaded }) {
     setProgress(0);
 
     try {
-      // Ensure no double slashes if API_BASE ends with /
       const cleanBase = API_BASE.replace(/\/+$/, "");
       const url = `${cleanBase}/api/songs/upload`;
       console.log("Uploading to:", url);
@@ -57,14 +65,14 @@ export default function UploadCard({ onUploaded }) {
         },
       });
 
-      // Reset Form
       setFile(null);
+      setPreviewUrl(null); // Reset preview
       setCoverImage(null);
       setArtistImage(null);
       setTitle("");
       setArtistName("");
       setAlbum("");
-      setGenre("Pop"); // Reset genre
+      setGenre("Pop");
       setProgress(0);
       setLoading(false);
 
@@ -88,9 +96,17 @@ export default function UploadCard({ onUploaded }) {
             className="file-input" 
             type="file" 
             accept="audio/*" 
-            onChange={(e) => setFile(e.target.files[0])} 
+            onChange={handleFileChange} // Updated handler
           />
         </div>
+
+        {/* --- AUDIO PREVIEW --- */}
+        {previewUrl && (
+          <div className="preview-player" style={{ marginBottom: '15px' }}>
+             <p className="file-label-text" style={{fontSize: '11px', color: '#ffa500'}}>Previewing: {file.name}</p>
+             <audio src={previewUrl} controls style={{ width: '100%', height: '35px' }} />
+          </div>
+        )}
 
         <div className="form-group">
           <input
@@ -110,7 +126,6 @@ export default function UploadCard({ onUploaded }) {
           />
         </div>
 
-        {/* 3. NEW GENRE DROPDOWN */}
         <div className="form-group">
           <label className="file-label-text" style={{marginBottom: '5px', display:'block'}}>Genre</label>
           <select
