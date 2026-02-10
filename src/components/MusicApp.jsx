@@ -15,11 +15,11 @@ import {
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
     X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2, 
-    Youtube 
+    Youtube, SkipBack, SkipForward 
 } from "lucide-react";
 
-// --- ADDED INTERNAL CSS FOR THE TOGGLE ---
-const IOS_TOGGLE_STYLES = `
+// --- CSS FOR IOS TOGGLE & SLIDER ---
+const CUSTOM_STYLES = `
 .ios-toggle-container {
     position: relative;
     background: rgba(255, 255, 255, 0.1);
@@ -57,6 +57,55 @@ const IOS_TOGGLE_STYLES = `
     transition: color 0.3s ease;
     height: 100%;
 }
+/* Custom Range Slider for YouTube Controls */
+.yt-controls {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+}
+.yt-progress-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: #ccc;
+}
+.yt-range {
+    flex: 1;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.2);
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+}
+.yt-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.yt-buttons {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+.yt-play-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255,255,255,0.3);
+}
 `;
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -86,12 +135,10 @@ const FEATURED_ARTISTS = [
 const SPECIAL_IDS = [250, 277, 248, 470]; 
 
 export default function MusicApp({ user, onLogout }) {
-    // --- VIEW STATE ---
     const [activeTab, setActiveTab] = useState('home');
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
-    
-    const [searchMode, setSearchMode] = useState('local'); // 'local' or 'global' (youtube)
+    const [searchMode, setSearchMode] = useState('local'); 
     
     const [selectedArtist, setSelectedArtist] = useState(null);
     const [specialView, setSpecialView] = useState(null); 
@@ -124,6 +171,10 @@ export default function MusicApp({ user, onLogout }) {
     const [loading, setLoading] = useState(false);
     const sleepIntervalRef = useRef(null);
 
+    // --- YOUTUBE CONTROL REFS ---
+    const playerRef = useRef(null);
+    const [duration, setDuration] = useState(0);
+
     useEffect(() => {
         const closeMenu = () => {
             setOpenMenuId(null);
@@ -138,16 +189,65 @@ export default function MusicApp({ user, onLogout }) {
     
     const authHeaders = useMemo(() => ({ headers: { "X-User-Id": user?.id || 0 } }), [user?.id]);
 
+    // --- YOUTUBE SYNC LOGIC ---
+    
+    // 1. Sync Playing State: React -> YouTube
+    useEffect(() => {
+        if (queue[currentIndex] && getSongById(queue[currentIndex])?.isYouTube && playerRef.current) {
+            if (playing) {
+                playerRef.current.playVideo();
+            } else {
+                playerRef.current.pauseVideo();
+            }
+        }
+    }, [playing, currentIndex, queue]);
+
+    // 2. Sync Progress: YouTube -> React (Polling)
+    useEffect(() => {
+        let interval;
+        if (queue[currentIndex] && getSongById(queue[currentIndex])?.isYouTube && playing) {
+            interval = setInterval(() => {
+                if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                    const curr = playerRef.current.getCurrentTime();
+                    const dur = playerRef.current.getDuration();
+                    setSongCurrentTime(curr);
+                    setDuration(dur);
+                    if (dur > 0) {
+                        setSongProgress((curr / dur) * 100);
+                    }
+                }
+            }, 1000); // Update every second
+        }
+        return () => clearInterval(interval);
+    }, [playing, currentIndex, queue]);
+
+    // 3. Handle Manual Seek
+    const handleSeek = (e) => {
+        const newPct = parseFloat(e.target.value);
+        const newTime = (newPct / 100) * duration;
+        setSongProgress(newPct);
+        setSongCurrentTime(newTime);
+        if (playerRef.current) {
+            playerRef.current.seekTo(newTime, true);
+        }
+    };
+
+    function formatTime(seconds) {
+        if (!seconds) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // --- EXISTING LOGIC ---
+
     useEffect(() => {
         if (selectedArtist && selectedArtist.name) {
             setIsArtistLoading(true);
             setArtistSongsFromDb([]); 
-
             axios.get(`${API_BASE}/api/songs/search?q=${encodeURIComponent(selectedArtist.name)}`, authHeaders)
-                .then(res => {
-                    setArtistSongsFromDb(res.data);
-                })
-                .catch(err => console.error("Failed to fetch artist songs", err))
+                .then(res => setArtistSongsFromDb(res.data))
+                .catch(err => console.error(err))
                 .finally(() => setIsArtistLoading(false));
         }
     }, [selectedArtist, API_BASE, authHeaders]);
@@ -160,43 +260,30 @@ export default function MusicApp({ user, onLogout }) {
 
     useEffect(() => {
         if (!window.history.state) window.history.replaceState({ tab: 'home', player: false }, '');
-        
         const handlePopState = (event) => {
             const state = event.state || { tab: 'home', player: false };
             setActiveTab(state.tab);
             setIsFullScreenPlayer(!!state.player);
-            
-            if (state.tab === 'home') {
-                setSelectedArtist(null);
-                setSpecialView(null);
-            }
+            if (state.tab === 'home') { setSelectedArtist(null); setSpecialView(null); }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
     const goHome = () => {
-        setActiveTab('home');
-        setSelectedArtist(null);
-        setSpecialView(null);
+        setActiveTab('home'); setSelectedArtist(null); setSpecialView(null);
         window.history.replaceState({ tab: 'home' }, '');
     };
 
     const handleNavClick = (tab) => {
         if (tab === activeTab && !selectedArtist && !specialView) return;
-        
         if (tab === 'home') {
-             window.history.back();
-             setSelectedArtist(null);
-             setSpecialView(null);
+             window.history.back(); setSelectedArtist(null); setSpecialView(null);
         } else {
             const newState = { tab, player: false };
             if (activeTab === 'home') window.history.pushState(newState, '');
             else window.history.replaceState(newState, '');
-            setActiveTab(tab);
-            setIsFullScreenPlayer(false);
-            setSelectedArtist(null);
-            setSpecialView(null);
+            setActiveTab(tab); setIsFullScreenPlayer(false); setSelectedArtist(null); setSpecialView(null);
         }
     };
 
@@ -207,10 +294,7 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const closePlayer = () => {
-        if (isLyricsExpanded) {
-            setIsLyricsExpanded(false);
-            return;
-        }
+        if (isLyricsExpanded) { setIsLyricsExpanded(false); return; }
         window.history.back();
     };
 
@@ -223,17 +307,13 @@ export default function MusicApp({ user, onLogout }) {
             setHomeFeed(recent.data);
             const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
             setDiscoveryFeed(random.data);
-            fetchLibraryData();
-            fetchAllSongs(); 
+            fetchLibraryData(); fetchAllSongs(); 
         } catch (e) { console.error(e); }
         setLoading(false);
     }
 
     async function fetchAllSongs() {
-        try {
-            const res = await axios.get(`${API_BASE}/api/songs`, authHeaders);
-            setAllSongs(res.data);
-        } catch (e) { console.error(e); }
+        try { const res = await axios.get(`${API_BASE}/api/songs`, authHeaders); setAllSongs(res.data); } catch (e) {}
     }
 
     async function fetchLibraryData() {
@@ -242,25 +322,15 @@ export default function MusicApp({ user, onLogout }) {
             setLikedSongs(liked.data);
             const pl = await axios.get(`${API_BASE}/api/playlists`, authHeaders).catch(() => ({ data: [] }));
             setPlaylists(pl.data || []);
-        } catch (e) { console.error(e); }
+        } catch (e) {}
     }
-
     useEffect(() => { if (activeTab === 'library') fetchLibraryData(); }, [activeTab]);
 
     const searchYouTube = async (term) => {
-        if (!YT_KEY) {
-            console.error("YouTube API Key missing");
-            return [];
-        }
+        if (!YT_KEY) return [];
         try {
             const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-                params: {
-                    part: 'snippet',
-                    maxResults: 15,
-                    q: term,
-                    type: 'video',
-                    key: YT_KEY,
-                }
+                params: { part: 'snippet', maxResults: 15, q: term, type: 'video', key: YT_KEY }
             });
             return response.data.items.map(item => ({
                 id: item.id.videoId,
@@ -269,10 +339,7 @@ export default function MusicApp({ user, onLogout }) {
                 coverUrl: item.snippet.thumbnails.high.url,
                 isYouTube: true 
             }));
-        } catch (error) {
-            console.error("YouTube Search Error:", error);
-            return [];
-        }
+        } catch (error) { return []; }
     };
 
     useEffect(() => {
@@ -301,12 +368,8 @@ export default function MusicApp({ user, onLogout }) {
 
     const handleShare = (song) => {
         const shareUrl = `${window.location.origin}${window.location.pathname}?songId=${song.id}`;
-        if (navigator.share) {
-            navigator.share({ title: song.title, text: `Listen to ${song.title} on Astronote`, url: shareUrl }).catch(() => {});
-        } else {
-            navigator.clipboard.writeText(shareUrl);
-            alert("Link copied to clipboard!");
-        }
+        if (navigator.share) navigator.share({ title: song.title, text: `Listen to ${song.title} on Astronote`, url: shareUrl }).catch(() => {});
+        else { navigator.clipboard.writeText(shareUrl); alert("Link copied to clipboard!"); }
     };
 
     useEffect(() => {
@@ -324,7 +387,6 @@ export default function MusicApp({ user, onLogout }) {
     const playSong = (song, contextList) => {
         if (!song) return;
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-        
         if (song.isYouTube) {
             setQueue([song.id]);
             setCurrentIndex(0);
@@ -339,10 +401,7 @@ export default function MusicApp({ user, onLogout }) {
 
     const playNow = (song) => {
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-        if (song.isYouTube) {
-            playSong(song);
-            return;
-        }
+        if (song.isYouTube) { playSong(song); return; }
         if (queue.length === 0) { playSong(song); return; }
         const newQueue = [...queue];
         const insertIndex = currentIndex + 1;
@@ -556,7 +615,7 @@ export default function MusicApp({ user, onLogout }) {
     const MainViewContent = useMemo(() => {
         return (
             <>
-                <style>{IOS_TOGGLE_STYLES}</style>
+                <style>{CUSTOM_STYLES}</style>
                 {activeTab === 'home' && (
                     <div className="tab-pane home-animate">
                         <header className="glass-header">
@@ -797,7 +856,6 @@ export default function MusicApp({ user, onLogout }) {
 
                 {activeTab === 'search' && (
                     <div className="tab-pane">
-                        {/* 1. NEW IPHONE STYLE TOGGLE */}
                         <div className="ios-toggle-container">
                             <div 
                                 className="ios-toggle-pill" 
@@ -908,16 +966,28 @@ export default function MusicApp({ user, onLogout }) {
                                     </button>
                                 </div>
                                 
-                                {/* 2. CHANGED: MOVED YOUTUBE PLAYER INTO THE ART CANVAS AREA */}
                                 <div className="art-glow-container" style={{ position: 'relative', overflow: 'hidden' }}>
                                     {currentSong.isYouTube ? (
                                         <div style={{ width: '100%', height: '100%', borderRadius: '20px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                                             {/* NOTE: We set controls: 0 to hide default youtube player controls */}
                                              <YouTube 
                                                 videoId={currentSong.id} 
+                                                onReady={(e) => { 
+                                                    playerRef.current = e.target; 
+                                                    setDuration(e.target.getDuration());
+                                                    e.target.playVideo(); 
+                                                }}
                                                 opts={{
                                                     height: '100%',
                                                     width: '100%',
-                                                    playerVars: { autoplay: 1, modestbranding: 1, controls: 1 }
+                                                    playerVars: { 
+                                                        autoplay: 1, 
+                                                        modestbranding: 1, 
+                                                        controls: 0, // HIDE NATIVE CONTROLS
+                                                        disablekb: 1,
+                                                        fs: 0,
+                                                        rel: 0
+                                                    }
                                                 }} 
                                                 style={{ width: '100%', height: '100%' }}
                                                 onEnd={handleNextSong}
@@ -936,10 +1006,39 @@ export default function MusicApp({ user, onLogout }) {
                             
                             <div className="modal-controls-wrapper" style={{ opacity: isLyricsExpanded ? 0 : 1, pointerEvents: isLyricsExpanded ? 'none' : 'auto', height: isLyricsExpanded ? 0 : 'auto', overflow: 'hidden' }}>
                                 {currentSong.isYouTube ? (
-                                     /* You can leave this empty or add a simple text indicating playing from YouTube */
-                                     <div style={{height: 80, display: 'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.5)', fontSize: 12}}>
-                                        Playing via YouTube
-                                     </div>
+                                    /* CUSTOM YOUTUBE CONTROLS */
+                                    <div className="yt-controls">
+                                        <div className="yt-progress-container">
+                                            <span>{formatTime(songCurrentTime)}</span>
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="100" 
+                                                value={songProgress} 
+                                                onChange={handleSeek}
+                                                className="yt-range"
+                                            />
+                                            <span>{formatTime(duration)}</span>
+                                        </div>
+                                        
+                                        <div className="yt-buttons">
+                                            <button className="icon-btn" onClick={toggleShuffle}>
+                                                <Shuffle size={20} color={shuffle ? "var(--neon)" : "rgba(255,255,255,0.6)"} />
+                                            </button>
+                                            <button className="icon-btn" onClick={handlePrevSong}>
+                                                <SkipBack size={28} fill="white" />
+                                            </button>
+                                            <button className="yt-play-btn" onClick={() => setPlaying(!playing)}>
+                                                {playing ? <Pause size={32} fill="black" stroke="black"/> : <Play size={32} fill="black" stroke="black" style={{ marginLeft: 4 }}/>}
+                                            </button>
+                                            <button className="icon-btn" onClick={handleNextSong}>
+                                                <SkipForward size={28} fill="white" />
+                                            </button>
+                                            <button className="icon-btn" onClick={toggleRepeat}>
+                                                {repeatMode === 'one' ? <Repeat1 size={20} color="var(--neon)" /> : <Repeat size={20} color={repeatMode === 'all' ? "var(--neon)" : "rgba(255,255,255,0.6)"} />}
+                                            </button>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <Player 
                                         song={currentSong} 
