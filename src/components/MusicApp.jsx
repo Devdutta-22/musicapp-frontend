@@ -7,6 +7,7 @@ import PlanetCard from './PlanetCard';
 import PlaylistPanel from './PlaylistPanel';
 import Leaderboard from './Leaderboard'; 
 import AIChatBot from './AIChatBot';
+// 1. ADD YOUTUBE IMPORT
 import YouTube from 'react-youtube';
 import '../App.css';
 import {
@@ -15,7 +16,8 @@ import {
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
     X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2, 
-    Youtube, Video, Image as ImageIcon
+    // 2. ADD YOUTUBE ICON
+    Youtube 
 } from "lucide-react";
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
@@ -45,12 +47,14 @@ const FEATURED_ARTISTS = [
 const SPECIAL_IDS = [250, 277, 248, 470]; 
 
 export default function MusicApp({ user, onLogout }) {
+    // --- VIEW STATE ---
     const [activeTab, setActiveTab] = useState('home');
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
-    const [searchMode, setSearchMode] = useState('local'); 
-    const [showVideo, setShowVideo] = useState(true); // Toggle between video and controls
-
+    
+    // 3. ADD SEARCH MODE STATE
+    const [searchMode, setSearchMode] = useState('local'); // 'local' or 'global' (youtube)
+    
     const [selectedArtist, setSelectedArtist] = useState(null);
     const [specialView, setSpecialView] = useState(null); 
     const [songCurrentTime, setSongCurrentTime] = useState(0);
@@ -92,6 +96,7 @@ export default function MusicApp({ user, onLogout }) {
     }, []);
 
     const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
+    // 4. ADD YOUTUBE API KEY FROM VERCEL ENV
     const YT_KEY = process.env.REACT_APP_YOUTUBE_API_KEY; 
     
     const authHeaders = useMemo(() => ({ headers: { "X-User-Id": user?.id || 0 } }), [user?.id]);
@@ -100,8 +105,11 @@ export default function MusicApp({ user, onLogout }) {
         if (selectedArtist && selectedArtist.name) {
             setIsArtistLoading(true);
             setArtistSongsFromDb([]); 
+
             axios.get(`${API_BASE}/api/songs/search?q=${encodeURIComponent(selectedArtist.name)}`, authHeaders)
-                .then(res => setArtistSongsFromDb(res.data))
+                .then(res => {
+                    setArtistSongsFromDb(res.data);
+                })
                 .catch(err => console.error("Failed to fetch artist songs", err))
                 .finally(() => setIsArtistLoading(false));
         }
@@ -115,30 +123,43 @@ export default function MusicApp({ user, onLogout }) {
 
     useEffect(() => {
         if (!window.history.state) window.history.replaceState({ tab: 'home', player: false }, '');
+        
         const handlePopState = (event) => {
             const state = event.state || { tab: 'home', player: false };
             setActiveTab(state.tab);
             setIsFullScreenPlayer(!!state.player);
-            if (state.tab === 'home') { setSelectedArtist(null); setSpecialView(null); }
+            
+            if (state.tab === 'home') {
+                setSelectedArtist(null);
+                setSpecialView(null);
+            }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
     const goHome = () => {
-        setActiveTab('home'); setSelectedArtist(null); setSpecialView(null);
+        setActiveTab('home');
+        setSelectedArtist(null);
+        setSpecialView(null);
         window.history.replaceState({ tab: 'home' }, '');
     };
 
     const handleNavClick = (tab) => {
         if (tab === activeTab && !selectedArtist && !specialView) return;
+        
         if (tab === 'home') {
-             window.history.back(); setSelectedArtist(null); setSpecialView(null);
+             window.history.back();
+             setSelectedArtist(null);
+             setSpecialView(null);
         } else {
             const newState = { tab, player: false };
             if (activeTab === 'home') window.history.pushState(newState, '');
             else window.history.replaceState(newState, '');
-            setActiveTab(tab); setIsFullScreenPlayer(false); setSelectedArtist(null); setSpecialView(null);
+            setActiveTab(tab);
+            setIsFullScreenPlayer(false);
+            setSelectedArtist(null);
+            setSpecialView(null);
         }
     };
 
@@ -149,7 +170,10 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const closePlayer = () => {
-        if (isLyricsExpanded) { setIsLyricsExpanded(false); return; }
+        if (isLyricsExpanded) {
+            setIsLyricsExpanded(false);
+            return;
+        }
         window.history.back();
     };
 
@@ -162,7 +186,8 @@ export default function MusicApp({ user, onLogout }) {
             setHomeFeed(recent.data);
             const random = await axios.get(`${API_BASE}/api/songs/discover`, authHeaders);
             setDiscoveryFeed(random.data);
-            fetchLibraryData(); fetchAllSongs(); 
+            fetchLibraryData();
+            fetchAllSongs(); 
         } catch (e) { console.error(e); }
         setLoading(false);
     }
@@ -185,41 +210,52 @@ export default function MusicApp({ user, onLogout }) {
 
     useEffect(() => { if (activeTab === 'library') fetchLibraryData(); }, [activeTab]);
 
+    // 5. DEFINE YOUTUBE SEARCH FUNCTION
     const searchYouTube = async (term) => {
-        if (!YT_KEY) return [];
+        if (!YT_KEY) {
+            console.error("YouTube API Key missing");
+            return [];
+        }
         try {
             const response = await axios.get(`https://www.googleapis.com/youtube/v3/search`, {
-                params: { part: 'snippet', maxResults: 15, q: term, type: 'video', key: YT_KEY }
+                params: {
+                    part: 'snippet',
+                    maxResults: 15,
+                    q: term,
+                    type: 'video',
+                    key: YT_KEY,
+                }
             });
             return response.data.items.map(item => ({
-                id: item.id.videoId, title: item.snippet.title, artistName: item.snippet.channelTitle,
-                coverUrl: item.snippet.thumbnails.high.url, isYouTube: true
+                id: item.id.videoId,
+                title: item.snippet.title,
+                artistName: item.snippet.channelTitle,
+                coverUrl: item.snippet.thumbnails.high.url,
+                isYouTube: true // Flag to distinguish from local songs
             }));
-        } catch (error) { console.error("YT Error:", error); return []; }
+        } catch (error) {
+            console.error("YouTube Search Error:", error);
+            return [];
+        }
     };
 
-    // QUOTA PROTECTED SEARCH
+    // 6. UPDATE SEARCH DEBOUNCE FOR GLOBAL SEARCH
     useEffect(() => {
-        if (searchMode === 'global') return; // Do nothing for global on type
         const delay = setTimeout(async () => {
             if (searchTerm.length > 1) {
-                try {
-                    const res = await axios.get(`${API_BASE}/api/songs/search?q=${searchTerm}`, authHeaders);
-                    setSearchResults(res.data);
-                } catch (e) { }
+                if (searchMode === 'global') {
+                    const ytResults = await searchYouTube(searchTerm);
+                    setSearchResults(ytResults);
+                } else {
+                    try {
+                        const res = await axios.get(`${API_BASE}/api/songs/search?q=${searchTerm}`, authHeaders);
+                        setSearchResults(res.data);
+                    } catch (e) { }
+                }
             } else { setSearchResults([]); }
         }, 500);
         return () => clearTimeout(delay);
     }, [searchTerm, searchMode]);
-
-    const triggerGlobalSearch = async () => {
-        if (searchTerm.length > 1) {
-            setLoading(true);
-            const results = await searchYouTube(searchTerm);
-            setSearchResults(results);
-            setLoading(false);
-        }
-    };
 
     function getSongById(id) {
         if (songCache[id]) return songCache[id];
@@ -233,7 +269,8 @@ export default function MusicApp({ user, onLogout }) {
         if (navigator.share) {
             navigator.share({ title: song.title, text: `Listen to ${song.title} on Astronote`, url: shareUrl }).catch(() => {});
         } else {
-            navigator.clipboard.writeText(shareUrl); alert("Link copied!");
+            navigator.clipboard.writeText(shareUrl);
+            alert("Link copied to clipboard!");
         }
     };
 
@@ -242,31 +279,43 @@ export default function MusicApp({ user, onLogout }) {
         const sharedId = params.get('songId');
         if (sharedId && allSongs.length > 0) {
             const song = allSongs.find(s => s.id === parseInt(sharedId));
-            if (song) { playSong(song, [song]); window.history.replaceState({}, document.title, window.location.pathname); }
+            if (song) {
+                playSong(song, [song]);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
         }
     }, [allSongs]);
 
     const playSong = (song, contextList) => {
         if (!song) return;
         setSongCache(prev => ({ ...prev, [song.id]: song }));
+        
+        // 7. STANDALONE PLAY FOR YOUTUBE (Clears queue for simplicity as planned)
         if (song.isYouTube) {
-            setQueue([song.id]); setCurrentIndex(0); setShowVideo(true);
+            setQueue([song.id]);
+            setCurrentIndex(0);
         } else {
             let newQueue = contextList && contextList.length > 0 ? contextList.map(s => s.id) : [song.id];
             if (shuffle) newQueue = shuffleArray(newQueue);
-            setQueue(newQueue); setCurrentIndex(newQueue.indexOf(song.id));
+            setQueue(newQueue);
+            setCurrentIndex(newQueue.indexOf(song.id));
         }
         setPlaying(true);
     };
 
     const playNow = (song) => {
         setSongCache(prev => ({ ...prev, [song.id]: song }));
-        if (song.isYouTube) { playSong(song); return; }
+        if (song.isYouTube) {
+            playSong(song);
+            return;
+        }
         if (queue.length === 0) { playSong(song); return; }
         const newQueue = [...queue];
         const insertIndex = currentIndex + 1;
         newQueue.splice(insertIndex, 0, song.id);
-        setQueue(newQueue); setCurrentIndex(insertIndex); setPlaying(true);
+        setQueue(newQueue);
+        setCurrentIndex(insertIndex);
+        setPlaying(true);
     };
 
     function shuffleArray(arr) {
@@ -282,29 +331,104 @@ export default function MusicApp({ user, onLogout }) {
     const toggleRepeat = () => setRepeatMode(prev => prev === 'off' ? 'all' : (prev === 'all' ? 'one' : 'off'));
 
     const toggleLike = async (songId) => {
-        if (currentSong?.isYouTube) return;
+        if (currentSong?.isYouTube) return; // Skip likes for standalone YT results for now
         const update = (list) => list.map(s => s.id === songId ? { ...s, liked: !s.liked } : s);
         setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update); setAllSongs(update);
+        setArtistSongsFromDb(update);
         try { await axios.post(`${API_BASE}/api/likes/${songId}`, {}, authHeaders); fetchLibraryData(); } catch (e) { }
     };
 
     const addToPlaylist = async (playlistId, songId) => {
         try {
             await axios.post(`${API_BASE}/api/playlists/${playlistId}/songs`, { songId }, authHeaders);
-            alert("Added!"); setShowPlaylistSelector(null);
-        } catch (e) { alert("Failed."); }
+            alert("Added to playlist!");
+            setShowPlaylistSelector(null);
+        } catch (e) { alert("Failed to add."); }
+    };
+
+    const playNext = (song) => {
+        if (song.isYouTube) return;
+        setSongCache(prev => ({ ...prev, [song.id]: song }));
+        if (queue.length === 0) { playSong(song); return; }
+        const newQueue = [...queue];
+        const insertIndex = currentIndex + 1;
+        const existingIdx = newQueue.indexOf(song.id);
+        if (existingIdx > -1 && existingIdx !== currentIndex) {
+            newQueue.splice(existingIdx, 1);
+            if (existingIdx < insertIndex) insertIndex--;
+        }
+        newQueue.splice(insertIndex, 0, song.id);
+        setQueue(newQueue);
+    };
+
+    const addToQueue = (song) => {
+        if (song.isYouTube) return;
+        setSongCache(prev => ({ ...prev, [song.id]: song }));
+        if (queue.length === 0) { playSong(song); return; }
+        if (!queue.includes(song.id)) setQueue([...queue, song.id]);
+    };
+
+    const clearQueue = () => {
+        if (currentIndex === -1) return;
+        if (window.confirm("Clear queue except current song?")) {
+            setQueue([queue[currentIndex]]);
+            setCurrentIndex(0);
+        }
+    };
+
+    const restoreQueue = () => {
+        if (homeFeed.length === 0) return;
+        if (window.confirm("Restore queue from Fresh Arrivals?")) {
+            const newQ = homeFeed.map(s => s.id);
+            setQueue(newQ);
+            const newIdx = newQ.indexOf(currentSong?.id);
+            setCurrentIndex(newIdx !== -1 ? newIdx : 0);
+        }
+    };
+
+    const moveItem = (oldIndex, newIndex) => {
+        if (oldIndex < 0 || oldIndex >= queue.length || newIndex < 0 || newIndex >= queue.length) return;
+        setQueue(prev => {
+            const q = [...prev];
+            const [item] = q.splice(oldIndex, 1);
+            q.splice(newIndex, 0, item);
+            if (currentIndex === oldIndex) setCurrentIndex(newIndex);
+            else if (currentIndex >= newIndex && currentIndex < oldIndex) setCurrentIndex(c => c + 1);
+            else if (currentIndex <= newIndex && currentIndex > oldIndex) setCurrentIndex(c => c - 1);
+            return q;
+        });
+    };
+
+    const removeAtIndex = (idx) => {
+        setQueue(prev => {
+            const newQ = [...prev];
+            newQ.splice(idx, 1);
+            if (idx < currentIndex) setCurrentIndex(c => c - 1);
+            return newQ;
+        });
     };
 
     const handleNextSong = () => {
         const nextIdx = currentIndex + 1;
-        if (nextIdx < queue.length) { setCurrentIndex(nextIdx); setPlaying(true); }
-        else if (repeatMode === 'all') { setCurrentIndex(0); setPlaying(true); }
-        else { setPlaying(false); }
+        if (nextIdx < queue.length) {
+            setCurrentIndex(nextIdx);
+            setPlaying(true);
+        } else if (repeatMode === 'all') {
+            setCurrentIndex(0);
+            setPlaying(true);
+        } else {
+            setPlaying(false);
+        }
     };
 
     const handlePrevSong = () => {
-        if (currentIndex > 0) { setCurrentIndex(currentIndex - 1); setPlaying(true); }
-        else if (repeatMode === 'all') { setCurrentIndex(queue.length - 1); setPlaying(true); }
+        if (currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+            setPlaying(true);
+        } else if (repeatMode === 'all') {
+            setCurrentIndex(queue.length - 1);
+            setPlaying(true);
+        }
     };
 
     const recordListen = async (duration, genre) => {
@@ -319,7 +443,9 @@ export default function MusicApp({ user, onLogout }) {
     useEffect(() => {
         if (!currentSong || !('mediaSession' in navigator)) return;
         navigator.mediaSession.metadata = new MediaMetadata({
-            title: currentSong.title, artist: currentSong.artistName, album: "Astronote Music",
+            title: currentSong.title,
+            artist: currentSong.artistName,
+            album: "Astronote Music",
             artwork: [{ src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }]
         });
         navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
@@ -328,11 +454,25 @@ export default function MusicApp({ user, onLogout }) {
         navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
     }, [currentSong, currentIndex, queue]);
 
+    useEffect(() => {
+        if (sleepTime !== null && sleepTime > 0) {
+            sleepIntervalRef.current = setTimeout(() => {
+                setSleepTime(prev => prev <= 1 ? (setPlaying(false), null) : prev - 1);
+            }, 60000);
+        }
+        return () => clearTimeout(sleepIntervalRef.current);
+    }, [sleepTime]);
+
+    // --- REUSABLE COMPONENTS ---
     const SongRow = ({ s, list, onClick }) => (
         <div className="glass-row" onClick={onClick ? onClick : () => playSong(s, list)}>
             <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb" onError={e => e.target.src = PERSON_PLACEHOLDER} alt={s.title} />
-            <div className="row-info"><div className="row-title">{s.title}</div><div className="row-artist">{s.artistName}</div></div>
+            <div className="row-info">
+                <div className="row-title">{s.title}</div>
+                <div className="row-artist">{s.artistName}</div>
+            </div>
             <div className="row-actions">
+                {/* 8. HIDE LIKE FOR YT FOR NOW */}
                 {!s.isYouTube && (
                     <button className="icon-btn" onClick={(e) => { e.stopPropagation(); toggleLike(s.id) }}>
                         <Heart size={20} fill={s.liked ? "#ff00cc" : "none"} color={s.liked ? "#ff00cc" : "rgba(255,255,255,0.5)"} />
@@ -347,6 +487,8 @@ export default function MusicApp({ user, onLogout }) {
                             <button className="menu-item" onClick={() => { playNow(s); setOpenMenuId(null); }}><PlayCircle /> Play Now</button>
                             {!s.isYouTube && (
                                 <>
+                                    <button className="menu-item" onClick={() => { playNext(s); setOpenMenuId(null); }}><ArrowRightCircle /> Play Next</button>
+                                    <button className="menu-item" onClick={() => { addToQueue(s); setOpenMenuId(null); }}><ListPlus /> Add to Queue</button>
                                     <button className="menu-item" onClick={() => { setShowPlaylistSelector(s.id); setOpenMenuId(null); }}><ListMusic /> Add to Playlist</button>
                                 </>
                             )}
@@ -354,14 +496,27 @@ export default function MusicApp({ user, onLogout }) {
                     )}
                 </div>
             </div>
+            {showPlaylistSelector === s.id && (
+                <div className="glass-dropdown-menu" style={{ position: 'fixed', zIndex: 100, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 250, padding: 10, background: 'rgba(20, 10, 40, 0.95)', border: '1px solid #ffffff44', borderRadius: 10 }}>
+                    <div className="menu-header" style={{ marginBottom: 10, borderBottom: '1px solid #ffffff22' }}>Select Playlist</div>
+                    {playlists.map(pl => (
+                        <button key={pl.id} className="menu-option" onClick={(e) => { e.stopPropagation(); addToPlaylist(pl.id, s.id); }}>{pl.name}</button>
+                    ))}
+                    <button className="menu-option danger" style={{ marginTop: 10, background: '#ff0055aa' }} onClick={(e) => { e.stopPropagation(); setShowPlaylistSelector(null); }}>Cancel</button>
+                </div>
+            )}
         </div>
     );
 
     const HomeSongCard = ({ s, list }) => (
         <div className="glass-card song-card" onClick={() => playSong(s, list)}>
             <img src={s.coverUrl || PERSON_PLACEHOLDER} onError={e => e.target.src = PERSON_PLACEHOLDER} alt={s.title} />
-            <div className="marquee-container"><p className={`song-title ${s.title.length > 15 ? 'marquee-text' : ''}`}>{s.title}</p></div>
-            <div className="marquee-container"><p className={`song-artist ${s.artistName.length > 15 ? 'marquee-text' : ''}`}>{s.artistName}</p></div>
+            <div className="marquee-container">
+                <p className={`song-title ${s.title.length > 15 ? 'marquee-text' : ''}`}>{s.title}</p>
+            </div>
+            <div className="marquee-container">
+                <p className={`song-artist ${s.artistName.length > 15 ? 'marquee-text' : ''}`}>{s.artistName}</p>
+            </div>
         </div>
     );
 
@@ -372,16 +527,22 @@ export default function MusicApp({ user, onLogout }) {
                     <div className="tab-pane home-animate">
                         <header className="glass-header">
                             <img src="/my-brand.png" alt="Logo" height="32" />
-                            <div className="header-text"><h1>Hi, {user.username}</h1><p>Welcome to your galaxy.</p></div>
+                            <div className="header-text">
+                                <h1>Hi, {user.username}</h1>
+                                <p>Welcome to your galaxy.</p>
+                            </div>
                         </header>
+
                         <div className="usp-slider">
                             {USP_FEATURES.map((feat, i) => (
                                 <div key={i} className="glass-card usp-card" style={{ background: feat.accent }}>
                                     <div className="usp-icon">{feat.icon}</div>
-                                    <h3>{feat.title}</h3><p>{feat.subtitle}</p>
+                                    <h3>{feat.title}</h3>
+                                    <p>{feat.subtitle}</p>
                                 </div>
                             ))}
                         </div>
+
                         <div className="dashboard-grid">
                             <div className="mini-card" onClick={() => handleNavClick('leaderboard')}>
                                 <div className="mini-card-bg" style={{ backgroundImage: `url(/planets/trophy.jpeg)` }}></div>
@@ -396,47 +557,241 @@ export default function MusicApp({ user, onLogout }) {
                                 <div className="mini-card-overlay"><div className="mini-card-title"><ListMusic size={16}/> Browse All Music</div></div>
                             </div>
                         </div>
+
                         <h2 className="section-title">Top Artists</h2>
                         <div className="horizontal-scroll">
                             {FEATURED_ARTISTS.map((artist, i) => (
-                                <div key={i} className="song-card" onClick={() => { setSelectedArtist(artist); setActiveTab('artist-view'); }} style={{ width: 120, marginRight: 16, cursor: 'pointer' }}>
+                                <div 
+                                    key={i} 
+                                    className="song-card"
+                                    onClick={() => { setSelectedArtist(artist); setActiveTab('artist-view'); }}
+                                    style={{ width: 120, marginRight: 16, cursor: 'pointer' }}
+                                >
                                     <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '12px', overflow: 'hidden', marginBottom: 8 }}>
-                                        <img src={artist.image} alt={artist.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 0 }} />
+                                        <img 
+                                            src={artist.image} 
+                                            alt={artist.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 0 }}
+                                        />
                                     </div>
-                                    <p className="song-title" style={{ textAlign: 'center', fontSize: 13 }}>{artist.name}</p>
+                                    <p className="song-title" style={{ textAlign: 'center', fontSize: 13 }}>
+                                        {artist.name}
+                                    </p>
                                 </div>
                             ))}
                         </div>
+
+                        <h2 className="section-title">Specials</h2>
+                        <div 
+                            className="artistic-box" 
+                            onClick={() => { setSpecialView('christmas'); setActiveTab('special-view'); }}
+                            style={{
+                                position: 'relative',
+                                height: '140px',
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                backgroundImage: 'url(/banners/christmas-banner.png)', 
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center right',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'flex-start',
+                                paddingLeft: '20px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                                marginTop: '10px'
+                            }}
+                        >
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                background: 'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 60%)',
+                                zIndex: 1
+                            }}></div>
+
+                            <div style={{ zIndex: 2, position: 'relative', textAlign: 'left' }}>
+                                <div style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    fontSize: '1.2rem', 
+                                    fontWeight: 'bold', 
+                                    color: 'white',
+                                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                }}>
+                                    <Sparkles size={18} color="#00ffff"/> Christmas Hits
+                                </div>
+                                <div style={{ 
+                                    fontSize: '0.8rem', 
+                                    color: '#ddd', 
+                                    marginTop: '4px',
+                                    fontWeight: '400'
+                                }}>
+                                    Feel the magic of the season
+                                </div>
+                            </div>
+                        </div>
+
                         <h2 className="section-title">Cosmic Arrivals</h2>
-                        <div className="horizontal-scroll">{homeFeed.map(s => <HomeSongCard key={s.id} s={s} list={homeFeed} />)}</div>
+                        <div className="horizontal-scroll">
+                            {homeFeed.map(s => <HomeSongCard key={s.id} s={s} list={homeFeed} />)}
+                        </div>
+
                         <h2 className="section-title">Discovery</h2>
-                        <div className="horizontal-scroll">{discoveryFeed.map(s => <HomeSongCard key={s.id} s={s} list={discoveryFeed} />)}</div>
+                        <div className="horizontal-scroll">
+                            {discoveryFeed.map(s => <HomeSongCard key={s.id} s={s} list={discoveryFeed} />)}
+                        </div>
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {activeTab === 'artist-view' && selectedArtist && (
+                    <div className="tab-pane">
+                        <div className="glass-header">
+                            <button className="icon-btn" onClick={goHome}><ArrowLeft size={24} color="white" /></button>
+                            <div className="header-text">
+                                <h1>{selectedArtist.name}</h1>
+                                <p>Artist Discography</p>
+                            </div>
+                        </div>
+                        <div className="list-vertical">
+                            {isArtistLoading && <div style={{textAlign:'center', padding:20, color:'#888'}}>Loading tracks...</div>}
+                            
+                            {!isArtistLoading && artistSongsFromDb.length > 0 ? (
+                                artistSongsFromDb.map(s => <SongRow key={s.id} s={s} list={artistSongsFromDb} />)
+                            ) : !isArtistLoading && (
+                                <div style={{textAlign:'center', color:'#888', marginTop: 20}}>
+                                    No songs found matching "{selectedArtist.name}".<br/>
+                                    <span style={{fontSize:12}}>Ensure artist name matches exactly in your database.</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {activeTab === 'special-view' && specialView === 'christmas' && (
+                    <div className="tab-pane">
+                        <div style={{
+                            position: 'relative',
+                            height: '160px', 
+                            width: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center', 
+                            alignItems: 'flex-start', 
+                            padding: '20px',
+                            marginBottom: '20px',
+                            boxSizing: 'border-box',
+                            backgroundImage: 'url(/banners/christmas-banner.png)', 
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center right',
+                            borderRadius: '0 0 20px 20px',
+                            overflow: 'hidden'
+                        }}>
+                            <button 
+                                className="icon-btn" 
+                                onClick={goHome} 
+                                style={{ 
+                                    position: 'absolute', 
+                                    top: '15px', 
+                                    left: '15px', 
+                                    zIndex: 10,
+                                    background: 'rgba(0,0,0,0.2)',
+                                    borderRadius: '50%',
+                                    padding: '5px'
+                                }}
+                            >
+                                <ArrowLeft size={20} color="white" />
+                            </button>
+
+                            <div style={{ 
+                                zIndex: 2, 
+                                marginTop: '20px',
+                                maxWidth: '60%',
+                                textAlign: 'left'
+                            }}>
+                                <h1 style={{ 
+                                    fontSize: '1.5rem',
+                                    fontWeight: '700', 
+                                    margin: '0 0 4px 0', 
+                                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                }}>
+                                    Christmas Specials
+                                </h1>
+                                <p style={{ 
+                                    fontSize: '0.85rem',
+                                    margin: 0, 
+                                    opacity: 0.9, 
+                                    fontWeight: '400' 
+                                }}>
+                                    Curated for the Holidays
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="list-vertical">
+                            {specialSongsList.length > 0 ? (
+                                specialSongsList.map(s => <SongRow key={s.id} s={s} list={specialSongsList} />)
+                            ) : (
+                                <div style={{textAlign:'center', padding:20, color:'#aaa', fontSize: 14}}>
+                                    No songs found matching IDs.<br/>
+                                    <span style={{fontSize:12, opacity:0.7}}>Check SPECIAL_IDS in MusicApp.jsx</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {activeTab === 'all-songs' && (
+                    <div className="tab-pane">
+                        <div className="glass-header">
+                            <button className="icon-btn" onClick={() => handleNavClick('home')}><ArrowLeft size={24} color="white" /></button>
+                            <div className="header-text"><h1>All Songs</h1><p>{allSongs.length} Tracks</p></div>
+                        </div>
+                        <div className="list-vertical">
+                            {allSongs.map(s => <SongRow key={s.id} s={s} list={allSongs} />)}
+                        </div>
                         <div className="spacer"></div>
                     </div>
                 )}
 
                 {activeTab === 'search' && (
                     <div className="tab-pane">
-                        {/* MODERN SLIDING TOGGLE */}
-                        <div className="search-toggle-container">
-                            <div className={`search-toggle-track ${searchMode}`}>
-                                <div className="toggle-thumb"></div>
-                                <button className="toggle-btn" onClick={() => setSearchMode('local')}>Library</button>
-                                <button className="toggle-btn" onClick={() => setSearchMode('global')}><Youtube size={14} color="#ff0000" /> Global</button>
-                            </div>
+                        {/* 9. ADD SEARCH MODE TOGGLE UI */}
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                            <button 
+                                className={`glass-btn ${searchMode === 'local' ? 'active' : ''}`}
+                                onClick={() => setSearchMode('local')}
+                                style={{ flex: 1, padding: '10px', fontSize: '13px' }}
+                            >
+                                Library
+                            </button>
+                            <button 
+                                className={`glass-btn ${searchMode === 'global' ? 'active' : ''}`}
+                                onClick={() => setSearchMode('global')}
+                                style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                            >
+                                <Youtube size={16} color="#ff0000" /> Global
+                            </button>
                         </div>
 
                         <div className="search-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
                             <Search size={20} className="search-icon" style={{ position: 'absolute', left: 12, zIndex: 1 }} />
                             <input 
                                 className="glass-input" 
-                                placeholder={searchMode === 'global' ? "Search YouTube & press Enter..." : "Search Library..."}
+                                placeholder={searchMode === 'global' ? "Search YouTube..." : "Search Library..."}
                                 value={searchTerm} 
                                 onChange={e => setSearchTerm(e.target.value)} 
-                                onKeyDown={(e) => e.key === 'Enter' && searchMode === 'global' && triggerGlobalSearch()}
-                                autoFocus style={{ paddingLeft: 40 }} 
+                                autoFocus 
+                                style={{ paddingLeft: 40 }} 
                             />
-                            {searchTerm && <button onClick={() => setSearchTerm('')} className="icon-btn" style={{ position: 'absolute', right: 8 }}><X size={18} color="#ccc" /></button>}
+                            {searchTerm && <button onClick={() => setSearchTerm('')} className="icon-btn" style={{ position: 'absolute', right: 8, padding: 4 }}><X size={18} color="#ccc" /></button>}
                         </div>
                         <div className="list-vertical">
                             {searchResults.map(s => <SongRow key={s.id} s={s} list={searchResults} onClick={() => playNow(s)} />)}
@@ -444,10 +799,54 @@ export default function MusicApp({ user, onLogout }) {
                         <div className="spacer"></div>
                     </div>
                 )}
-                {/* ... other tabs ... */}
+
+                {activeTab === 'upload' && (
+                    <div className="tab-pane">
+                        <h2 className="page-title">Upload Music</h2>
+                        <UploadCard onUploaded={loadFeeds} />
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {activeTab === 'ai' && <AIChatBot />}
+
+                {activeTab === 'leaderboard' && <Leaderboard user={user} />}
+
+                {activeTab === 'library' && (
+                    <div className="tab-pane">
+                        <h2 className="page-title">Your Library</h2>
+                        <div className="lib-box-container">
+                            <div className={`lib-box ${libraryTab === 'liked' ? 'active' : ''}`} onClick={() => setLibraryTab('liked')}>
+                                <Heart size={32} fill={libraryTab === 'liked' ? "#fff" : "none"} color="#fff" />
+                                <span className="lib-box-title">Liked Songs</span>
+                            </div>
+                            <div className={`lib-box ${libraryTab === 'playlists' ? 'active' : ''}`} onClick={() => setLibraryTab('playlists')}>
+                                <ListMusic size={32} color="#fff" />
+                                <span className="lib-box-title">Playlists</span>
+                            </div>
+                        </div>
+                        {libraryTab === 'liked' && (
+                            likedSongs.length === 0 
+                            ? <div style={{ textAlign: 'center', marginTop: 50, color: '#666' }}>No liked songs yet.</div>
+                            : <div className="list-vertical">{likedSongs.map(s => <SongRow key={s.id} s={s} list={likedSongs} />)}</div>
+                        )}
+                        {libraryTab === 'playlists' && (
+                            <PlaylistPanel playlists={playlists} onRefresh={fetchLibraryData} user={user} onPlayPlaylist={(pl) => { if (pl.songs?.length) playSong(pl.songs[0], pl.songs); }} />
+                        )}
+                        <div className="spacer"></div>
+                    </div>
+                )}
+
+                {activeTab === 'planet' && (
+                    <div className="tab-pane">
+                        <PlanetCard user={user} onClose={() => handleNavClick('home')} />
+                        <button className="glass-btn logout-btn" onClick={onLogout}>Sign Out</button>
+                        <div className="spacer"></div>
+                    </div>
+                )}
             </>
         );
-    }, [activeTab, searchMode, searchTerm, searchResults, homeFeed, discoveryFeed, user, loading]);
+    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode, specialSongsList, artistSongsFromDb, isArtistLoading, selectedArtist, specialView, searchMode]);
 
     return (
         <div className="glass-shell">
@@ -462,48 +861,127 @@ export default function MusicApp({ user, onLogout }) {
                             <div style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
                                 <div className="modal-header">
                                     <button onClick={closePlayer} className="icon-btn"><ChevronDown size={32} /></button>
-                                    <div style={{display:'flex', gap: 10}}>
-                                        {currentSong.isYouTube && (
-                                            <button className="icon-btn" onClick={() => setShowVideo(!showVideo)}>
-                                                {showVideo ? <ImageIcon size={24}/> : <Video size={24}/>}
-                                            </button>
-                                        )}
-                                        <button className="icon-btn" onClick={() => handleShare(currentSong)}><Share2 size={24} color="white" /></button>
-                                    </div>
+                                    <button 
+                                        className="icon-btn" 
+                                        onClick={(e) => { e.stopPropagation(); handleShare(currentSong); }}
+                                        style={{ marginLeft: 'auto', marginRight: '10px' }}
+                                    >
+                                        <Share2 size={24} color="white" />
+                                    </button>
                                 </div>
                                 <div className="art-glow-container">
                                     <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" alt="" />
-                                    {currentSong.isYouTube && showVideo ? (
-                                        <div className="youtube-overlay">
-                                            <YouTube 
-                                                videoId={currentSong.id} 
-                                                opts={{ height: '100%', width: '100%', playerVars: { autoplay: 1, modestbranding: 1, controls: 1 } }} 
-                                                onEnd={handleNextSong}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" alt="" />
-                                    )}
+                                    <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" alt="" />
                                 </div>
                                 <div className="modal-meta"><h1>{currentSong.title}</h1><p>{currentSong.artistName}</p></div>
                             </div>
                             
+                            {/* 10. CONDITIONAL PLAYER RENDERING (YT VS LOCAL) */}
                             <div className="modal-controls-wrapper" style={{ opacity: isLyricsExpanded ? 0 : 1, pointerEvents: isLyricsExpanded ? 'none' : 'auto', height: isLyricsExpanded ? 0 : 'auto', overflow: 'hidden' }}>
-                                <Player 
-                                    song={currentSong} playing={playing} onToggle={() => setPlaying(!playing)} 
-                                    onNext={handleNextSong} onPrev={handlePrevSong} onToggleLike={() => toggleLike(currentSong.id)} 
-                                    onEnded={() => { recordListen(currentSong.durationSeconds, currentSong.genre); handleNextSong(); }} 
-                                    hideCover={true} hideMeta={true} repeatMode={repeatMode} onToggleRepeat={toggleRepeat} 
-                                    shuffle={shuffle} onToggleShuffle={toggleShuffle} sleepTime={sleepTime} onSetSleepTimer={setSleepTime} 
-                                    onProgress={(c, t) => { setSongProgress(t ? (c / t) * 100 : 0); setSongCurrentTime(c); }} 
-                                />
+                                {currentSong.isYouTube ? (
+                                    <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <YouTube 
+                                            videoId={currentSong.id} 
+                                            opts={{
+                                                height: '220',
+                                                width: '100%',
+                                                playerVars: { autoplay: 1, modestbranding: 1 }
+                                            }} 
+                                            onEnd={handleNextSong}
+                                        />
+                                    </div>
+                                ) : (
+                                    <Player 
+                                        song={currentSong} 
+                                        playing={playing} 
+                                        onToggle={() => setPlaying(!playing)} 
+                                        onNext={handleNextSong} 
+                                        onPrev={handlePrevSong} 
+                                        onToggleLike={() => toggleLike(currentSong.id)} 
+                                        onEnded={() => { recordListen(currentSong.durationSeconds, currentSong.genre); handleNextSong(); }} 
+                                        hideCover={true} 
+                                        hideMeta={true} 
+                                        repeatMode={repeatMode} 
+                                        onToggleRepeat={toggleRepeat} 
+                                        shuffle={shuffle} 
+                                        onToggleShuffle={toggleShuffle} 
+                                        sleepTime={sleepTime} 
+                                        onSetSleepTimer={setSleepTime} 
+                                        onProgress={(c, t) => { setSongProgress(t ? (c / t) * 100 : 0); setSongCurrentTime(c); }} 
+                                    />
+                                )}
                             </div>
-                            {/* ... Lyrics and Up Next ... */}
+
+                            <div className="modal-section" style={isLyricsExpanded ? { position:'fixed', top:0, left:0, width:'100%', height:'100%', zIndex:2000, overflowY:'auto' } : {}}>
+                                <div className={isLyricsExpanded ? '' : 'glass-inset'}>
+                                    <LyricsPanel song={currentSong} currentTime={songCurrentTime} onExpand={() => setIsLyricsExpanded(true)} isFullMode={isLyricsExpanded} />
+                                    {isLyricsExpanded && <button className="icon-btn" onClick={() => setIsLyricsExpanded(false)} style={{ position: 'fixed', top: 20, right: 20, zIndex: 2001, background: 'rgba(255,255,255,0.1)', padding: 8 }}><Minimize2 size={24} color="white"/></button>}
+                                </div>
+                            </div>
+
+                            <div className="modal-section" style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
+                                <div className="section-header">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ListMusic size={20} color="#aaa" /><h3>Up Next</h3></div>
+                                    <div style={{ display: 'flex', gap: 10 }}><button className="icon-btn" onClick={clearQueue}><Trash2 size={18}/></button><button className="icon-btn" onClick={restoreQueue}><RotateCcw size={18}/></button></div>
+                                </div>
+                                <div className="list-vertical">
+                                    {queue.map((id, i) => {
+                                        if (i < currentIndex - 2 || i > currentIndex + 20) return null;
+                                        const s = getSongById(id);
+                                        const isCurrent = i === currentIndex;
+                                        return (
+                                            <div key={`${id}-${i}`} className={`glass-row compact ${isCurrent ? 'active-row' : ''}`}>
+                                                <img src={s.coverUrl || PERSON_PLACEHOLDER} className="row-thumb small" alt="" />
+                                                <div className="row-info"><div className="row-title" style={{ color: isCurrent ? 'var(--neon)' : 'white' }}>{s.title}</div><div className="row-artist">{s.artistName}</div></div>
+                                                <div className="row-actions">
+                                                    {!isCurrent && <button className="icon-btn" onClick={() => { setCurrentIndex(i); setPlaying(true); }}><Play size={14} /></button>}
+                                                    <button className="icon-btn" onClick={() => moveItem(i, i - 1)}><ArrowUp size={16} /></button>
+                                                    <button className="icon-btn" onClick={() => moveItem(i, i + 1)}><ArrowDown size={16} /></button>
+                                                    <button className="icon-btn" onClick={() => removeAtIndex(i)}><Trash2 size={16} color="#666" /></button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                            <div className="spacer"></div>
                         </div>
                     </div>
+                    {!isFullScreenPlayer && (
+                        <div className="glass-dock" onClick={openPlayer}>
+                            <div className="dock-left">
+                                <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="dock-thumb" alt="" />
+                                <div className="dock-info"><div className="dock-title">{currentSong.title}</div><div className="dock-artist">{currentSong.artistName}</div></div>
+                            </div>
+                            <div className="dock-right">
+                                {!currentSong.isYouTube && (
+                                    <button className="icon-btn" onClick={(e) => { e.stopPropagation(); toggleLike(currentSong.id) }}><Heart size={20} fill={currentSong.liked ? "#ff00cc" : "none"} color={currentSong.liked ? "#ff00cc" : "white"} /></button>
+                                )}
+                                <button className="icon-btn dock-play" onClick={(e) => { e.stopPropagation(); setPlaying(!playing) }}>{playing ? <Pause size={20} fill="black" /> : <Play size={20} fill="black" style={{ marginLeft: 2 }} />}</button>
+                            </div>
+                            <div className="dock-progress"><div className="dock-progress-fill" style={{ width: `${songProgress}%` }}></div></div>
+                        </div>
+                    )}
                 </>
             )}
-            {/* ... Navigation ... */}
+
+            <nav className="glass-nav" style={{ display: isLyricsExpanded ? 'none' : 'flex' }}>
+                <button className={activeTab === 'home' ? 'active' : ''} onClick={() => handleNavClick('home')}>
+                    <Home size={24} /><span>Home</span>
+                </button>
+                <button className={activeTab === 'search' ? 'active' : ''} onClick={() => handleNavClick('search')}>
+                    <Search size={24} /><span>Search</span>
+                </button>
+                <button className={activeTab === 'ai' ? 'active' : ''} onClick={() => handleNavClick('ai')}>
+                    <Bot size={24} /><span>Lyra</span>
+                </button>
+                <button className={activeTab === 'upload' ? 'active' : ''} onClick={() => handleNavClick('upload')}>
+                    <Rocket size={24} /><span>Upload</span>
+                </button>
+                <button className={activeTab === 'library' ? 'active' : ''} onClick={() => handleNavClick('library')}>
+                    <Library size={24} /><span>Library</span>
+                </button>
+            </nav>
         </div>
     );
 }
