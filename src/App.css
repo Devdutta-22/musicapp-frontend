@@ -1096,6 +1096,28 @@ button.glass-card:active,
   padding-left: 0;
   animation: scroll-left 10s linear infinite;
 }
+
+/* Only animate if the user hovers over the card (Optional - currently set to always run) */
+/* .song-card:hover .marquee-text { animation-play-state: running; } */
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(0); } /* Pause at start */
+  100% { transform: translateX(-100%); }
+}
+
+/* OPTIMIZATION: Reduce heavy effects on tablets when music plays */
+@media screen and (max-width: 1024px) {
+  .glass-card {
+    /* Disable blur on cards to save battery and performance */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* Slightly darker background to compensate for lack of blur */
+    background: rgba(20, 10, 40, 0.85) !important;
+    /* Stop any hover transforms on touch devices */
+    transform: none !important;
+  }
+}
 .search-toggle-container {
     display: flex;
     justify-content: center;
@@ -1158,24 +1180,3 @@ button.glass-card:active,
     overflow: hidden;
 }
 
-/* Only animate if the user hovers over the card (Optional - currently set to always run) */
-/* .song-card:hover .marquee-text { animation-play-state: running; } */
-
-@keyframes scroll-left {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(0); } /* Pause at start */
-  100% { transform: translateX(-100%); }
-}
-
-/* OPTIMIZATION: Reduce heavy effects on tablets when music plays */
-@media screen and (max-width: 1024px) {
-  .glass-card {
-    /* Disable blur on cards to save battery and performance */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    /* Slightly darker background to compensate for lack of blur */
-    background: rgba(20, 10, 40, 0.85) !important;
-    /* Stop any hover transforms on touch devices */
-    transform: none !important;
-  }
-}
