@@ -19,92 +19,86 @@ export default function Player({
   shuffle = false,
   onToggleShuffle,
   onProgress, 
-  sleepTime,       
+  sleepTime,        
   onSetSleepTimer,
-  onMinimize 
+  // --- NEW PROPS FOR YOUTUBE ---
+  isYouTube = false,
+  currentTime = 0,     // Passed from parent for YouTube
+  duration = 0,        // Passed from parent for YouTube
+  onSeek               // Function to handle seeking in parent
 }) {
   const audioRef = useRef(null);
   const rangeRef = useRef(null);
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  
+  // Local state for native audio
+  const [localTime, setLocalTime] = useState(0);
+  const [localDuration, setLocalDuration] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [buffering, setBuffering] = useState(false);
 
+  // Determine which values to use based on mode
+  const displayTime = isDragging ? localTime : (isYouTube ? currentTime : localTime);
+  const displayDuration = isYouTube ? duration : localDuration;
+
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
 
-  // Handle Play/Pause when 'playing' prop changes
+  // Sync Slider Background (The cool gradient)
   useEffect(() => {
-    if (audioRef.current) {
+    if (rangeRef.current) {
+        const d = displayDuration || 1; // avoid divide by zero
+        const percent = (displayTime / d) * 100;
+        rangeRef.current.style.setProperty('--seek-pos', `${percent}%`);
+    }
+  }, [displayTime, displayDuration]);
+
+  // Handle Play/Pause for LOCAL AUDIO ONLY
+  useEffect(() => {
+    if (!isYouTube && audioRef.current) {
       if (playing) {
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            console.log("Playback prevented:", error);
-          });
+          playPromise.catch((error) => console.log("Playback prevented:", error));
         }
       } else {
         audioRef.current.pause();
       }
     }
-  }, [playing]);
+  }, [playing, isYouTube]);
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-        setDuration(audioRef.current.duration);
+    if (audioRef.current && !isYouTube) {
+        setLocalDuration(audioRef.current.duration);
     }
-    updateMediaSessionPosition();
   };
 
   const handleTimeUpdate = () => {
-    if (audioRef.current && !isDragging) {
+    if (audioRef.current && !isDragging && !isYouTube) {
       const c = audioRef.current.currentTime;
       const d = audioRef.current.duration;
-      setTime(c);
+      setLocalTime(c);
       if (onProgressRef.current) onProgressRef.current(c, d);
-      updateRangeBackground(c, d);
-      if (Math.floor(c) !== Math.floor(time)) updateMediaSessionPosition();
     }
   };
 
-  const updateRangeBackground = (c, d) => {
-    if (rangeRef.current) {
-        const percent = (c / d) * 100 || 0;
-        // We set the CSS variable on the input, which inherits to the track pseudo-element
-        rangeRef.current.style.setProperty('--seek-pos', `${percent}%`);
-    }
+  const handleSeekChange = (e) => {
+    // Just update visual slider while dragging
+    setLocalTime(Number(e.target.value));
   };
 
-  const handleSeek = (e) => {
+  const handleSeekEnd = (e) => {
     const newTime = Number(e.target.value);
-    setTime(newTime);
-    updateRangeBackground(newTime, duration);
-    if (audioRef.current) {
+    
+    if (isYouTube) {
+        // Tell parent to seek YouTube
+        if (onSeek) onSeek(newTime); 
+    } else if (audioRef.current) {
+        // Seek local audio
         audioRef.current.currentTime = newTime;
+        setLocalTime(newTime);
     }
-    updateMediaSessionPosition();
-  };
-
-  const updateMediaSessionPosition = () => {
-    if ('mediaSession' in navigator && audioRef.current) {
-      const audio = audioRef.current;
-      if (!isFinite(audio.duration) || !isFinite(audio.currentTime)) return;
-      try {
-        navigator.mediaSession.setPositionState({
-          duration: audio.duration,
-          playbackRate: audio.playbackRate,
-          position: audio.currentTime,
-        });
-      } catch (e) { console.error(e); }
-    }
-  };
-
-  const formatTime = (s) => {
-    if (!s || isNaN(s)) return "0:00";
-    const min = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${min}:${sec < 10 ? '0' + sec : sec}`;
+    setIsDragging(false);
   };
 
   const handleAudioEnded = () => {
@@ -116,12 +110,15 @@ export default function Player({
     }
   };
 
+  const formatTime = (s) => {
+    if (!s || isNaN(s)) return "0:00";
+    const min = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${min}:${sec < 10 ? '0' + sec : sec}`;
+  };
+
   return (
     <div className="player-container">
-      {/* UPDATED STYLES: 
-          1. Moves styles to ::-webkit-slider-runnable-track to allow border-radius (Curves!).
-          2. Updates animation to cubic-bezier for "Fast then Slow" organic feel.
-      */}
       <style>{`
         .progress-section {
           display: flex !important;
@@ -130,8 +127,6 @@ export default function Player({
           height: auto;
           min-height: 40px; 
         }
-
-        /* 1. RESET INPUT */
         .seek-slider {
           -webkit-appearance: none;
           appearance: none;
@@ -139,46 +134,33 @@ export default function Player({
           background: transparent; 
           cursor: pointer;
           margin: 0;
-          height: 20px; /* Thumb height container */
+          height: 20px;
         }
-
-        /* 2. STYLE THE TRACK (WEBKIT) - Gives us Rounded Corners */
         .seek-slider::-webkit-slider-runnable-track {
           width: 100%;
-          height: 6px; /* Line height */
-          border-radius: 999px; /* CURVED EDGES */
-          
-          /* LAYERS: Shimmer, Progress, Base */
+          height: 6px;
+          border-radius: 999px;
           background-image: 
             linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent),
             linear-gradient(90deg, var(--cloud-blue), var(--cloud-pink)),
             linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15));
-            
-          background-size: 
-            0% 100%, /* Hidden shimmer default */
-            var(--seek-pos, 0%) 100%, 
-            100% 100%;
-            
+          background-size: 0% 100%, var(--seek-pos, 0%) 100%, 100% 100%;
           background-repeat: no-repeat;
           background-position: -100% center, left center, left center;
         }
-
-        /* 3. STYLE THE THUMB (WEBKIT) */
         .seek-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
           height: 20px; width: 20px;
           border-radius: 50%;
           background: white;
           box-shadow: 0 0 10px rgba(0,0,0,0.5);
-          /* Center thumb on the 6px track: (6 - 20) / 2 = -7px */
           margin-top: -7px; 
           transition: transform 0.1s;
         }
         .seek-slider:active::-webkit-slider-thumb {
           transform: scale(1.2);
         }
-
-        /* 4. FIREFOX SUPPORT (Duplicate styles required for separate vendor) */
+        /* Firefox Support */
         .seek-slider::-moz-range-track {
           width: 100%;
           height: 6px;
@@ -197,20 +179,10 @@ export default function Player({
           background: white;
           border: none;
         }
-
-        /* 5. BUFFERING ANIMATION - Organic Speed */
-        /* Applied to WebKit Track */
         .seek-slider.buffering-active::-webkit-slider-runnable-track {
-          /* fast-out, slow-in curve */
           animation: shimmer 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1); 
           background-size: 50% 100%, var(--seek-pos, 0%) 100%, 100% 100%;
         }
-        /* Applied to Firefox Track */
-        .seek-slider.buffering-active::-moz-range-track {
-          animation: shimmer 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
-          background-size: 50% 100%, var(--seek-pos, 0%) 100%, 100% 100%;
-        }
-
         @keyframes shimmer {
           0% { background-position: -100% center, left center, left center; }
           100% { background-position: 200% center, left center, left center; }
@@ -252,19 +224,19 @@ export default function Player({
           <input 
             type="range" 
             min="0" 
-            max={duration || 0} 
-            value={time} 
+            max={displayDuration || 0} 
+            value={displayTime} 
             className={`seek-slider ${buffering ? 'buffering-active' : ''}`} 
             ref={rangeRef}
-            onChange={handleSeek}
+            onChange={handleSeekChange}
             onMouseDown={() => setIsDragging(true)}
-            onMouseUp={() => setIsDragging(false)}
+            onMouseUp={handleSeekEnd}
             onTouchStart={() => setIsDragging(true)}
-            onTouchEnd={() => setIsDragging(false)}
+            onTouchEnd={handleSeekEnd}
           />
           <div className="time-row">
-             <span>{formatTime(time)}</span>
-             <span>{formatTime(duration)}</span>
+             <span>{formatTime(displayTime)}</span>
+             <span>{formatTime(displayDuration)}</span>
           </div>
       </div>
 
@@ -290,18 +262,21 @@ export default function Player({
          </button>
       </div>
 
-      <audio
-        ref={audioRef}
-        src={song?.streamUrl} 
-        autoPlay={playing}
-        onLoadedMetadata={handleLoadedMetadata}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={handleAudioEnded}
-        onLoadStart={() => setBuffering(true)}
-        onWaiting={() => setBuffering(true)} 
-        onPlaying={() => setBuffering(false)}
-        onCanPlay={() => setBuffering(false)}
-      />
+      {/* ONLY RENDER AUDIO TAG FOR LOCAL SONGS */}
+      {!isYouTube && (
+        <audio
+            ref={audioRef}
+            src={song?.streamUrl} 
+            autoPlay={playing}
+            onLoadedMetadata={handleLoadedMetadata}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleAudioEnded}
+            onLoadStart={() => setBuffering(true)}
+            onWaiting={() => setBuffering(true)} 
+            onPlaying={() => setBuffering(false)}
+            onCanPlay={() => setBuffering(false)}
+        />
+      )}
     </div>
   );
 }
