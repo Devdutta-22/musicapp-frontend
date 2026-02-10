@@ -15,10 +15,10 @@ import {
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
     X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2, 
-    Youtube, SkipBack, SkipForward 
+    Youtube 
 } from "lucide-react";
 
-// --- CSS FOR IOS TOGGLE & SLIDER ---
+// --- CSS FOR IOS TOGGLE ---
 const CUSTOM_STYLES = `
 .ios-toggle-container {
     position: relative;
@@ -56,55 +56,6 @@ const CUSTOM_STYLES = `
     gap: 6px;
     transition: color 0.3s ease;
     height: 100%;
-}
-/* Custom Range Slider for YouTube Controls */
-.yt-controls {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-}
-.yt-progress-container {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: #ccc;
-}
-.yt-range {
-    flex: 1;
-    -webkit-appearance: none;
-    background: rgba(255,255,255,0.2);
-    height: 4px;
-    border-radius: 2px;
-    outline: none;
-}
-.yt-range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 12px;
-    height: 12px;
-    background: #fff;
-    border-radius: 50%;
-    cursor: pointer;
-}
-.yt-buttons {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-}
-.yt-play-btn {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(255,255,255,0.3);
 }
 `;
 
@@ -190,7 +141,6 @@ export default function MusicApp({ user, onLogout }) {
     const authHeaders = useMemo(() => ({ headers: { "X-User-Id": user?.id || 0 } }), [user?.id]);
 
     // --- YOUTUBE SYNC LOGIC ---
-    
     // 1. Sync Playing State: React -> YouTube
     useEffect(() => {
         if (queue[currentIndex] && getSongById(queue[currentIndex])?.isYouTube && playerRef.current) {
@@ -221,14 +171,11 @@ export default function MusicApp({ user, onLogout }) {
         return () => clearInterval(interval);
     }, [playing, currentIndex, queue]);
 
-    // 3. Handle Manual Seek
-    const handleSeek = (e) => {
-        const newPct = parseFloat(e.target.value);
-        const newTime = (newPct / 100) * duration;
-        setSongProgress(newPct);
-        setSongCurrentTime(newTime);
+    // 3. Handle Manual Seek (Passed to Player)
+    const handleSeek = (newTime) => {
         if (playerRef.current) {
             playerRef.current.seekTo(newTime, true);
+            setSongCurrentTime(newTime);
         }
     };
 
@@ -240,7 +187,6 @@ export default function MusicApp({ user, onLogout }) {
     }
 
     // --- EXISTING LOGIC ---
-
     useEffect(() => {
         if (selectedArtist && selectedArtist.name) {
             setIsArtistLoading(true);
@@ -1005,60 +951,37 @@ export default function MusicApp({ user, onLogout }) {
                             </div>
                             
                             <div className="modal-controls-wrapper" style={{ opacity: isLyricsExpanded ? 0 : 1, pointerEvents: isLyricsExpanded ? 'none' : 'auto', height: isLyricsExpanded ? 0 : 'auto', overflow: 'hidden' }}>
-                                {currentSong.isYouTube ? (
-                                    /* CUSTOM YOUTUBE CONTROLS */
-                                    <div className="yt-controls">
-                                        <div className="yt-progress-container">
-                                            <span>{formatTime(songCurrentTime)}</span>
-                                            <input 
-                                                type="range" 
-                                                min="0" 
-                                                max="100" 
-                                                value={songProgress} 
-                                                onChange={handleSeek}
-                                                className="yt-range"
-                                            />
-                                            <span>{formatTime(duration)}</span>
-                                        </div>
-                                        
-                                        <div className="yt-buttons">
-                                            <button className="icon-btn" onClick={toggleShuffle}>
-                                                <Shuffle size={20} color={shuffle ? "var(--neon)" : "rgba(255,255,255,0.6)"} />
-                                            </button>
-                                            <button className="icon-btn" onClick={handlePrevSong}>
-                                                <SkipBack size={28} fill="white" />
-                                            </button>
-                                            <button className="yt-play-btn" onClick={() => setPlaying(!playing)}>
-                                                {playing ? <Pause size={32} fill="black" stroke="black"/> : <Play size={32} fill="black" stroke="black" style={{ marginLeft: 4 }}/>}
-                                            </button>
-                                            <button className="icon-btn" onClick={handleNextSong}>
-                                                <SkipForward size={28} fill="white" />
-                                            </button>
-                                            <button className="icon-btn" onClick={toggleRepeat}>
-                                                {repeatMode === 'one' ? <Repeat1 size={20} color="var(--neon)" /> : <Repeat size={20} color={repeatMode === 'all' ? "var(--neon)" : "rgba(255,255,255,0.6)"} />}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <Player 
-                                        song={currentSong} 
-                                        playing={playing} 
-                                        onToggle={() => setPlaying(!playing)} 
-                                        onNext={handleNextSong} 
-                                        onPrev={handlePrevSong} 
-                                        onToggleLike={() => toggleLike(currentSong.id)} 
-                                        onEnded={() => { recordListen(currentSong.durationSeconds, currentSong.genre); handleNextSong(); }} 
-                                        hideCover={true} 
-                                        hideMeta={true} 
-                                        repeatMode={repeatMode} 
-                                        onToggleRepeat={toggleRepeat} 
-                                        shuffle={shuffle} 
-                                        onToggleShuffle={toggleShuffle} 
-                                        sleepTime={sleepTime} 
-                                        onSetSleepTimer={setSleepTime} 
-                                        onProgress={(c, t) => { setSongProgress(t ? (c / t) * 100 : 0); setSongCurrentTime(c); }} 
-                                    />
-                                )}
+                                <Player 
+                                    // Shared Props
+                                    song={currentSong} 
+                                    playing={playing} 
+                                    onToggle={() => setPlaying(!playing)} 
+                                    onNext={handleNextSong} 
+                                    onPrev={handlePrevSong} 
+                                    onToggleLike={() => toggleLike(currentSong.id)} 
+                                    repeatMode={repeatMode} 
+                                    onToggleRepeat={toggleRepeat} 
+                                    shuffle={shuffle} 
+                                    onToggleShuffle={toggleShuffle} 
+                                    sleepTime={sleepTime} 
+                                    onSetSleepTimer={setSleepTime}
+                                    
+                                    // YouTube Specifics
+                                    isYouTube={currentSong.isYouTube}
+                                    currentTime={songCurrentTime} 
+                                    duration={duration}           
+                                    onSeek={handleSeek}
+                                    
+                                    // Local Specifics
+                                    onEnded={() => { 
+                                        recordListen(currentSong.durationSeconds, currentSong.genre); 
+                                        handleNextSong(); 
+                                    }} 
+                                    onProgress={(c, t) => { 
+                                        setSongProgress(t ? (c / t) * 100 : 0); 
+                                        setSongCurrentTime(c); 
+                                    }} 
+                                />
                             </div>
 
                             <div className="modal-section" style={isLyricsExpanded ? { position:'fixed', top:0, left:0, width:'100%', height:'100%', zIndex:2000, overflowY:'auto' } : {}}>
