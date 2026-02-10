@@ -7,7 +7,6 @@ import PlanetCard from './PlanetCard';
 import PlaylistPanel from './PlaylistPanel';
 import Leaderboard from './Leaderboard'; 
 import AIChatBot from './AIChatBot';
-// 1. ADD YOUTUBE IMPORT
 import YouTube from 'react-youtube';
 import '../App.css';
 import {
@@ -16,9 +15,49 @@ import {
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
     X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2, 
-    // 2. ADD YOUTUBE ICON
     Youtube 
 } from "lucide-react";
+
+// --- ADDED INTERNAL CSS FOR THE TOGGLE ---
+const IOS_TOGGLE_STYLES = `
+.ios-toggle-container {
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.ios-toggle-pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    width: calc(50% - 4px);
+    background: #ffffff;
+    border-radius: 26px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.ios-toggle-btn {
+    flex: 1;
+    z-index: 2;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: color 0.3s ease;
+    height: 100%;
+}
+`;
 
 const PERSON_PLACEHOLDER = '/person-placeholder.png';
 
@@ -52,7 +91,6 @@ export default function MusicApp({ user, onLogout }) {
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
     
-    // 3. ADD SEARCH MODE STATE
     const [searchMode, setSearchMode] = useState('local'); // 'local' or 'global' (youtube)
     
     const [selectedArtist, setSelectedArtist] = useState(null);
@@ -96,7 +134,6 @@ export default function MusicApp({ user, onLogout }) {
     }, []);
 
     const API_BASE = (process.env.REACT_APP_API_BASE_URL || "https://musicapp-o3ow.onrender.com").replace(/\/$/, "");
-    // 4. ADD YOUTUBE API KEY FROM VERCEL ENV
     const YT_KEY = process.env.REACT_APP_YOUTUBE_API_KEY; 
     
     const authHeaders = useMemo(() => ({ headers: { "X-User-Id": user?.id || 0 } }), [user?.id]);
@@ -210,7 +247,6 @@ export default function MusicApp({ user, onLogout }) {
 
     useEffect(() => { if (activeTab === 'library') fetchLibraryData(); }, [activeTab]);
 
-    // 5. DEFINE YOUTUBE SEARCH FUNCTION
     const searchYouTube = async (term) => {
         if (!YT_KEY) {
             console.error("YouTube API Key missing");
@@ -231,7 +267,7 @@ export default function MusicApp({ user, onLogout }) {
                 title: item.snippet.title,
                 artistName: item.snippet.channelTitle,
                 coverUrl: item.snippet.thumbnails.high.url,
-                isYouTube: true // Flag to distinguish from local songs
+                isYouTube: true 
             }));
         } catch (error) {
             console.error("YouTube Search Error:", error);
@@ -239,7 +275,6 @@ export default function MusicApp({ user, onLogout }) {
         }
     };
 
-    // 6. UPDATE SEARCH DEBOUNCE FOR GLOBAL SEARCH
     useEffect(() => {
         const delay = setTimeout(async () => {
             if (searchTerm.length > 1) {
@@ -290,7 +325,6 @@ export default function MusicApp({ user, onLogout }) {
         if (!song) return;
         setSongCache(prev => ({ ...prev, [song.id]: song }));
         
-        // 7. STANDALONE PLAY FOR YOUTUBE (Clears queue for simplicity as planned)
         if (song.isYouTube) {
             setQueue([song.id]);
             setCurrentIndex(0);
@@ -331,7 +365,7 @@ export default function MusicApp({ user, onLogout }) {
     const toggleRepeat = () => setRepeatMode(prev => prev === 'off' ? 'all' : (prev === 'all' ? 'one' : 'off'));
 
     const toggleLike = async (songId) => {
-        if (currentSong?.isYouTube) return; // Skip likes for standalone YT results for now
+        if (currentSong?.isYouTube) return; 
         const update = (list) => list.map(s => s.id === songId ? { ...s, liked: !s.liked } : s);
         setHomeFeed(update); setDiscoveryFeed(update); setSearchResults(update); setLikedSongs(update); setAllSongs(update);
         setArtistSongsFromDb(update);
@@ -472,7 +506,6 @@ export default function MusicApp({ user, onLogout }) {
                 <div className="row-artist">{s.artistName}</div>
             </div>
             <div className="row-actions">
-                {/* 8. HIDE LIKE FOR YT FOR NOW */}
                 {!s.isYouTube && (
                     <button className="icon-btn" onClick={(e) => { e.stopPropagation(); toggleLike(s.id) }}>
                         <Heart size={20} fill={s.liked ? "#ff00cc" : "none"} color={s.liked ? "#ff00cc" : "rgba(255,255,255,0.5)"} />
@@ -523,6 +556,7 @@ export default function MusicApp({ user, onLogout }) {
     const MainViewContent = useMemo(() => {
         return (
             <>
+                <style>{IOS_TOGGLE_STYLES}</style>
                 {activeTab === 'home' && (
                     <div className="tab-pane home-animate">
                         <header className="glass-header">
@@ -763,21 +797,25 @@ export default function MusicApp({ user, onLogout }) {
 
                 {activeTab === 'search' && (
                     <div className="tab-pane">
-                        {/* 9. ADD SEARCH MODE TOGGLE UI */}
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                        {/* 1. NEW IPHONE STYLE TOGGLE */}
+                        <div className="ios-toggle-container">
+                            <div 
+                                className="ios-toggle-pill" 
+                                style={{ left: searchMode === 'local' ? '4px' : 'calc(50% + 0px)' }}
+                            ></div>
                             <button 
-                                className={`glass-btn ${searchMode === 'local' ? 'active' : ''}`}
+                                className="ios-toggle-btn" 
                                 onClick={() => setSearchMode('local')}
-                                style={{ flex: 1, padding: '10px', fontSize: '13px' }}
+                                style={{ color: searchMode === 'local' ? '#000' : '#fff' }}
                             >
                                 Library
                             </button>
                             <button 
-                                className={`glass-btn ${searchMode === 'global' ? 'active' : ''}`}
+                                className="ios-toggle-btn" 
                                 onClick={() => setSearchMode('global')}
-                                style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                style={{ color: searchMode === 'global' ? '#000' : '#fff' }}
                             >
-                                <Youtube size={16} color="#ff0000" /> Global
+                                <Youtube size={16} color={searchMode === 'global' ? "#ff0000" : "#ff0000"} /> Global
                             </button>
                         </div>
 
@@ -869,27 +907,39 @@ export default function MusicApp({ user, onLogout }) {
                                         <Share2 size={24} color="white" />
                                     </button>
                                 </div>
-                                <div className="art-glow-container">
-                                    <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" alt="" />
-                                    <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" alt="" />
+                                
+                                {/* 2. CHANGED: MOVED YOUTUBE PLAYER INTO THE ART CANVAS AREA */}
+                                <div className="art-glow-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                                    {currentSong.isYouTube ? (
+                                        <div style={{ width: '100%', height: '100%', borderRadius: '20px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                                             <YouTube 
+                                                videoId={currentSong.id} 
+                                                opts={{
+                                                    height: '100%',
+                                                    width: '100%',
+                                                    playerVars: { autoplay: 1, modestbranding: 1, controls: 1 }
+                                                }} 
+                                                style={{ width: '100%', height: '100%' }}
+                                                onEnd={handleNextSong}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" alt="" />
+                                            <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" alt="" />
+                                        </>
+                                    )}
                                 </div>
+
                                 <div className="modal-meta"><h1>{currentSong.title}</h1><p>{currentSong.artistName}</p></div>
                             </div>
                             
-                            {/* 10. CONDITIONAL PLAYER RENDERING (YT VS LOCAL) */}
                             <div className="modal-controls-wrapper" style={{ opacity: isLyricsExpanded ? 0 : 1, pointerEvents: isLyricsExpanded ? 'none' : 'auto', height: isLyricsExpanded ? 0 : 'auto', overflow: 'hidden' }}>
                                 {currentSong.isYouTube ? (
-                                    <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                        <YouTube 
-                                            videoId={currentSong.id} 
-                                            opts={{
-                                                height: '220',
-                                                width: '100%',
-                                                playerVars: { autoplay: 1, modestbranding: 1 }
-                                            }} 
-                                            onEnd={handleNextSong}
-                                        />
-                                    </div>
+                                     /* You can leave this empty or add a simple text indicating playing from YouTube */
+                                     <div style={{height: 80, display: 'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.5)', fontSize: 12}}>
+                                        Playing via YouTube
+                                     </div>
                                 ) : (
                                     <Player 
                                         song={currentSong} 
