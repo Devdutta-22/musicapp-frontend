@@ -386,7 +386,8 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const playNext = (song) => {
-        if (song.isYouTube) return;
+        // --- REMOVED GUARD CLAUSE FOR YOUTUBE ---
+        // if (song.isYouTube) return;
         setSongCache(prev => ({ ...prev, [song.id]: song }));
         if (queue.length === 0) { playSong(song); return; }
         const newQueue = [...queue];
@@ -401,7 +402,8 @@ export default function MusicApp({ user, onLogout }) {
     };
 
     const addToQueue = (song) => {
-        if (song.isYouTube) return;
+        // --- REMOVED GUARD CLAUSE FOR YOUTUBE ---
+        // if (song.isYouTube) return;
         setSongCache(prev => ({ ...prev, [song.id]: song }));
         if (queue.length === 0) { playSong(song); return; }
         if (!queue.includes(song.id)) setQueue([...queue, song.id]);
@@ -523,12 +525,14 @@ export default function MusicApp({ user, onLogout }) {
                     {openMenuId === s.id && (
                         <div className="context-menu" onClick={e => e.stopPropagation()}>
                             <button className="menu-item" onClick={() => { playNow(s); setOpenMenuId(null); }}><PlayCircle /> Play Now</button>
+                            
+                            {/* --- CHANGED: Buttons exposed for YouTube songs too --- */}
+                            <button className="menu-item" onClick={() => { playNext(s); setOpenMenuId(null); }}><ArrowRightCircle /> Play Next</button>
+                            <button className="menu-item" onClick={() => { addToQueue(s); setOpenMenuId(null); }}><ListPlus /> Add to Queue</button>
+                            
+                            {/* Playlist still restricted to local */}
                             {!s.isYouTube && (
-                                <>
-                                    <button className="menu-item" onClick={() => { playNext(s); setOpenMenuId(null); }}><ArrowRightCircle /> Play Next</button>
-                                    <button className="menu-item" onClick={() => { addToQueue(s); setOpenMenuId(null); }}><ListPlus /> Add to Queue</button>
-                                    <button className="menu-item" onClick={() => { setShowPlaylistSelector(s.id); setOpenMenuId(null); }}><ListMusic /> Add to Playlist</button>
-                                </>
+                                <button className="menu-item" onClick={() => { setShowPlaylistSelector(s.id); setOpenMenuId(null); }}><ListMusic /> Add to Playlist</button>
                             )}
                         </div>
                     )}
