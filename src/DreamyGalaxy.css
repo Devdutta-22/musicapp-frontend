@@ -18,16 +18,15 @@ html,
 body,
 #root,
 .App {
-  background-color: var(--bg-deep);
+  background-color: var(--bg-deep) !important;
   min-height: 100%;
 }
 
 body {
-  background-color: var(--bg-deep);
-  background-image: 
+  background: 
     radial-gradient(circle at 85% 10%, rgba(216, 109, 252, 0.35) 0%, transparent 50%),
     radial-gradient(circle at 15% 25%, rgba(94, 179, 253, 0.3) 0%, transparent 45%),
-    linear-gradient(180deg, #1a0b2e 0%, #050414 100%);
+    linear-gradient(180deg, #1a0b2e 0%, #050414 100%) !important;
   
   background-attachment: fixed;
   color: white;
@@ -41,6 +40,12 @@ body {
 .App {
   width: 100%;
   min-height: 100vh;
+}
+
+.glass-shell,
+.glass-viewport,
+.tab-pane {
+  background: transparent !important;
 }
 
 /* 2. STARS - LAYER 1 */
