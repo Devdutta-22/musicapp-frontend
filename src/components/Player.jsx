@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward,
   Shuffle, Repeat, Repeat1, Heart, 
-  ChevronDown, MoreHorizontal, Timer, Moon
+  ChevronDown, MoreHorizontal, Timer, Moon, Sparkles
 } from "lucide-react";
 import '../App.css';
 
@@ -21,6 +21,9 @@ export default function Player({
   onProgress, 
   sleepTime,        
   onSetSleepTimer,
+  // --- AUTOPLAY PROPS ---
+  autoplay = true,
+  onToggleAutoplay,
   // --- NEW PROPS FOR YOUTUBE ---
   isYouTube = false,
   currentTime = 0,     // Passed from parent for YouTube
@@ -197,6 +200,31 @@ export default function Player({
                 color={song?.liked ? "#ff00cc" : "rgba(255,255,255,0.7)"} 
             />
          </button>
+
+         {onToggleAutoplay && (
+             <button 
+                 type="button"
+                 className={`icon-btn ${autoplay ? 'active' : ''}`}
+                 onClick={onToggleAutoplay}
+                 title={autoplay ? "Autoplay ON (Similar songs will play next)" : "Autoplay OFF"}
+                 style={{
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: 5,
+                     fontSize: '11px',
+                     fontWeight: 600,
+                     background: autoplay ? 'rgba(0, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.05)',
+                     padding: '4px 10px',
+                     borderRadius: '20px',
+                     border: autoplay ? '1px solid rgba(0, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                     color: autoplay ? '#00ffff' : '#aaa',
+                     cursor: 'pointer'
+                 }}
+             >
+                 <Sparkles size={13} color={autoplay ? "#00ffff" : "#aaa"} />
+                 <span>Autoplay {autoplay ? "ON" : "OFF"}</span>
+             </button>
+         )}
           
           <div className="relative-menu-container">
               <button 

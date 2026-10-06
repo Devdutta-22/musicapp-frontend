@@ -124,6 +124,11 @@ export default function MusicApp({ user, onLogout }) {
     const searchRecognitionRef = useRef(null);
     const sleepIntervalRef = useRef(null);
 
+    // --- AUTOPLAY & RECOMMENDATION ENGINE STATE ---
+    const [autoplay, setAutoplay] = useState(true);
+    const [isFetchingRecs, setIsFetchingRecs] = useState(false);
+    const recsInFlightRef = useRef(false);
+
     // --- VOICE SEARCH FUNCTIONALITY ---
     const toggleVoiceSearch = () => {
         if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
@@ -353,6 +358,87 @@ export default function MusicApp({ user, onLogout }) {
         } catch (error) { return []; }
     };
 
+    // --- SMART RECOMMENDATION ENGINE (AI Vibe + YouTube Radio) ---
+    const fetchRecommendationsForSong = async (seedSong) => {
+        if (!seedSong) return [];
+        const cleanTitle = (seedSong.title || '').replace(/[\(\[\{].*?[\)\]\}]/g, '').trim();
+        const cleanArtist = (seedSong.artistName || '').replace(/VEVO|Official|Records|Channel/gi, '').trim();
+
+        // Tier 1: Ask Lyra AI for 3-4 vibey matching songs
+        try {
+            const aiPrompt = `Return ONLY a valid JSON array of 3 songs that closely match the genre, tempo, mood, and artist style of "${cleanTitle}" by "${cleanArtist}". Do not write any markdown, no backticks, no explanatory text, just the raw JSON array in this exact schema: [{"title":"Song Name","artist":"Artist Name"}]`;
+            const chatRes = await axios.post(`${API_BASE}/api/chat`, { message: aiPrompt }, { timeout: 7000 });
+            if (chatRes.data?.reply) {
+                const raw = chatRes.data.reply.trim();
+                const jsonMatch = raw.match(/\[\s*\{[\s\S]*\}\s*\]/);
+                if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const recs = [];
+                        for (const item of parsed.slice(0, 3)) {
+                            const query = `${item.title} ${item.artist}`;
+                            const ytMatches = await searchYouTube(query);
+                            const top = ytMatches.find(m => m.id !== seedSong.id && !queue.includes(m.id));
+                            if (top) recs.push(top);
+                        }
+                        if (recs.length > 0) {
+                            return recs;
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn("AI recommendation fallback triggered:", err?.message);
+        }
+
+        // Tier 2: YouTube Radio / Mix search query
+        try {
+            const radioQuery = `${cleanArtist} ${cleanTitle} audio mix`;
+            const radioMatches = await searchYouTube(radioQuery);
+            const filtered = radioMatches.filter(m => m.id !== seedSong.id && !queue.includes(m.id));
+            if (filtered.length > 0) {
+                return filtered.slice(0, 4);
+            }
+        } catch (err) {
+            console.warn("YouTube Radio mix error:", err?.message);
+        }
+
+        // Tier 3: Local catalog random recommendations
+        const localCatalog = [...homeFeed, ...discoveryFeed, ...allSongs].filter(
+            s => s.id !== seedSong.id && !queue.includes(s.id)
+        );
+        if (localCatalog.length > 0) {
+            return shuffleArray(localCatalog).slice(0, 4);
+        }
+
+        return [];
+    };
+
+    const appendRecommendations = async (seedSong) => {
+        if (!autoplay || recsInFlightRef.current || !seedSong) return;
+        recsInFlightRef.current = true;
+        setIsFetchingRecs(true);
+        try {
+            const recs = await fetchRecommendationsForSong(seedSong);
+            if (recs && recs.length > 0) {
+                setSongCache(prev => {
+                    const next = { ...prev };
+                    recs.forEach(r => { next[r.id] = r; });
+                    return next;
+                });
+                setQueue(prev => {
+                    const newIds = recs.map(r => r.id).filter(id => !prev.includes(id));
+                    return [...prev, ...newIds];
+                });
+            }
+        } catch (e) {
+            console.warn("Could not append recommendations:", e);
+        } finally {
+            recsInFlightRef.current = false;
+            setIsFetchingRecs(false);
+        }
+    };
+
     useEffect(() => {
         const delay = setTimeout(async () => {
             if (searchTerm.length > 1) {
@@ -401,6 +487,9 @@ export default function MusicApp({ user, onLogout }) {
         if (song.isYouTube) {
             setQueue([song.id]);
             setCurrentIndex(0);
+            if (autoplay) {
+                appendRecommendations(song);
+            }
         } else {
             let newQueue = contextList && contextList.length > 0 ? contextList.map(s => s.id) : [song.id];
             if (shuffle) newQueue = shuffleArray(newQueue);
@@ -514,14 +603,47 @@ export default function MusicApp({ user, onLogout }) {
         });
     };
 
-    const handleNextSong = () => {
+    const handleNextSong = async () => {
         const nextIdx = currentIndex + 1;
         if (nextIdx < queue.length) {
             setCurrentIndex(nextIdx);
             setPlaying(true);
+            // Prefetch next batch if nearing queue end
+            if (autoplay && queue.length - nextIdx <= 2) {
+                const nextSeed = getSongById(queue[nextIdx]);
+                appendRecommendations(nextSeed);
+            }
         } else if (repeatMode === 'all') {
             setCurrentIndex(0);
             setPlaying(true);
+        } else if (autoplay) {
+            // Queue is exhausted: fetch new recommendations immediately for infinite autoplay
+            const activeSeed = currentSong || (queue[currentIndex] ? getSongById(queue[currentIndex]) : null);
+            if (activeSeed && !recsInFlightRef.current) {
+                setIsFetchingRecs(true);
+                recsInFlightRef.current = true;
+                try {
+                    const recs = await fetchRecommendationsForSong(activeSeed);
+                    if (recs && recs.length > 0) {
+                        setSongCache(prev => {
+                            const next = { ...prev };
+                            recs.forEach(r => { next[r.id] = r; });
+                            return next;
+                        });
+                        const newIds = recs.map(r => r.id);
+                        setQueue(prev => [...prev, ...newIds]);
+                        setCurrentIndex(nextIdx);
+                        setPlaying(true);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Infinite autoplay failed:", e);
+                } finally {
+                    recsInFlightRef.current = false;
+                    setIsFetchingRecs(false);
+                }
+            }
+            setPlaying(false);
         } else {
             setPlaying(false);
         }
@@ -1084,6 +1206,8 @@ export default function MusicApp({ user, onLogout }) {
                                     onToggleShuffle={toggleShuffle} 
                                     sleepTime={sleepTime} 
                                     onSetSleepTimer={setSleepTime}
+                                    autoplay={autoplay}
+                                    onToggleAutoplay={() => setAutoplay(prev => !prev)}
                                     
                                     // YouTube Specifics
                                     isYouTube={currentSong.isYouTube}
@@ -1111,9 +1235,41 @@ export default function MusicApp({ user, onLogout }) {
                             </div>
 
                             <div className="modal-section" style={{ display: isLyricsExpanded ? 'none' : 'block' }}>
-                                <div className="section-header">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ListMusic size={20} color="#aaa" /><h3>Up Next</h3></div>
-                                    <div style={{ display: 'flex', gap: 10 }}><button className="icon-btn" onClick={clearQueue}><Trash2 size={18}/></button><button className="icon-btn" onClick={restoreQueue}><RotateCcw size={18}/></button></div>
+                                <div className="section-header" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <ListMusic size={20} color="#aaa" />
+                                        <h3>Up Next</h3>
+                                        {isFetchingRecs && (
+                                            <span style={{ fontSize: '11px', color: '#00ffff', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <Sparkles size={12} className="spin-slow" />
+                                                Loading similar...
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <button 
+                                            type="button"
+                                            className="icon-btn"
+                                            onClick={() => setAutoplay(prev => !prev)}
+                                            title="Autoplay recommended tracks infinitely"
+                                            style={{
+                                                fontSize: '11px',
+                                                padding: '4px 8px',
+                                                borderRadius: '12px',
+                                                background: autoplay ? 'rgba(0, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                                border: autoplay ? '1px solid rgba(0, 255, 255, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                                color: autoplay ? '#00ffff' : '#888',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4
+                                            }}
+                                        >
+                                            <Sparkles size={12} />
+                                            <span>Autoplay</span>
+                                        </button>
+                                        <button className="icon-btn" onClick={clearQueue} title="Clear Queue"><Trash2 size={18}/></button>
+                                        <button className="icon-btn" onClick={restoreQueue} title="Restore Queue"><RotateCcw size={18}/></button>
+                                    </div>
                                 </div>
                                 <div className="list-vertical">
                                     {queue.map((id, i) => {
