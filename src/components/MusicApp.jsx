@@ -10,6 +10,7 @@ import AIChatBot from './AIChatBot';
 import YouTube from 'react-youtube';
 import FlexCarousel from './FlexCarousel';
 import CircularCarousel from './CircularCarousel';
+import OptionWheel from './OptionWheel';
 import '../App.css';
 import {
     Home, Search, Library, User, PlusCircle,
@@ -1095,9 +1096,57 @@ export default function MusicApp({ user, onLogout }) {
                                 </button>
                             </div>
                         </div>
-                        <div className="list-vertical">
-                            {searchResults.map(s => <SongRow key={s.id} s={s} list={searchResults} onClick={() => playNow(s)} />)}
-                        </div>
+                        {searchTerm.trim().length > 0 || searchResults.length > 0 ? (
+                            <div className="list-vertical">
+                                {searchResults.map(s => <SongRow key={s.id} s={s} list={searchResults} onClick={() => playNow(s)} />)}
+                                {searchTerm.trim().length > 1 && searchResults.length === 0 && (
+                                    <div style={{ textAlign: 'center', color: '#888', marginTop: 40, fontSize: 14 }}>
+                                        No tracks found for "{searchTerm}".
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 270px)', minHeight: '340px', position: 'relative' }}>
+                                <div style={{ textAlign: 'left', padding: '10px 4px 6px 4px' }}>
+                                    <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                                        ✨ Explore Genres & Vibes
+                                    </h3>
+                                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '2px 0 0 0' }}>
+                                        Scroll or tap a genre to search immediately
+                                    </p>
+                                </div>
+                                <div style={{ flex: 1, position: 'relative', width: '100%', overflow: 'hidden' }}>
+                                    <OptionWheel
+                                        items={[
+                                            'Bollywood Hits',
+                                            'Arijit Singh',
+                                            'Lo-Fi Beats',
+                                            'Romantic Hits',
+                                            'Punjabi Beats',
+                                            'Pop English',
+                                            'Hip-Hop',
+                                            'Acoustic Chill',
+                                            'Sad Melodies',
+                                            'Retro Classics',
+                                            'EDM Party',
+                                            'Indie Vibes',
+                                            'Taylor Swift',
+                                            'K.K. Classics'
+                                        ]}
+                                        defaultSelected={2}
+                                        fontSize={1.9}
+                                        spacing={1.35}
+                                        tilt={7}
+                                        curve={1.1}
+                                        fade={0.25}
+                                        inset={16}
+                                        onItemSelect={(genre) => {
+                                            setSearchTerm(genre);
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
                         <div className="spacer"></div>
                     </div>
                 )}
