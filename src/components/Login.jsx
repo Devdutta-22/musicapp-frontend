@@ -29,7 +29,10 @@ export default function Login({ onLogin }) {
       }
     } catch (err) {
       console.error(err);
-      setError(err.response?.data || 'Connection failed. Is backend running?');
+      const msg = typeof err.response?.data === 'string' 
+        ? err.response.data 
+        : (err.response?.data?.message || err.message || 'Connection failed. Is backend running?');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -37,11 +40,11 @@ export default function Login({ onLogin }) {
 
   return (
     <div style={{
-      height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100dvh', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'radial-gradient(circle at center, #1a1a2e 0%, #000 100%)', color: 'white'
     }}>
       <div style={{
-        background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)',
+        background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
         padding: '40px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.1)',
         width: '100%', maxWidth: '400px', textAlign: 'center'
       }}>
