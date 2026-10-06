@@ -18,7 +18,7 @@ import {
     Play, Pause, Heart, ChevronDown, Zap, Mic2, ListMusic, MoreHorizontal,
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
-    X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2, 
+    X, Minimize2, Maximize2, MessageCircle, Trophy, Bot, Globe, Share2, 
     Youtube, Mic
 } from "lucide-react";
 
@@ -93,6 +93,7 @@ export default function MusicApp({ user, onLogout }) {
     const [activeTab, setActiveTab] = useState('home');
     const [isFullScreenPlayer, setIsFullScreenPlayer] = useState(false);
     const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
+    const [isVideoFullScreen, setIsVideoFullScreen] = useState(false);
     const [searchMode, setSearchMode] = useState('local'); 
     
     const [selectedArtist, setSelectedArtist] = useState(null);
@@ -1257,11 +1258,22 @@ export default function MusicApp({ user, onLogout }) {
                                     </button>
                                 </div>
                                 
-                                <div className="art-glow-container" style={{ position: 'relative', overflow: 'hidden' }}>
+                                <div className="art-glow-container" style={{ position: 'relative', overflow: isVideoFullScreen ? 'visible' : 'hidden' }}>
                                     {currentSong.isYouTube ? (
-                                        <div style={{ width: '100%', height: '100%', borderRadius: '20px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-                                             {/* NOTE: We set controls: 0 to hide default youtube player controls */}
-                                             <YouTube 
+                                        <div className={`yt-video-frame ${isVideoFullScreen ? 'yt-video-fullscreen' : ''}`}>
+                                            <button
+                                                type="button"
+                                                className={`icon-btn yt-expand-btn ${isVideoFullScreen ? 'fullscreen' : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsVideoFullScreen(prev => !prev);
+                                                }}
+                                                title={isVideoFullScreen ? "Exit Fullscreen" : "Fullscreen Video"}
+                                            >
+                                                {isVideoFullScreen ? <Minimize2 size={22} color="white" /> : <Maximize2 size={18} color="white" />}
+                                            </button>
+                                            {/* NOTE: We set controls: 0 to hide default youtube player controls */}
+                                            <YouTube 
                                                 videoId={currentSong.id} 
                                                 onReady={(e) => { 
                                                     playerRef.current = e.target; 
