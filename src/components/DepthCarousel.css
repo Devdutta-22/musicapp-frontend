@@ -170,6 +170,14 @@
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
 }
 
+/* Hide side arrows and dots on mobile for clean touch gestures */
+@media (max-width: 768px) {
+  .depth-carousel__arrow,
+  .depth-carousel__dots {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .depth-carousel__card {
     will-change: auto;
