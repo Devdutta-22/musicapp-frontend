@@ -8,6 +8,7 @@ import PlaylistPanel from './PlaylistPanel';
 import Leaderboard from './Leaderboard'; 
 import AIChatBot from './AIChatBot';
 import YouTube from 'react-youtube';
+import FlexCarousel from './FlexCarousel';
 import '../App.css';
 import {
     Home, Search, Library, User, PlusCircle,
@@ -807,26 +808,28 @@ export default function MusicApp({ user, onLogout }) {
                         </div>
 
                         <h2 className="section-title">Top Artists</h2>
-                        <div className="horizontal-scroll">
-                            {FEATURED_ARTISTS.map((artist, i) => (
-                                <div 
-                                    key={i} 
-                                    className="song-card"
-                                    onClick={() => { setSelectedArtist(artist); setActiveTab('artist-view'); }}
-                                    style={{ width: 120, marginRight: 16, cursor: 'pointer' }}
-                                >
-                                    <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '12px', overflow: 'hidden', marginBottom: 8 }}>
-                                        <img 
-                                            src={artist.image} 
-                                            alt={artist.name}
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 0 }}
-                                        />
-                                    </div>
-                                    <p className="song-title" style={{ textAlign: 'center', fontSize: 13 }}>
-                                        {artist.name}
-                                    </p>
-                                </div>
-                            ))}
+                        <div style={{ width: '100%', height: '260px', position: 'relative', margin: '4px 0 20px 0' }}>
+                            <FlexCarousel 
+                                items={FEATURED_ARTISTS.map(artist => ({
+                                    src: artist.image,
+                                    title: artist.name,
+                                    alt: artist.name,
+                                    subtitle: 'Featured Artist',
+                                    artist
+                                }))}
+                                preset="liquid"
+                                intro="bloom"
+                                cardHeight={0.65}
+                                radius={18}
+                                fit="square"
+                                captions={true}
+                                onSelect={(index, item) => {
+                                    if (item?.artist) {
+                                        setSelectedArtist(item.artist);
+                                        setActiveTab('artist-view');
+                                    }
+                                }}
+                            />
                         </div>
 
                         <h2 className="section-title">Specials</h2>
