@@ -1258,9 +1258,27 @@ export default function MusicApp({ user, onLogout }) {
                                     </button>
                                 </div>
                                 
-                                <div className="art-glow-container" style={{ position: 'relative', overflow: isVideoFullScreen ? 'visible' : 'hidden' }}>
+                                <div className={`art-glow-container ${currentSong.isYouTube ? 'astro-visor-wrapper' : ''}`} style={{ position: 'relative', overflow: isVideoFullScreen ? 'visible' : 'hidden' }}>
                                     {currentSong.isYouTube ? (
-                                        <div className={`yt-video-frame ${isVideoFullScreen ? 'yt-video-fullscreen' : ''}`}>
+                                        <div className={`yt-video-frame ${isVideoFullScreen ? 'yt-video-fullscreen' : 'astro-helmet-visor'}`}>
+                                            {/* Protective click-shield: intercepts clicks, prevents navigating to YouTube, toggles play/pause */}
+                                            <div 
+                                                className="yt-protective-shield"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setPlaying(prev => !prev);
+                                                }}
+                                                title="Click to Play / Pause"
+                                            />
+
+                                            {/* Visor glass reflection & curvature specular highlight (when in square/helmet mode) */}
+                                            {!isVideoFullScreen && (
+                                                <div className="visor-glass-overlay">
+                                                    <div className="visor-reflection-top" />
+                                                    <div className="visor-reflection-bottom" />
+                                                </div>
+                                            )}
+
                                             <button
                                                 type="button"
                                                 className={`icon-btn yt-expand-btn ${isVideoFullScreen ? 'fullscreen' : ''}`}
@@ -1273,33 +1291,37 @@ export default function MusicApp({ user, onLogout }) {
                                                 {isVideoFullScreen ? <Minimize2 size={22} color="white" /> : <Maximize2 size={18} color="white" />}
                                             </button>
                                             {/* NOTE: We set controls: 0 to hide default youtube player controls */}
-                                            <YouTube 
-                                                videoId={currentSong.id} 
-                                                onReady={(e) => { 
-                                                    playerRef.current = e.target; 
-                                                    setDuration(e.target.getDuration());
-                                                    e.target.playVideo(); 
-                                                }}
-                                                onError={(error) => {
-                                                    console.warn('YouTube playback failed.', error.data);
-                                                    playerRef.current = null;
-                                                    setPlaying(false);
-                                                }}
-                                                opts={{
-                                                    height: '100%',
-                                                    width: '100%',
-                                                    playerVars: { 
-                                                        autoplay: 1, 
-                                                        modestbranding: 1, 
-                                                        controls: 0, // HIDE NATIVE CONTROLS
-                                                        disablekb: 1,
-                                                        fs: 0,
-                                                        rel: 0
-                                                    }
-                                                }} 
-                                                style={{ width: '100%', height: '100%' }}
-                                                onEnd={handleNextSong}
-                                            />
+                                            <div className="yt-iframe-scaler">
+                                                <YouTube 
+                                                    videoId={currentSong.id} 
+                                                    onReady={(e) => { 
+                                                        playerRef.current = e.target; 
+                                                        setDuration(e.target.getDuration());
+                                                        e.target.playVideo(); 
+                                                    }}
+                                                    onError={(error) => {
+                                                        console.warn('YouTube playback failed.', error.data);
+                                                        playerRef.current = null;
+                                                        setPlaying(false);
+                                                    }}
+                                                    opts={{
+                                                        height: '100%',
+                                                        width: '100%',
+                                                        playerVars: { 
+                                                            autoplay: 1, 
+                                                            modestbranding: 1, 
+                                                            controls: 0, // HIDE NATIVE CONTROLS
+                                                            disablekb: 1,
+                                                            fs: 0,
+                                                            rel: 0,
+                                                            iv_load_policy: 3,
+                                                            playsinline: 1
+                                                        }
+                                                    }} 
+                                                    style={{ width: '100%', height: '100%' }}
+                                                    onEnd={handleNextSong}
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
                                         <>
