@@ -296,6 +296,8 @@ export default function Player({
             ref={audioRef}
             src={song?.streamUrl} 
             autoPlay={playing}
+            preload="auto"
+            playsInline
             onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleAudioEnded}

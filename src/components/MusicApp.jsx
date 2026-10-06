@@ -681,12 +681,24 @@ export default function MusicApp({ user, onLogout }) {
                     title: currentSong.title,
                     artist: currentSong.artistName,
                     album: "Astronote Music",
-                    artwork: [{ src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }]
+                    artwork: [
+                        { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '96x96', type: 'image/png' },
+                        { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '128x128', type: 'image/png' },
+                        { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '192x192', type: 'image/png' },
+                        { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '256x256', type: 'image/png' },
+                        { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '384x384', type: 'image/png' },
+                        { src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }
+                    ]
                 });
             } catch (error) {
                 console.warn('Media Session metadata is unavailable.', error);
             }
         }
+
+        // Set playback state (playing vs paused)
+        try {
+            navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+        } catch (e) {}
 
         // Safari exposes Media Session partially and throws for unsupported actions.
         const registerAction = (action, handler) => {
@@ -701,9 +713,29 @@ export default function MusicApp({ user, onLogout }) {
 
         registerAction('play', () => setPlaying(true));
         registerAction('pause', () => setPlaying(false));
+        registerAction('stop', () => setPlaying(false));
         registerAction('previoustrack', handlePrevSong);
         registerAction('nexttrack', handleNextSong);
-    }, [currentSong, currentIndex, queue]);
+        registerAction('seekto', (details) => {
+            if (details.seekTime !== undefined && details.seekTime !== null) {
+                handleSeek(details.seekTime);
+            }
+        });
+    }, [currentSong, currentIndex, queue, playing]);
+
+    // Keep MediaSession positionState updated so the lock screen seekbar and timer stay in sync
+    useEffect(() => {
+        if (!('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return;
+        if (duration > 0 && songCurrentTime >= 0 && songCurrentTime <= duration) {
+            try {
+                navigator.mediaSession.setPositionState({
+                    duration: Math.max(duration, 1),
+                    playbackRate: 1,
+                    position: Math.min(Math.max(songCurrentTime, 0), duration)
+                });
+            } catch (e) {}
+        }
+    }, [songCurrentTime, duration]);
 
     useEffect(() => {
         if (sleepTime !== null && sleepTime > 0) {
@@ -1258,7 +1290,7 @@ export default function MusicApp({ user, onLogout }) {
                                     </button>
                                 </div>
                                 
-                                <div className={`art-glow-container ${currentSong.isYouTube ? 'astro-visor-wrapper' : ''}`} style={{ position: 'relative', overflow: isVideoFullScreen ? 'visible' : 'hidden' }}>
+                                <div className={`art-glow-container astro-visor-wrapper`} style={{ position: 'relative', overflow: isVideoFullScreen ? 'visible' : 'hidden' }}>
                                     {currentSong.isYouTube ? (
                                         <div className={`yt-video-frame ${isVideoFullScreen ? 'yt-video-fullscreen' : 'astro-helmet-visor'}`}>
                                             {/* Protective click-shield: intercepts clicks, prevents navigating to YouTube, toggles play/pause */}
@@ -1324,10 +1356,14 @@ export default function MusicApp({ user, onLogout }) {
                                             </div>
                                         </div>
                                     ) : (
-                                        <>
+                                        <div className="astro-helmet-visor normal-song-visor">
                                             <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-glow-bg" alt="" />
-                                            <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front" alt="" />
-                                        </>
+                                            <img src={currentSong.coverUrl || PERSON_PLACEHOLDER} className="art-front-sphere" alt="" />
+                                            <div className="visor-glass-overlay">
+                                                <div className="visor-reflection-top" />
+                                                <div className="visor-reflection-bottom" />
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
 
