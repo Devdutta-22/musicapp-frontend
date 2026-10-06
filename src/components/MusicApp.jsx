@@ -890,24 +890,22 @@ export default function MusicApp({ user, onLogout }) {
 
                         <h2 className="section-title">Cosmic Arrivals</h2>
                         {homeFeed && homeFeed.length > 0 ? (
-                            <div style={{ width: '100%', height: '240px', position: 'relative', margin: '4px 0 20px 0' }}>
-                                <CircularCarousel
+                            <div style={{ width: '100%', height: '320px', position: 'relative', margin: '4px 0 24px 0' }}>
+                                <FlexCarousel
                                     items={homeFeed.map(s => ({
                                         src: s.coverUrl || PERSON_PLACEHOLDER,
                                         title: s.title || 'Untitled',
                                         subtitle: s.artistName || 'Unknown',
+                                        alt: s.title || 'Song Cover',
                                         song: s
                                     }))}
-                                    preset="orbit"
-                                    intro="rise"
-                                    cardWidth={160}
-                                    aspectRatio={1}
-                                    gap={20}
-                                    speed={12}
-                                    autoplay="drift"
+                                    preset="liquid"
+                                    intro="bloom"
+                                    cardHeight={0.72}
+                                    radius={20}
+                                    fit="square"
                                     captions={true}
-                                    cornerRadius={16}
-                                    onItemClick={(item) => {
+                                    onSelect={(index, item) => {
                                         if (item?.song) {
                                             playSong(item.song, homeFeed);
                                         }
