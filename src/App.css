@@ -943,8 +943,19 @@ button.glass-card:active,
 /* States */
 .cosmic-core.idle { animation: pulseCore 4s infinite ease-in-out; }
 .cosmic-core.listening { transform: scale(1.2); box-shadow: 0 0 80px #ff00cc; background: radial-gradient(circle, #fff 0%, #ff00cc 30%, #000 70%); }
+.cosmic-core.humming { 
+  animation: pulseMelody 0.8s infinite alternate ease-in-out; 
+  transform: scale(1.25); 
+  box-shadow: 0 0 90px #00ffff, 0 0 40px #ff00cc, inset 0 0 30px #fff; 
+  background: radial-gradient(circle, #fff 0%, #00ffff 35%, #ff00cc 75%); 
+}
 .cosmic-core.speaking { animation: vibrateCore 0.2s infinite; box-shadow: 0 0 100px #9146ff; }
 .cosmic-core.processing { animation: spinCore 2s linear infinite; border: 2px dashed rgba(255,255,255,0.5); background: #000; }
+
+@keyframes pulseMelody {
+  0% { transform: scale(1.15) rotate(-3deg); filter: hue-rotate(0deg); }
+  100% { transform: scale(1.3) rotate(3deg); filter: hue-rotate(60deg); }
+}
 
 .status-text {
   margin-top: 30px;

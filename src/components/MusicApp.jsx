@@ -15,7 +15,7 @@ import {
     ListPlus, PlayCircle, ArrowRightCircle,
     Shuffle, Repeat, Repeat1, Trash2, ArrowUp, ArrowDown, Telescope, Sparkles, Sparkle,RotateCcw, ArrowLeft, Rocket, Orbit,
     X, Minimize2, MessageCircle, Trophy, Bot, Globe, Share2, 
-    Youtube 
+    Youtube, Mic
 } from "lucide-react";
 
 // --- CSS FOR IOS TOGGLE ---
@@ -120,7 +120,72 @@ export default function MusicApp({ user, onLogout }) {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isListeningSearch, setIsListeningSearch] = useState(false);
+    const searchRecognitionRef = useRef(null);
     const sleepIntervalRef = useRef(null);
+
+    // --- VOICE SEARCH FUNCTIONALITY ---
+    const toggleVoiceSearch = () => {
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            alert("Voice search is not supported in this browser. Please use Chrome or Safari 14.1+.");
+            return;
+        }
+        if (isListeningSearch) {
+            if (searchRecognitionRef.current) {
+                try { searchRecognitionRef.current.stop(); } catch (e) {}
+            }
+            setIsListeningSearch(false);
+            return;
+        }
+
+        try {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const rec = new SpeechRecognition();
+            rec.continuous = false;
+            rec.interimResults = false;
+            rec.lang = 'en-US';
+
+            rec.onstart = () => setIsListeningSearch(true);
+            rec.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                if (text) {
+                    setSearchTerm(text.trim());
+                }
+                setIsListeningSearch(false);
+            };
+            rec.onerror = (err) => {
+                console.warn("Voice search error:", err);
+                setIsListeningSearch(false);
+            };
+            rec.onend = () => setIsListeningSearch(false);
+
+            searchRecognitionRef.current = rec;
+            rec.start();
+        } catch (err) {
+            console.warn("Could not start voice search:", err);
+            setIsListeningSearch(false);
+        }
+    };
+
+    // --- PLAY SONG FROM LYRA'S HUMMING DETECTION ---
+    const handlePlayGuessedSong = (songTitleOrQuery) => {
+        if (!songTitleOrQuery) return;
+        const clean = songTitleOrQuery.replace(/^\[(?:PLAY_MATCH|PLAY_SONG|GUESS):\s*|\]$/gi, '').trim();
+        // Look in loaded songs
+        const pool = [...allSongs, ...homeFeed, ...discoveryFeed];
+        const match = pool.find(s => 
+            s.title?.toLowerCase().includes(clean.toLowerCase()) || 
+            clean.toLowerCase().includes(s.title?.toLowerCase())
+        );
+        if (match) {
+            playSong(match, [match]);
+        } else {
+            // Fallback: populate search and switch to global YouTube search
+            setSearchTerm(clean);
+            setSearchMode('global');
+            setActiveTab('search');
+        }
+    };
 
     // --- YOUTUBE CONTROL REFS ---
     const playerRef = useRef(null);
@@ -849,13 +914,35 @@ export default function MusicApp({ user, onLogout }) {
                             <Search size={20} className="search-icon" style={{ position: 'absolute', left: 12, zIndex: 1 }} />
                             <input 
                                 className="glass-input" 
-                                placeholder={searchMode === 'global' ? "Search YouTube..." : "Search Library..."}
+                                placeholder={isListeningSearch ? "🎙️ Listening... speak now..." : (searchMode === 'global' ? "Search YouTube..." : "Search Library...")}
                                 value={searchTerm} 
                                 onChange={e => setSearchTerm(e.target.value)} 
                                 autoFocus 
-                                style={{ paddingLeft: 40 }} 
+                                style={{ paddingLeft: 40, paddingRight: 80 }} 
                             />
-                            {searchTerm && <button onClick={() => setSearchTerm('')} className="icon-btn" style={{ position: 'absolute', right: 8, padding: 4 }}><X size={18} color="#ccc" /></button>}
+                            <div style={{ position: 'absolute', right: 8, display: 'flex', alignItems: 'center', gap: 4, zIndex: 2 }}>
+                                {searchTerm && (
+                                    <button onClick={() => setSearchTerm('')} className="icon-btn" style={{ padding: 4 }} title="Clear">
+                                        <X size={18} color="#ccc" />
+                                    </button>
+                                )}
+                                <button 
+                                    type="button"
+                                    className="icon-btn" 
+                                    onClick={toggleVoiceSearch}
+                                    title={isListeningSearch ? "Stop voice search" : "Voice search"}
+                                    style={{
+                                        padding: '6px',
+                                        borderRadius: '50%',
+                                        background: isListeningSearch ? 'rgba(255, 0, 85, 0.35)' : 'rgba(255, 255, 255, 0.08)',
+                                        border: isListeningSearch ? '1px solid #ff0055' : '1px solid rgba(255, 255, 255, 0.15)',
+                                        animation: isListeningSearch ? 'pulseMic 1s infinite' : 'none',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <Mic size={18} color={isListeningSearch ? "#ff0055" : "#00ffff"} />
+                                </button>
+                            </div>
                         </div>
                         <div className="list-vertical">
                             {searchResults.map(s => <SongRow key={s.id} s={s} list={searchResults} onClick={() => playNow(s)} />)}
@@ -872,7 +959,12 @@ export default function MusicApp({ user, onLogout }) {
                     </div>
                 )}
 
-                {activeTab === 'ai' && <AIChatBot />}
+                {activeTab === 'ai' && (
+                    <AIChatBot 
+                        onPlaySong={handlePlayGuessedSong} 
+                        allSongs={allSongs}
+                    />
+                )}
 
                 {activeTab === 'leaderboard' && <Leaderboard user={user} />}
 
@@ -910,7 +1002,7 @@ export default function MusicApp({ user, onLogout }) {
                 )}
             </>
         );
-    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode, specialSongsList, artistSongsFromDb, isArtistLoading, selectedArtist, specialView, searchMode]);
+    }, [activeTab, homeFeed, discoveryFeed, allSongs, searchResults, libraryTab, likedSongs, playlists, user, searchTerm, isListeningSearch, openMenuId, showPlaylistSelector, queue, currentIndex, shuffle, repeatMode, specialSongsList, artistSongsFromDb, isArtistLoading, selectedArtist, specialView, searchMode]);
 
     return (
         <div className="glass-shell">
