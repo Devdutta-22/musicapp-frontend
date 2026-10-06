@@ -1118,28 +1118,52 @@ export default function MusicApp({ user, onLogout }) {
                                 <div style={{ flex: 1, position: 'relative', width: '100%', overflow: 'hidden' }}>
                                     <OptionWheel
                                         items={[
-                                            'Bollywood Hits',
-                                            'Arijit Singh',
-                                            'Lo-Fi Beats',
-                                            'Romantic Hits',
-                                            'Punjabi Beats',
-                                            'Pop English',
-                                            'Hip-Hop',
-                                            'Acoustic Chill',
-                                            'Sad Melodies',
-                                            'Retro Classics',
-                                            'EDM Party',
-                                            'Indie Vibes',
-                                            'Taylor Swift',
-                                            'K.K. Classics'
+                                            'Bollywood Romance',
+                                            'Arijit Singh Melodies',
+                                            'Midnight Lo-Fi',
+                                            'The Weeknd Synthwave',
+                                            'Punjabi Party Bangers',
+                                            'K.K. Nostalgia',
+                                            'Taylor Swift Anthems',
+                                            'Shreya Ghoshal Classics',
+                                            'Atif Aslam Acoustic',
+                                            'Late Night Hip-Hop',
+                                            '90s Bollywood Retro',
+                                            'A.R. Rahman Magic',
+                                            'EDM Festival Drops',
+                                            'Indie Pop Dreams',
+                                            'Acoustic Coffeehouse',
+                                            'Drake & Travis Scott',
+                                            'Sad Broken Heart Vibes',
+                                            'Sonu Nigam Evergreen',
+                                            'Chill Rain Beats',
+                                            'Dua Lipa Disco Pop',
+                                            'Coke Studio Gems',
+                                            'Gym Energy Boost',
+                                            'Sunidhi Chauhan Dance',
+                                            'Sufi Soul Journey',
+                                            'Kishore Kumar Golden Era',
+                                            'Armaan Malik Pop',
+                                            'Mohit Chauhan Mountain Vibes',
+                                            'Deep House Sunset',
+                                            'Ariana Grande Vocals',
+                                            'Ghazal Evenings',
+                                            'Phonk & Drift Beats',
+                                            'Justin Bieber R&B',
+                                            'Bollywood Item Bangers',
+                                            'Dreamy Bedroom Pop',
+                                            'Old School 80s Rock',
+                                            'Road Trip Playlist'
                                         ]}
-                                        defaultSelected={2}
-                                        fontSize={1.9}
-                                        spacing={1.35}
+                                        defaultSelected={3}
+                                        fontSize={1.8}
+                                        spacing={1.3}
                                         tilt={7}
                                         curve={1.1}
                                         fade={0.25}
                                         inset={16}
+                                        showLever={true}
+                                        loop={true}
                                         onItemSelect={(genre) => {
                                             setSearchTerm(genre);
                                         }}

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useImperativeHandle, forwardRef } from 'react';
 import './OptionWheel.css';
 
 const DEFAULT_ITEMS = [
@@ -16,7 +16,7 @@ const DEFAULT_ITEMS = [
   'Sad Vibes'
 ];
 
-const OptionWheel = ({
+const OptionWheel = forwardRef(({
   items = DEFAULT_ITEMS,
   defaultSelected = 2,
   onChange,
@@ -33,12 +33,13 @@ const OptionWheel = ({
   minOpacity = 0.05,
   smoothing = 200,
   inset = 24,
-  loop = false,
+  loop = true,
   draggable = true,
   soundUrl = '',
   soundVolume = 0.5,
+  showLever = true,
   className = ''
-}) => {
+}, ref) => {
   const rootRef = useRef(null);
   const itemRefs = useRef([]);
   const posRef = useRef(defaultSelected);
@@ -55,8 +56,11 @@ const OptionWheel = ({
   const audioRef = useRef(null);
   const audioUrlRef = useRef('');
   const lastTickRef = useRef(0);
+  
   const [selectedIndex, setSelectedIndex] = useState(defaultSelected);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [leverPulled, setLeverPulled] = useState(false);
 
   const remPx = typeof window !== 'undefined' ? parseFloat(getComputedStyle(document.documentElement).fontSize) || 16 : 16;
 
@@ -170,10 +174,56 @@ const OptionWheel = ({
     [startLoop, playTick]
   );
 
+  // --- ROULETTE LEVER SPIN ACTION ---
+  const spinRoulette = useCallback(() => {
+    if (isSpinning) return;
+    setIsSpinning(true);
+    setLeverPulled(true);
+
+    // Click feedback
+    if (navigator.vibrate) navigator.vibrate(50);
+
+    const cfg = cfgRef.current;
+    const cur = targetRef.current;
+    
+    // Choose a random distance: 2 to 4 full rotations + random index offset
+    const randomLaps = 2 + Math.floor(Math.random() * 3);
+    const randomIndex = Math.floor(Math.random() * cfg.count);
+    const totalSteps = randomLaps * cfg.count + randomIndex;
+    
+    // Animate smoothly to high velocity then ease down like a casino roulette wheel
+    const finalTarget = Math.round(cur + totalSteps);
+    
+    // Slightly lengthen smoothing during roulette spin for cinematic decelerating feel
+    const prevSmoothing = cfg.smoothing;
+    cfg.smoothing = 450;
+    
+    applyTarget(finalTarget, true);
+
+    setTimeout(() => {
+      setLeverPulled(false);
+    }, 400);
+
+    // After deceleration settles, finalize selection and trigger action
+    setTimeout(() => {
+      cfg.smoothing = prevSmoothing;
+      setIsSpinning(false);
+      const chosenIdx = ((Math.round(finalTarget) % cfg.count) + cfg.count) % cfg.count;
+      if (onItemSelectRef.current) {
+        onItemSelectRef.current(cfg.items[chosenIdx], chosenIdx);
+      }
+    }, 1800);
+  }, [isSpinning, applyTarget]);
+
+  useImperativeHandle(ref, () => ({
+    spin: spinRoulette
+  }));
+
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
     const onWheel = e => {
+      if (isSpinning) return;
       e.preventDefault();
       const cfg = cfgRef.current;
       const delta = e.deltaMode === 1 ? e.deltaY * 24 : e.deltaY;
@@ -187,14 +237,14 @@ const OptionWheel = ({
       el.removeEventListener('wheel', onWheel);
       if (wheelTimerRef.current) clearTimeout(wheelTimerRef.current);
     };
-  }, [applyTarget]);
+  }, [applyTarget, isSpinning]);
 
   const handlePointerDown = useCallback(e => {
-    if (!cfgRef.current.draggable) return;
+    if (!cfgRef.current.draggable || isSpinning) return;
     dragRef.current = { y: e.clientY, start: targetRef.current, id: e.pointerId };
     dragMovedRef.current = false;
     setIsDragging(true);
-  }, []);
+  }, [isSpinning]);
 
   const handlePointerMove = useCallback(
     e => {
@@ -219,7 +269,7 @@ const OptionWheel = ({
 
   const handleItemClick = useCallback(
     index => {
-      if (dragMovedRef.current) return;
+      if (dragMovedRef.current || isSpinning) return;
       const cfg = cfgRef.current;
       const cur = targetRef.current;
       let d = index - (((cur % cfg.count) + cfg.count) % cfg.count);
@@ -228,14 +278,14 @@ const OptionWheel = ({
         else if (d < -cfg.count / 2) d += cfg.count;
       }
       applyTarget(cur + d, true);
-      // Trigger instant genre search on click
       onItemSelectRef.current?.(cfg.items[index], index);
     },
-    [applyTarget]
+    [applyTarget, isSpinning]
   );
 
   const handleKeyDown = useCallback(
     e => {
+      if (isSpinning) return;
       let delta = null;
       if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') delta = -1;
       else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') delta = 1;
@@ -243,7 +293,7 @@ const OptionWheel = ({
       e.preventDefault();
       applyTarget(Math.round(targetRef.current) + delta, true);
     },
-    [applyTarget]
+    [applyTarget, isSpinning]
   );
 
   useEffect(() => {
@@ -260,40 +310,58 @@ const OptionWheel = ({
   );
 
   return (
-    <div
-      ref={rootRef}
-      role="listbox"
-      tabIndex={0}
-      aria-label="Option wheel"
-      className={`option-wheel${side === 'right' ? ' option-wheel--right' : ''}${isDragging ? ' option-wheel--dragging' : ''}${className ? ` ${className}` : ''}`}
-      style={{
-        '--ow-text-color': textColor,
-        '--ow-active-color': activeColor,
-        '--ow-font-size': `${fontSize}rem`,
-        '--ow-inset': `${inset}px`
-      }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerEnd}
-      onPointerCancel={handlePointerEnd}
-      onKeyDown={handleKeyDown}
-    >
-      {items.map((label, index) => (
-        <div
-          key={`${label}-${index}`}
-          ref={el => {
-            itemRefs.current[index] = el;
-          }}
-          role="option"
-          aria-selected={selectedIndex === index}
-          className={`option-wheel__item${selectedIndex === index ? ' option-wheel__item--selected' : ''}`}
-          onClick={() => handleItemClick(index)}
-        >
-          {label}
+    <div className="option-wheel-container">
+      <div
+        ref={rootRef}
+        role="listbox"
+        tabIndex={0}
+        aria-label="Option wheel"
+        className={`option-wheel${side === 'right' ? ' option-wheel--right' : ''}${isDragging ? ' option-wheel--dragging' : ''}${className ? ` ${className}` : ''}`}
+        style={{
+          '--ow-text-color': textColor,
+          '--ow-active-color': activeColor,
+          '--ow-font-size': `${fontSize}rem`,
+          '--ow-inset': `${inset}px`
+        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onKeyDown={handleKeyDown}
+      >
+        {items.map((label, index) => (
+          <div
+            key={`${label}-${index}`}
+            ref={el => {
+              itemRefs.current[index] = el;
+            }}
+            role="option"
+            aria-selected={selectedIndex === index}
+            className={`option-wheel__item${selectedIndex === index ? ' option-wheel__item--selected' : ''}`}
+            onClick={() => handleItemClick(index)}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+
+      {showLever && (
+        <div className="wheel-lever-rig" onClick={spinRoulette} title="Pull Lever to Spin Genre Roulette!">
+          <div className="wheel-lever-housing">
+            <div className={`wheel-lever-arm ${leverPulled ? 'pulled' : ''}`}>
+              <div className="wheel-lever-knob">
+                <span className="knob-glow"></span>
+              </div>
+            </div>
+            <div className="wheel-lever-base"></div>
+          </div>
+          <div className="wheel-lever-label">
+            {isSpinning ? 'SPINNING...' : 'PULL TO SPIN'}
+          </div>
         </div>
-      ))}
+      )}
     </div>
   );
-};
+});
 
 export default OptionWheel;

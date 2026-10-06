@@ -1,3 +1,12 @@
+.option-wheel-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
 .option-wheel {
   --ow-text-color: #a6a6a6;
   --ow-active-color: #ffffff;
@@ -5,7 +14,7 @@
   --ow-inset: 20px;
 
   position: relative;
-  width: 100%;
+  flex: 1;
   height: 100%;
   overflow: hidden;
   cursor: grab;
@@ -47,4 +56,102 @@
   font-weight: 700;
   color: var(--neon, #00ffff);
   text-shadow: 0 0 20px rgba(0, 255, 255, 0.8), 0 0 40px rgba(255, 0, 204, 0.4);
+}
+
+/* --- ROULETTE LEVER RIG --- */
+.wheel-lever-rig {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  z-index: 10;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.wheel-lever-housing {
+  position: relative;
+  width: 48px;
+  height: 130px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.wheel-lever-base {
+  width: 32px;
+  height: 22px;
+  background: linear-gradient(180deg, #3a2254, #1b0e2b);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px 6px 10px 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  z-index: 2;
+}
+
+.wheel-lever-arm {
+  position: absolute;
+  bottom: 12px;
+  width: 6px;
+  height: 80px;
+  background: linear-gradient(180deg, #fff, #999 50%, #444);
+  border-radius: 3px;
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  z-index: 3;
+}
+
+.wheel-lever-arm.pulled {
+  transform: rotate(62deg);
+  transition: transform 0.15s ease-in;
+}
+
+.wheel-lever-knob {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff007f, #99004d 70%, #440022);
+  box-shadow: 0 0 16px rgba(255, 0, 128, 0.8), inset 0 2px 5px rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.knob-glow {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  opacity: 0.7;
+  filter: blur(1px);
+}
+
+.wheel-lever-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #00ffff;
+  background: rgba(0, 255, 255, 0.1);
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+  pointer-events: none;
+  animation: pulseNeon 2s infinite ease-in-out;
+}
+
+@keyframes pulseNeon {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
 }
