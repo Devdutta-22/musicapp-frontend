@@ -11,6 +11,7 @@ import YouTube from 'react-youtube';
 import FlexCarousel from './FlexCarousel';
 import CircularCarousel from './CircularCarousel';
 import OptionWheel from './OptionWheel';
+import DepthCarousel from './DepthCarousel';
 import '../App.css';
 import {
     Home, Search, Library, User, PlusCircle,
@@ -891,22 +892,28 @@ export default function MusicApp({ user, onLogout }) {
 
                         <h2 className="section-title">Cosmic Arrivals</h2>
                         {homeFeed && homeFeed.length > 0 ? (
-                            <div style={{ width: '100%', height: '320px', position: 'relative', margin: '4px 0 24px 0' }}>
-                                <FlexCarousel
+                            <div style={{ width: '100%', height: '360px', position: 'relative', margin: '4px 0 24px 0' }}>
+                                <DepthCarousel
                                     items={homeFeed.map(s => ({
-                                        src: s.coverUrl || PERSON_PLACEHOLDER,
+                                        image: s.coverUrl || PERSON_PLACEHOLDER,
+                                        alt: s.title || 'Track Cover',
                                         title: s.title || 'Untitled',
-                                        subtitle: s.artistName || 'Unknown',
-                                        alt: s.title || 'Song Cover',
+                                        subtitle: s.artistName || 'Unknown Artist',
                                         song: s
                                     }))}
-                                    preset="liquid"
-                                    intro="bloom"
-                                    cardHeight={0.72}
+                                    cardWidth={240}
+                                    cardHeight={290}
                                     radius={20}
-                                    fit="square"
-                                    captions={true}
-                                    onSelect={(index, item) => {
+                                    depth={180}
+                                    spread={80}
+                                    tilt={18}
+                                    tiltDirection="right"
+                                    perspective={1200}
+                                    visibleCards={3}
+                                    autoplay={false}
+                                    showControls={true}
+                                    showIndicators={true}
+                                    onItemClick={(item) => {
                                         if (item?.song) {
                                             playSong(item.song, homeFeed);
                                         }
