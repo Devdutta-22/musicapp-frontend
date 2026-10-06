@@ -9,6 +9,7 @@ import Leaderboard from './Leaderboard';
 import AIChatBot from './AIChatBot';
 import YouTube from 'react-youtube';
 import FlexCarousel from './FlexCarousel';
+import CircularCarousel from './CircularCarousel';
 import '../App.css';
 import {
     Home, Search, Library, User, PlusCircle,
@@ -888,9 +889,36 @@ export default function MusicApp({ user, onLogout }) {
                         </div>
 
                         <h2 className="section-title">Cosmic Arrivals</h2>
-                        <div className="horizontal-scroll">
-                            {homeFeed.map(s => <HomeSongCard key={s.id} s={s} list={homeFeed} />)}
-                        </div>
+                        {homeFeed && homeFeed.length > 0 ? (
+                            <div style={{ width: '100%', height: '240px', position: 'relative', margin: '4px 0 20px 0' }}>
+                                <CircularCarousel
+                                    items={homeFeed.map(s => ({
+                                        src: s.coverUrl || PERSON_PLACEHOLDER,
+                                        title: s.title || 'Untitled',
+                                        subtitle: s.artistName || 'Unknown',
+                                        song: s
+                                    }))}
+                                    preset="orbit"
+                                    intro="rise"
+                                    cardWidth={160}
+                                    aspectRatio={1}
+                                    gap={20}
+                                    speed={12}
+                                    autoplay="drift"
+                                    captions={true}
+                                    cornerRadius={16}
+                                    onItemClick={(item) => {
+                                        if (item?.song) {
+                                            playSong(item.song, homeFeed);
+                                        }
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="horizontal-scroll">
+                                {homeFeed.map(s => <HomeSongCard key={s.id} s={s} list={homeFeed} />)}
+                            </div>
+                        )}
 
                         <h2 className="section-title">Discovery</h2>
                         <div className="horizontal-scroll">
