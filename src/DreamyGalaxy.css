@@ -14,6 +14,14 @@
 }
 
 /* 1. THE ATMOSPHERE BACKGROUND */
+html,
+body,
+#root,
+.App {
+  background-color: var(--bg-deep);
+  min-height: 100%;
+}
+
 body {
   background-color: var(--bg-deep);
   background-image: 
@@ -27,6 +35,12 @@ body {
   position: relative;
   overflow-x: hidden; /* Prevent scrollbars from stars */
   margin: 0;
+}
+
+#root,
+.App {
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* 2. STARS - LAYER 1 */

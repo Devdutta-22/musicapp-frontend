@@ -483,16 +483,34 @@ export default function MusicApp({ user, onLogout }) {
 
     useEffect(() => {
         if (!currentSong || !('mediaSession' in navigator)) return;
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: currentSong.title,
-            artist: currentSong.artistName,
-            album: "Astronote Music",
-            artwork: [{ src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }]
-        });
-        navigator.mediaSession.setActionHandler('play', () => setPlaying(true));
-        navigator.mediaSession.setActionHandler('pause', () => setPlaying(false));
-        navigator.mediaSession.setActionHandler('previoustrack', handlePrevSong);
-        navigator.mediaSession.setActionHandler('nexttrack', handleNextSong);
+        if (typeof MediaMetadata === 'function') {
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: currentSong.title,
+                    artist: currentSong.artistName,
+                    album: "Astronote Music",
+                    artwork: [{ src: currentSong.coverUrl || PERSON_PLACEHOLDER, sizes: '512x512', type: 'image/png' }]
+                });
+            } catch (error) {
+                console.warn('Media Session metadata is unavailable.', error);
+            }
+        }
+
+        // Safari exposes Media Session partially and throws for unsupported actions.
+        const registerAction = (action, handler) => {
+            try {
+                navigator.mediaSession.setActionHandler(action, handler);
+            } catch (error) {
+                if (error.name !== 'NotSupportedError' && error.name !== 'TypeError') {
+                    console.warn(`Media Session action "${action}" is unavailable.`, error);
+                }
+            }
+        };
+
+        registerAction('play', () => setPlaying(true));
+        registerAction('pause', () => setPlaying(false));
+        registerAction('previoustrack', handlePrevSong);
+        registerAction('nexttrack', handleNextSong);
     }, [currentSong, currentIndex, queue]);
 
     useEffect(() => {
@@ -554,10 +572,10 @@ export default function MusicApp({ user, onLogout }) {
         <div className="glass-card song-card" onClick={() => playSong(s, list)}>
             <img src={s.coverUrl || PERSON_PLACEHOLDER} onError={e => e.target.src = PERSON_PLACEHOLDER} alt={s.title} />
             <div className="marquee-container">
-                <p className={`song-title ${s.title.length > 15 ? 'marquee-text' : ''}`}>{s.title}</p>
+                <p className={`song-title ${(s.title || '').length > 15 ? 'marquee-text' : ''}`}>{s.title || 'Unknown title'}</p>
             </div>
             <div className="marquee-container">
-                <p className={`song-artist ${s.artistName.length > 15 ? 'marquee-text' : ''}`}>{s.artistName}</p>
+                <p className={`song-artist ${(s.artistName || '').length > 15 ? 'marquee-text' : ''}`}>{s.artistName || 'Unknown artist'}</p>
             </div>
         </div>
     );
@@ -926,6 +944,11 @@ export default function MusicApp({ user, onLogout }) {
                                                     playerRef.current = e.target; 
                                                     setDuration(e.target.getDuration());
                                                     e.target.playVideo(); 
+                                                }}
+                                                onError={(error) => {
+                                                    console.warn('YouTube playback failed.', error.data);
+                                                    playerRef.current = null;
+                                                    setPlaying(false);
                                                 }}
                                                 opts={{
                                                     height: '100%',
